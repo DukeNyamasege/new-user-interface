@@ -278,9 +278,7 @@ const RunPanel = observer(() => {
     }, [onMount, onUnmount]);
 
     React.useEffect(() => {
-        if (!isDesktop) {
-            toggleDrawer(false);
-        } else if (!is_drawer_open) {
+        if (isDesktop && !is_drawer_open) {
             toggleDrawer(true);
         }
     }, [isDesktop, is_drawer_open, toggleDrawer]);
