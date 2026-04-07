@@ -7,12 +7,19 @@
     height: 0;
 
     &__container {
-        position: fixed !important; // float over every page, not just bot-builder
-        height: calc(100vh - 4.9rem) !important; // full viewport minus header
-        top: 4.9rem !important; // sit directly below the header
+        position: fixed !important;
+        height: calc(100vh - 4.9rem) !important;
+        top: 4.9rem !important;
         width: 36.6rem !important;
         right: 0;
-        z-index: 999; // above page content, below modals
+        z-index: 999;
+        transition: transform 0.3s ease;
+
+        // When drawer is closed, slide it into view (but keep it onscreen)
+        // The Drawer component handles the actual open/close animation
+        &:not(.dc-drawer--open) {
+            transform: translateX(calc(100% - 4rem)); // show toggle button edge
+        }
 
         &--mobile {
             position: absolute;

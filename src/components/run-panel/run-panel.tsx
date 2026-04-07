@@ -280,8 +280,10 @@ const RunPanel = observer(() => {
     React.useEffect(() => {
         if (!isDesktop) {
             toggleDrawer(false);
+        } else if (!is_drawer_open) {
+            toggleDrawer(true);
         }
-    }, [isDesktop, toggleDrawer]);
+    }, [isDesktop, is_drawer_open, toggleDrawer]);
 
     const content = (
         <DrawerContent
