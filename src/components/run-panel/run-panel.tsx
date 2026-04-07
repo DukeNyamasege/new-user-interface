@@ -281,8 +281,7 @@ const RunPanel = observer(() => {
         if (!isDesktop) {
             toggleDrawer(false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [isDesktop, toggleDrawer]);
 
     const content = (
         <DrawerContent
@@ -314,7 +313,7 @@ const RunPanel = observer(() => {
     );
 
     const show_run_panel = [BOT_BUILDER, CHART].includes(active_tab) || active_tour;
-    // On desktop the panel floats (position:fixed) over every page — never hide it.
+    // On desktop the panel floats (position:fixed) over every page — always show.
     // On mobile keep the original tab-based gating.
     if (active_tour === 'bot_builder') return null;
     if (!isDesktop && !show_run_panel) return null;
