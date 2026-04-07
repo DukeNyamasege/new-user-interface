@@ -399,6 +399,15 @@
                 margin-bottom: 0.8rem;
                 border-radius: 0.8rem;
                 padding: 1.6rem;
+                cursor: pointer;
+                transition:
+                    background-color 0.2s ease,
+                    transform 0.15s ease;
+
+                &:hover {
+                    background-color: #e8effe;
+                    transform: translateY(-2px);
+                }
 
                 &--minimized {
                     @include mobile-or-tablet-screen {
@@ -407,6 +416,11 @@
                         padding: 0.8rem;
                     }
                 }
+            }
+
+            &__computer-icon {
+                color: #1c5ae3;
+                display: block;
             }
         }
     }

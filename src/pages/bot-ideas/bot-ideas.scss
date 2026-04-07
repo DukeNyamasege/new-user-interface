@@ -1,0 +1,890 @@
+// ─── Bot Ideas — Dark Trading Dashboard Theme ──────────────────────────────
+.bot-ideas {
+    --bi-bg: #0d1117;
+    --bi-sidebar-bg: #0a0d14;
+    --bi-card-bg: #161b27;
+    --bi-card-hover: #1c2333;
+    --bi-border: #21293b;
+    --bi-accent: #1c5ae3;
+    --bi-accent-h: #2563eb;
+    --bi-green: #00c076;
+    --bi-red: #ff444f;
+    --bi-yellow: #f0b429;
+    --bi-text: #e6edf3;
+    --bi-text-muted: #8b949e;
+    --bi-text-dim: #484f58;
+
+    display: flex;
+    height: 100%;
+    min-height: calc(100vh - 8rem);
+    background: var(--bi-bg);
+    color: var(--bi-text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    overflow: hidden;
+}
+
+// ─── Sidebar ────────────────────────────────────────────────────────────────
+.bi-sidebar {
+    width: 22rem;
+    min-width: 22rem;
+    background: var(--bi-sidebar-bg);
+    border-right: 1px solid var(--bi-border);
+    display: flex;
+    flex-direction: column;
+    padding: 2rem 1.2rem;
+    gap: 2.4rem;
+
+    &__brand {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0 0.8rem 1.6rem;
+        border-bottom: 1px solid var(--bi-border);
+    }
+
+    &__brand-icon {
+        font-size: 2.4rem;
+    }
+
+    &__brand-name {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--bi-text);
+    }
+
+    &__brand-sub {
+        font-size: 1rem;
+        color: var(--bi-text-muted);
+        margin-top: 0.2rem;
+    }
+
+    &__nav {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        flex: 1;
+    }
+
+    &__footer {
+        border-top: 1px solid var(--bi-border);
+        padding-top: 1.6rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+
+        &-label {
+            font-size: 1rem;
+            color: var(--bi-text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        &-status {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 1.2rem;
+            color: var(--bi-green);
+        }
+
+        &-stat {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.2rem;
+            color: var(--bi-text-muted);
+
+            strong {
+                color: var(--bi-text);
+            }
+        }
+    }
+}
+
+// ─── Nav Items ───────────────────────────────────────────────────────────────
+.bi-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.2rem;
+    border-radius: 0.8rem;
+    border: none;
+    background: transparent;
+    color: var(--bi-text-muted);
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    width: 100%;
+    text-align: left;
+
+    &:hover {
+        background: var(--bi-card-bg);
+        color: var(--bi-text);
+    }
+
+    &--active {
+        background: rgb(28 90 227 / 15%);
+        color: #7ba7f7;
+        border-left: 3px solid var(--bi-accent);
+    }
+
+    &__icon {
+        font-size: 1.6rem;
+    }
+
+    &__label {
+        font-weight: 500;
+    }
+}
+
+// ─── Main Content ─────────────────────────────────────────────────────────────
+.bi-main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2.4rem;
+    display: flex;
+    flex-direction: column;
+}
+
+// ─── Status dots ─────────────────────────────────────────────────────────────
+.bi-dot {
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 50%;
+    display: inline-block;
+
+    &--live {
+        background: var(--bi-green);
+        box-shadow: 0 0 6px var(--bi-green);
+        animation: pulse 1.5s infinite;
+    }
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+}
+
+// ─── Colour helpers ───────────────────────────────────────────────────────────
+.bi-green {
+    color: var(--bi-green) !important;
+}
+
+.bi-red {
+    color: var(--bi-red) !important;
+}
+
+// ─── Buttons ─────────────────────────────────────────────────────────────────
+.bi-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.8rem 1.8rem;
+    border-radius: 0.8rem;
+    border: none;
+    font-size: 1.3rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &--primary {
+        background: var(--bi-accent);
+        color: #fff;
+
+        &:hover {
+            background: var(--bi-accent-h);
+            transform: translateY(-1px);
+        }
+    }
+
+    &--ghost {
+        background: transparent;
+        color: var(--bi-text-muted);
+        border: 1px solid var(--bi-border);
+
+        &:hover {
+            border-color: var(--bi-accent);
+            color: var(--bi-text);
+        }
+    }
+
+    &--start {
+        background: var(--bi-green);
+        color: #000;
+        font-weight: 700;
+        font-size: 1.5rem;
+        padding: 1.2rem 3rem;
+        border-radius: 1rem;
+
+        &:hover {
+            filter: brightness(1.1);
+        }
+    }
+
+    &--stop {
+        background: var(--bi-red);
+        color: #fff;
+        font-weight: 700;
+        font-size: 1.5rem;
+        padding: 1.2rem 3rem;
+        border-radius: 1rem;
+    }
+
+    &--sm {
+        padding: 0.5rem 1rem;
+        font-size: 1.2rem;
+    }
+
+    &--lg {
+        padding: 1.2rem 2.4rem;
+        font-size: 1.5rem;
+    }
+
+    &--full {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+// ─── Cards ────────────────────────────────────────────────────────────────────
+.bi-card {
+    background: var(--bi-card-bg);
+    border: 1px solid var(--bi-border);
+    border-radius: 1.4rem;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+    transition: all 0.2s ease;
+
+    &:hover {
+        border-color: var(--bi-accent);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgb(28 90 227 / 15%);
+    }
+
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    &__header-left {
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+    }
+
+    &__avatar {
+        width: 4rem;
+        height: 4rem;
+        border-radius: 0.8rem;
+        background: linear-gradient(135deg, var(--bi-accent), #7b3fe4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    &__name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--bi-text);
+    }
+
+    &__strategy {
+        font-size: 1.2rem;
+        color: var(--bi-text-muted);
+        margin-top: 0.2rem;
+    }
+
+    &__desc {
+        font-size: 1.2rem;
+        color: var(--bi-text-muted);
+        line-height: 1.6;
+    }
+
+    &__tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+    }
+
+    &__stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.8rem;
+        background: rgb(255 255 255 / 3%);
+        border-radius: 0.8rem;
+        padding: 1.2rem;
+    }
+
+    &__winrate {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    &__winrate-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 1.2rem;
+        color: var(--bi-text-muted);
+    }
+
+    &__rating {
+        font-size: 1.4rem;
+        color: var(--bi-yellow);
+    }
+
+    &__rating-value {
+        font-size: 1.2rem;
+        color: var(--bi-text-muted);
+        margin-left: 0.6rem;
+    }
+
+    &__actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.4rem;
+    }
+}
+
+.bi-tag {
+    padding: 0.3rem 0.8rem;
+    border-radius: 10rem;
+    font-size: 1.1rem;
+    background: rgb(28 90 227 / 15%);
+    color: #7ba7f7;
+    border: 1px solid rgb(28 90 227 / 25%);
+}
+
+.bi-winbar {
+    height: 0.6rem;
+    background: var(--bi-border);
+    border-radius: 10rem;
+    overflow: hidden;
+
+    &__fill {
+        height: 100%;
+        border-radius: 10rem;
+        transition: width 0.6s ease;
+    }
+}
+
+.bi-badge {
+    padding: 0.3rem 0.9rem;
+    border-radius: 10rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+
+    &--active {
+        background: rgb(0 192 118 / 15%);
+        color: var(--bi-green);
+        border: 1px solid rgb(0 192 118 / 30%);
+    }
+
+    &--testing {
+        background: rgb(240 180 41 / 15%);
+        color: var(--bi-yellow);
+        border: 1px solid rgb(240 180 41 / 30%);
+    }
+
+    &--beta {
+        background: rgb(28 90 227 / 15%);
+        color: #7ba7f7;
+        border: 1px solid rgb(28 90 227 / 30%);
+    }
+
+    &--inactive {
+        background: rgb(255 68 79 / 15%);
+        color: var(--bi-red);
+        border: 1px solid rgb(255 68 79 / 30%);
+    }
+}
+
+.bi-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+
+    &__label {
+        font-size: 1.1rem;
+        color: var(--bi-text-dim);
+    }
+
+    &__value {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--bi-text);
+    }
+
+    &__value--green {
+        color: var(--bi-green);
+    }
+}
+
+// ─── Bot Library ─────────────────────────────────────────────────────────────
+.bi-library {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 1.6rem;
+    }
+
+    &__title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--bi-text);
+    }
+
+    &__subtitle {
+        font-size: 1.2rem;
+        color: var(--bi-text-muted);
+        margin-top: 0.4rem;
+    }
+
+    &__controls {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-end;
+    }
+
+    &__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(30rem, 1fr));
+        gap: 2rem;
+    }
+}
+
+.bi-search {
+    display: flex;
+    align-items: center;
+    background: var(--bi-card-bg);
+    border: 1px solid var(--bi-border);
+    border-radius: 0.8rem;
+    padding: 0.6rem 1.2rem;
+    gap: 0.8rem;
+    width: 32rem;
+
+    &__icon {
+        font-size: 1.4rem;
+    }
+
+    &__input {
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--bi-text);
+        font-size: 1.3rem;
+        width: 100%;
+
+        &::placeholder {
+            color: var(--bi-text-dim);
+        }
+    }
+}
+
+.bi-filter-tabs {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.bi-filter-tab {
+    padding: 0.5rem 1.2rem;
+    border-radius: 10rem;
+    border: 1px solid var(--bi-border);
+    background: transparent;
+    color: var(--bi-text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+        border-color: var(--bi-accent);
+        color: var(--bi-text);
+    }
+
+    &--active {
+        background: var(--bi-accent);
+        color: #fff;
+        border-color: var(--bi-accent);
+    }
+}
+
+// ─── Submit Form ─────────────────────────────────────────────────────────────
+.bi-submit {
+    max-width: 72rem;
+
+    &__header {
+        margin-bottom: 2.4rem;
+    }
+
+    &__title {
+        font-size: 2.4rem;
+        font-weight: 700;
+        color: var(--bi-text);
+    }
+
+    &__subtitle {
+        font-size: 1.4rem;
+        color: var(--bi-text-muted);
+        margin-top: 0.6rem;
+    }
+
+    &__form {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    &__success {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.6rem;
+        padding: 6rem 2rem;
+        text-align: center;
+        color: var(--bi-text);
+
+        h2 {
+            font-size: 2.4rem;
+            font-weight: 700;
+        }
+
+        p {
+            color: var(--bi-text-muted);
+            font-size: 1.4rem;
+            max-width: 44rem;
+        }
+
+        &-icon {
+            font-size: 5rem;
+        }
+    }
+}
+
+.bi-form-row {
+    display: flex;
+    gap: 1.6rem;
+
+    &--2col > * {
+        flex: 1;
+    }
+}
+
+.bi-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.bi-label {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--bi-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.bi-input,
+.bi-select,
+.bi-textarea {
+    background: var(--bi-card-bg);
+    border: 1px solid var(--bi-border);
+    border-radius: 0.8rem;
+    padding: 1rem 1.4rem;
+    color: var(--bi-text);
+    font-size: 1.4rem;
+    outline: none;
+    transition: border-color 0.15s ease;
+    font-family: inherit;
+
+    &:focus {
+        border-color: var(--bi-accent);
+        box-shadow: 0 0 0 3px rgb(28 90 227 / 15%);
+    }
+
+    &::placeholder {
+        color: var(--bi-text-dim);
+    }
+
+    option {
+        background: var(--bi-card-bg);
+    }
+}
+
+.bi-textarea {
+    resize: vertical;
+    min-height: 12rem;
+}
+
+.bi-risk-selector {
+    display: flex;
+    gap: 1.2rem;
+}
+
+.bi-risk-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 1.6rem 1.2rem;
+    background: var(--bi-card-bg);
+    border: 2px solid var(--bi-border);
+    border-radius: 1rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+        border-color: var(--bi-accent);
+    }
+
+    &--selected {
+        border-color: var(--bi-accent);
+        background: rgb(28 90 227 / 10%);
+    }
+
+    &__emoji {
+        font-size: 2rem;
+    }
+
+    &__label {
+        font-weight: 700;
+        color: var(--bi-text);
+        font-size: 1.4rem;
+    }
+
+    &__desc {
+        font-size: 1.1rem;
+        color: var(--bi-text-muted);
+        text-align: center;
+    }
+}
+
+// ─── Empty state ─────────────────────────────────────────────────────────────
+.bi-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+    padding: 4rem;
+    color: var(--bi-text-muted);
+    text-align: center;
+
+    &--center {
+        justify-content: center;
+        flex: 1;
+    }
+
+    &__icon {
+        font-size: 4rem;
+    }
+
+    h3 {
+        font-size: 1.8rem;
+        color: var(--bi-text);
+    }
+
+    p {
+        font-size: 1.3rem;
+    }
+
+    strong {
+        color: var(--bi-accent);
+    }
+}
+
+// ─── Bot Loader ───────────────────────────────────────────────────────────────
+.bi-loader {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    height: 100%;
+
+    &__topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bi-card-bg);
+        border: 1px solid var(--bi-border);
+        border-radius: 1.2rem;
+        padding: 1.2rem 1.8rem;
+    }
+
+    &__bot-info {
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+    }
+
+    &__avatar {
+        width: 4rem;
+        height: 4rem;
+        border-radius: 0.8rem;
+        background: linear-gradient(135deg, var(--bi-accent), #7b3fe4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    &__bot-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--bi-text);
+    }
+
+    &__bot-meta {
+        font-size: 1.2rem;
+        color: var(--bi-text-muted);
+    }
+
+    &__status-dot {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--bi-text-muted);
+        padding: 0.6rem 1.2rem;
+        background: var(--bi-bg);
+        border-radius: 10rem;
+        border: 1px solid var(--bi-border);
+
+        &--live {
+            color: var(--bi-green);
+            border-color: rgb(0 192 118 / 30%);
+            background: rgb(0 192 118 / 8%);
+        }
+    }
+
+    &__stats-row {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1.2rem;
+    }
+
+    &__controls {
+        display: flex;
+        align-items: center;
+        gap: 1.6rem;
+        justify-content: center;
+        padding: 1.6rem;
+        background: var(--bi-card-bg);
+        border: 1px solid var(--bi-border);
+        border-radius: 1.2rem;
+    }
+
+    &__logs {
+        flex: 1;
+        background: var(--bi-card-bg);
+        border: 1px solid var(--bi-border);
+        border-radius: 1.2rem;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+}
+
+.bi-stat-card {
+    background: var(--bi-card-bg);
+    border: 1px solid var(--bi-border);
+    border-radius: 1rem;
+    padding: 1.4rem 1.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    &__label {
+        font-size: 1.1rem;
+        color: var(--bi-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    &__value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--bi-text);
+    }
+}
+
+.bi-logs {
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.2rem 1.6rem;
+        border-bottom: 1px solid var(--bi-border);
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--bi-text);
+    }
+
+    &__count {
+        font-size: 1.1rem;
+        color: var(--bi-text-muted);
+    }
+
+    &__table-wrap {
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    &__table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 1.2rem;
+
+        th {
+            padding: 1rem 1.4rem;
+            text-align: left;
+            color: var(--bi-text-dim);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 1rem;
+            letter-spacing: 0.06em;
+            border-bottom: 1px solid var(--bi-border);
+            background: rgb(255 255 255 / 2%);
+            position: sticky;
+            top: 0;
+        }
+
+        td {
+            padding: 1rem 1.4rem;
+            color: var(--bi-text);
+            border-bottom: 1px solid rgb(255 255 255 / 4%);
+        }
+    }
+
+    &__empty {
+        text-align: center;
+        color: var(--bi-text-dim);
+        padding: 4rem;
+    }
+}
+
+.bi-log--win td {
+    background: rgb(0 192 118 / 3%);
+}
+
+.bi-log--loss td {
+    background: rgb(255 68 79 / 3%);
+}

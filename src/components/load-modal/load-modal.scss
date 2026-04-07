@@ -1,5 +1,64 @@
 @use 'components/shared/styles/mixins' as *;
 
+// ─── Load Bot modal — blue branding ──────────────────────────────────────────
+// className='load-strategy' on <Modal> generates: dc-modal__container_load-strategy
+// and dc-modal-header--load-strategy  (see modal.tsx lines 150, 167)
+#modal_root .dc-modal__container_load-strategy {
+    border-top: 4px solid #1c5ae3;
+    border-radius: 1.2rem;
+    overflow: hidden;
+
+    // Blue tabs inside the modal (Recent / Local / Google Drive)
+    .dc-tabs__item {
+        background-color: #1c5ae3 !important;
+        color: #fff !important;
+        border-radius: 0.6rem;
+        margin: 0.6rem 0.4rem 0;
+        transition: background-color 0.2s ease;
+
+        &:hover:not(.dc-tabs__active) {
+            background-color: #1749c0 !important;
+        }
+
+        &.dc-tabs__active {
+            background-color: #0d3fa8 !important;
+            color: #fff !important;
+        }
+    }
+
+    .dc-tabs__active-line {
+        display: none;
+    }
+
+    .dc-tabs__list {
+        background: transparent;
+    }
+
+    // Blue primary button (Open / Load)
+    .dc-btn--primary {
+        background-color: #1c5ae3 !important;
+        border-color: #1c5ae3 !important;
+
+        &:not([disabled]):hover {
+            background-color: #1749c0 !important;
+            border-color: #1749c0 !important;
+        }
+    }
+}
+
+.dc-modal-header--load-strategy {
+    background: linear-gradient(135deg, #f0f4ff 0%, #fff 100%);
+    border-bottom: 1px solid #d0deff;
+}
+
+.dc-modal-header__title--load-strategy {
+    color: #1c5ae3 !important;
+    font-weight: 700 !important;
+    font-size: 1.8rem !important;
+    letter-spacing: -0.01em;
+}
+
+// ─── Main load-strategy content styles ───────────────────────────────────────
 #modal_root {
     .load-strategy {
         &__recent {
@@ -38,13 +97,14 @@
 
                 &-expand {
                     margin-bottom: 0.8rem;
-                    color: var(--brand-red-coral);
+                    color: #1c5ae3;
                     font-size: var(--text-size-xs);
                     font-weight: bold;
                     cursor: pointer;
 
                     &:hover {
                         text-decoration: underline;
+                        color: #0d3fa8;
                     }
                 }
 
@@ -82,7 +142,8 @@
                 }
 
                 &--selected {
-                    background-color: var(--general-section-2);
+                    background-color: #e8effe;
+                    border-inline-start: 3px solid #1c5ae3;
                 }
 
                 &-text {
@@ -166,5 +227,38 @@
         min-height: unset;
         height: unset;
         margin: 0;
+    }
+
+    // ── Dropzone enhancements ────────────────────────────────────────────────
+    .load-strategy__local-dropzone-area {
+        border: 2px dashed #1c5ae3;
+        border-radius: 1.2rem;
+        background-color: #f4f7ff;
+        transition:
+            background-color 0.2s ease,
+            border-color 0.2s ease;
+        padding: 2.4rem;
+
+        &:hover {
+            background-color: #e4ecff;
+            border-color: #0d3fa8;
+        }
+    }
+
+    .load-strategy__local-icon {
+        color: #1c5ae3;
+    }
+
+    .load-strategy__local-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1c5ae3;
+        margin-top: 1.6rem;
+    }
+
+    .load-strategy__local-description {
+        color: var(--text-less-prominent);
+        font-size: 1.3rem;
+        margin-bottom: 1.6rem;
     }
 }

@@ -1,10 +1,36 @@
 .app-header {
     &__logo {
         padding-inline-start: 1.2rem;
-        padding-inline-end: 2rem;
+        padding-inline-end: 2.4rem;
         border-inline-end: 1px solid var(--general-section-1);
-        height: 32px;
         display: flex;
-        align-items: center;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        text-decoration: none;
+        line-height: 1.1;
+        gap: 2px;
+        min-width: max-content;
+    }
+
+    &__logo-powered {
+        font-size: 1rem;
+        font-weight: 500;
+        font-style: italic;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text-less-prominent);
+    }
+
+    &__logo-brand {
+        font-size: 2.4rem;
+        font-weight: 800;
+        font-style: italic;
+        letter-spacing: -0.02em;
+        background: linear-gradient(120deg, #ff6b6b 0%, #ff444f 45%, #c4111a 100%);
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: drop-shadow(0 1px 4px rgb(255 68 79 / 35%));
     }
 }

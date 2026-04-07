@@ -174,6 +174,47 @@
                 }
             }
         }
+
+        // Blue tab buttons — className='main__tabs' on <Tabs> generates dc-tabs--main__tabs
+        .dc-tabs--main__tabs {
+            .dc-tabs__item {
+                background-color: #1c5ae3 !important;
+                color: #fff !important;
+                border-radius: 0.6rem;
+                margin: 0.4rem 0.4rem 0;
+                transition: background-color 0.2s ease;
+
+                &:hover:not(.dc-tabs__active) {
+                    background-color: #1749c0 !important;
+                    color: #fff !important;
+                }
+            }
+
+            .dc-tabs__item.dc-tabs__active {
+                background-color: #0d3fa8 !important;
+                color: #fff !important;
+            }
+
+            .dc-tabs__active-line {
+                display: none;
+            }
+
+            .dc-tabs__list {
+                background: transparent;
+                gap: 0.4rem;
+            }
+
+            // placeholder tab content styling
+            .placeholder-tab {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                color: var(--text-general);
+                font-size: 1.6rem;
+                opacity: 0.6;
+            }
+        }
     }
 
     &__run-strategy-wrapper {

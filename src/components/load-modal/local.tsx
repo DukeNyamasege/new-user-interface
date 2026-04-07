@@ -3,8 +3,8 @@ import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import Button from '@/components/shared_ui/button';
 import { useStore } from '@/hooks/useStore';
-import { DerivLightLocalDeviceIcon, DerivLightMyComputerIcon } from '@deriv/quill-icons/Illustration';
 import { LegacyClose1pxIcon, LegacyInfo1pxIcon } from '@deriv/quill-icons/Legacy';
+import { StandaloneComputerFillIcon } from '@deriv/quill-icons/Standalone';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 import { botNotification } from '../bot-notification/bot-notification';
@@ -104,15 +104,9 @@ const LocalComponent = observer(() => {
                         handleFileChange(e, false);
                     }}
                 >
-                    {!isDesktop ? (
-                        <DerivLightLocalDeviceIcon height='96px' width='96px' className='load-strategy__local-icon' />
-                    ) : (
+                    <StandaloneComputerFillIcon iconSize='2xl' className='load-strategy__local-icon' />
+                    {isDesktop && (
                         <React.Fragment>
-                            <DerivLightMyComputerIcon
-                                height='128px'
-                                width='128px'
-                                className='load-strategy__local-icon'
-                            />
                             <div className='load-strategy__local-title'>
                                 <Localize i18n_default_text='Drag your XML file here' />
                             </div>

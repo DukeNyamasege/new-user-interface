@@ -13,7 +13,6 @@ import {
     LegacyCashierIcon,
     LegacyChartsIcon,
     LegacyHelpCentreIcon,
-    LegacyHomeOldIcon,
     LegacyProfileSmIcon,
     LegacyReportsIcon,
     LegacyResponsibleTradingIcon,
@@ -106,12 +105,6 @@ const useMobileMenuConfig = (client?: RootStore['client']) => {
                     href: standalone_routes.deriv_com,
                     label: localize('Deriv.com'),
                     LeftComponent: BrandDerivLogoCoralIcon,
-                },
-                {
-                    as: 'a',
-                    href: standalone_routes.deriv_app,
-                    label: localize("Trader's Hub"),
-                    LeftComponent: LegacyHomeOldIcon,
                 },
                 {
                     as: 'a',
