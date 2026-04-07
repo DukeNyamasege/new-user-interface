@@ -314,7 +314,10 @@ const RunPanel = observer(() => {
     );
 
     const show_run_panel = [BOT_BUILDER, CHART].includes(active_tab) || active_tour;
-    if ((!show_run_panel && isDesktop) || active_tour === 'bot_builder') return null;
+    // On desktop the panel floats (position:fixed) over every page — never hide it.
+    // On mobile keep the original tab-based gating.
+    if (active_tour === 'bot_builder') return null;
+    if (!isDesktop && !show_run_panel) return null;
 
     return (
         <>

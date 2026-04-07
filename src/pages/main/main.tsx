@@ -30,6 +30,7 @@ import { requestOidcAuthentication } from '@deriv-com/auth-client';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 import RunPanel from '../../components/run-panel';
+import BestBots from '../best-bots';
 import BotIdeas from '../bot-ideas';
 import ChartModal from '../chart/chart-modal';
 import Dashboard from '../dashboard';
@@ -265,9 +266,7 @@ const AppWrapper = observer(() => {
                                 }
                                 id='id-best-bots'
                             >
-                                <div className='placeholder-tab'>
-                                    <p>{localize('Best Bots — Coming Soon')}</p>
-                                </div>
+                                <BestBots />
                             </div>
                             <div
                                 label={

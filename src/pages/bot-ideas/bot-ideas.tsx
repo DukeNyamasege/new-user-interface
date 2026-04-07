@@ -1,91 +1,55 @@
-import { useState } from 'react';
-import BotLibrary from './components/bot-library';
-import BotLoader from './components/bot-loader';
-import SubmitForm from './components/submit-form';
-import { TBot, TBotIdeasView } from './types';
+import { useCallback, useState } from 'react';
+import BotPitchForm from './components/submit-form';
+import { TBotIdea } from './types';
 import './bot-ideas.scss';
 
-type TNavItem = { view: TBotIdeasView; label: string; icon: string };
+const STORAGE_KEY = 'bot_pitch_ideas';
 
-const NAV_ITEMS: TNavItem[] = [
-    { view: 'library', label: 'Bot Library', icon: '📚' },
-    { view: 'submit', label: 'Submit Idea', icon: '💡' },
-    { view: 'my-bots', label: 'My Bots', icon: '🗂' },
-];
+const loadIdeas = (): TBotIdea[] => {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
+    } catch {
+        return [];
+    }
+};
 
-const MyBots = () => (
-    <div className='bi-empty bi-empty--center'>
-        <div className='bi-empty__icon'>🤖</div>
-        <h3>No bots loaded yet</h3>
-        <p>
-            Go to the Bot Library and click <strong>Load Bot</strong> to activate a strategy.
-        </p>
-    </div>
-);
+const formatDate = (iso: string) => {
+    try {
+        return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch {
+        return iso;
+    }
+};
 
 const BotIdeas = () => {
-    const [view, setView] = useState<TBotIdeasView>('library');
-    const [activeBot, setActiveBot] = useState<TBot | null>(null);
+    const [ideas, setIdeas] = useState<TBotIdea[]>(loadIdeas);
 
-    const handleLoadBot = (bot: TBot) => {
-        setActiveBot(bot);
-        setView('loader');
-    };
-
-    const handleNavClick = (v: TBotIdeasView) => {
-        setView(v);
-        if (v !== 'loader') setActiveBot(null);
-    };
+    const handleIdeaSubmitted = useCallback((idea: TBotIdea) => {
+        setIdeas(prev => [idea, ...prev]);
+    }, []);
 
     return (
-        <div className='bot-ideas'>
-            {/* ── Sidebar ── */}
-            <aside className='bi-sidebar'>
-                <div className='bi-sidebar__brand'>
-                    <span className='bi-sidebar__brand-icon'>🔥</span>
-                    <div>
-                        <div className='bi-sidebar__brand-name'>Bot Ideas</div>
-                        <div className='bi-sidebar__brand-sub'>Trading Control Centre</div>
-                    </div>
-                </div>
+        <div className='bot-ideas-page'>
+            <div className='bot-ideas-page__inner'>
+                <BotPitchForm onIdeaSubmitted={handleIdeaSubmitted} />
 
-                <nav className='bi-sidebar__nav'>
-                    {NAV_ITEMS.map(item => (
-                        <button
-                            key={item.view}
-                            className={`bi-nav-item ${view === item.view ? 'bi-nav-item--active' : ''}`}
-                            onClick={() => handleNavClick(item.view)}
-                        >
-                            <span className='bi-nav-item__icon'>{item.icon}</span>
-                            <span className='bi-nav-item__label'>{item.label}</span>
-                        </button>
-                    ))}
-                </nav>
-
-                <div className='bi-sidebar__footer'>
-                    <div className='bi-sidebar__footer-label'>Platform Status</div>
-                    <div className='bi-sidebar__footer-status'>
-                        <span className='bi-dot bi-dot--live' />
-                        <span>Systems Operational</span>
-                    </div>
-                    <div className='bi-sidebar__footer-stat'>
-                        <span>Total Bots</span>
-                        <strong>6</strong>
-                    </div>
-                    <div className='bi-sidebar__footer-stat'>
-                        <span>Active</span>
-                        <strong className='bi-green'>3</strong>
-                    </div>
-                </div>
-            </aside>
-
-            {/* ── Main Content ── */}
-            <main className='bi-main'>
-                {view === 'library' && <BotLibrary onLoadBot={handleLoadBot} />}
-                {view === 'submit' && <SubmitForm />}
-                {view === 'my-bots' && <MyBots />}
-                {view === 'loader' && activeBot && <BotLoader bot={activeBot} onBack={() => setView('library')} />}
-            </main>
+                {ideas.length > 0 && (
+                    <section className='bi-ideas-list'>
+                        <h3 className='bi-ideas-list__heading'>Pitched Ideas</h3>
+                        <div className='bi-ideas-list__grid'>
+                            {ideas.map(idea => (
+                                <div key={idea.id} className='bi-idea-card'>
+                                    <div className='bi-idea-card__header'>
+                                        <span className='bi-idea-card__name'>{idea.bot_name}</span>
+                                        <span className='bi-idea-card__date'>{formatDate(idea.submitted_at)}</span>
+                                    </div>
+                                    <p className='bi-idea-card__desc'>{idea.strategy_description}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+            </div>
         </div>
     );
 };

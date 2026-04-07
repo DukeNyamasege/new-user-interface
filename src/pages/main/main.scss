@@ -44,6 +44,19 @@
         border: none;
         max-width: 100%;
         width: 100%;
+        height: 100%; // anchor so children can resolve percentage heights
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+
+        // The anonymous <div> wrapping <Tabs> in main.tsx has no class.
+        // Target it directly so it fills the container and passes height down.
+        > div {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
 
         &.no-scroll {
             overflow: hidden;
@@ -177,6 +190,22 @@
 
         // Blue tab buttons — className='main__tabs' on <Tabs> generates dc-tabs--main__tabs
         .dc-tabs--main__tabs {
+            flex: 1; // fill whatever space .main__container provides
+            min-height: 0; // allow shrinking so overflow-y kicks in
+            display: flex;
+            flex-direction: column;
+
+            .dc-tabs__content {
+                flex: 1;
+                min-height: 0;
+                overflow-y: auto;
+
+                // override the existing display:flex that breaks scroll
+                &--main__tabs {
+                    display: block;
+                }
+            }
+
             .dc-tabs__item {
                 background-color: #1c5ae3 !important;
                 color: #fff !important;

@@ -7,10 +7,12 @@
     height: 0;
 
     &__container {
-        height: var(--bot-content-height) !important;
-        top: 10.4rem !important;
+        position: fixed !important; // float over every page, not just bot-builder
+        height: calc(100vh - 4.9rem) !important; // full viewport minus header
+        top: 4.9rem !important; // sit directly below the header
         width: 36.6rem !important;
         right: 0;
+        z-index: 999; // above page content, below modals
 
         &--mobile {
             position: absolute;

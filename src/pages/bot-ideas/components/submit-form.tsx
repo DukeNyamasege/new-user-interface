@@ -1,134 +1,114 @@
-import React, { useState } from 'react';
-import { TBotIdea, TRiskLevel } from '../types';
+import { useRef, useState } from 'react';
+import { TBotIdea, TNotification } from '../types';
 
-const MARKETS = [
-    'Volatility 10',
-    'Volatility 25',
-    'Volatility 50',
-    'Volatility 75',
-    'Volatility 100',
-    'Boom 300',
-    'Boom 500',
-    'Boom 1000',
-    'Crash 300',
-    'Crash 500',
-    'Crash 1000',
-    'Step Index',
-    'Range Break 100',
-    'Range Break 200',
-];
+const STORAGE_KEY = 'bot_pitch_ideas';
 
-const RISK_OPTIONS: { value: TRiskLevel; emoji: string; desc: string }[] = [
-    { value: 'Low', emoji: '🟢', desc: 'Safe, slow growth' },
-    { value: 'Medium', emoji: '🟡', desc: 'Balanced risk/reward' },
-    { value: 'High', emoji: '🔴', desc: 'Aggressive, high reward' },
-];
+type TBotPitchFormProps = {
+    onIdeaSubmitted: (idea: TBotIdea) => void;
+};
 
-const EMPTY: TBotIdea = { name: '', strategy: '', market: MARKETS[0], risk: 'Medium', logic: '' };
+const BotPitchForm = ({ onIdeaSubmitted }: TBotPitchFormProps) => {
+    const [botName, setBotName] = useState('');
+    const [strategy, setStrategy] = useState('');
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-const SubmitForm = () => {
-    const [form, setForm] = useState<TBotIdea>(EMPTY);
-    const [submitted, setSubmitted] = useState(false);
+    const autoResize = () => {
+        const el = textareaRef.current;
+        if (!el) return;
+        el.style.height = 'auto'; // collapse first so shrinking also works
+        el.style.height = `${el.scrollHeight}px`;
+    };
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [notification, setNotification] = useState<TNotification | null>(null);
 
-    const set = (field: keyof TBotIdea, value: string) => setForm(prev => ({ ...prev, [field]: value }));
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        setSubmitted(true);
-        setTimeout(() => {
-            setSubmitted(false);
-            setForm(EMPTY);
-        }, 3000);
+    const showNotification = (n: TNotification) => {
+        setNotification(n);
+        setTimeout(() => setNotification(null), 5000);
     };
 
-    if (submitted) {
-        return (
-            <div className='bi-submit__success'>
-                <div className='bi-submit__success-icon'>🚀</div>
-                <h2>Idea Submitted!</h2>
-                <p>{"We'll"} review your bot idea and add it to the library if it passes our strategy checks.</p>
-            </div>
-        );
-    }
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        try {
+            // ── Replace with Supabase call when ready ──────────────────────
+            // const { error } = await supabase.from('bot_ideas').insert([{ bot_name: botName, strategy_description: strategy }]);
+            // if (error) throw error;
+            // ──────────────────────────────────────────────────────────────
+            const newIdea: TBotIdea = {
+                id: `${Date.now()}`,
+                bot_name: botName,
+                strategy_description: strategy,
+                submitted_at: new Date().toISOString(),
+            };
+            const existing: TBotIdea[] = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
+            localStorage.setItem(STORAGE_KEY, JSON.stringify([newIdea, ...existing]));
+
+            setBotName('');
+            setStrategy('');
+            showNotification({ type: 'success', message: 'Bot idea submitted successfully!' });
+            onIdeaSubmitted(newIdea);
+        } catch {
+            showNotification({ type: 'error', message: 'Failed to submit. Please try again.' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
-        <div className='bi-submit'>
-            <div className='bi-submit__header'>
-                <h2 className='bi-submit__title'>💡 Pitch Your Bot Idea</h2>
-                <p className='bi-submit__subtitle'>Got a trading strategy in mind? Submit it and {"we'll"} build it.</p>
+        <div className='bpf'>
+            <div className='bpf__card'>
+                <h2 className='bpf__title'>Describe your bot idea</h2>
+                <p className='bpf__subtitle'></p>
+
+                {notification && (
+                    <div className={`bpf__notification bpf__notification--${notification.type}`}>
+                        {notification.message}
+                    </div>
+                )}
+
+                <form className='bpf__form' onSubmit={handleSubmit}>
+                    <div className='bpf__field'>
+                        <label className='bpf__label' htmlFor='bot_name'>
+                            Bot Name
+                        </label>
+                        <input
+                            id='bot_name'
+                            className='bpf__input'
+                            type='text'
+                            placeholder=''
+                            value={botName}
+                            onChange={e => setBotName(e.target.value)}
+                            required
+                        />
+                    </div>
+
+                    <div className='bpf__field'>
+                        <label className='bpf__label' htmlFor='strategy_description'>
+                            Strategy Description
+                        </label>
+                        <textarea
+                            ref={textareaRef}
+                            id='strategy_description'
+                            className='bpf__textarea'
+                            placeholder=''
+                            rows={4}
+                            value={strategy}
+                            onChange={e => {
+                                setStrategy(e.target.value);
+                                autoResize();
+                            }}
+                            required
+                        />
+                    </div>
+
+                    <button className='bpf__submit' type='submit' disabled={isSubmitting}>
+                        {isSubmitting ? 'Submitting…' : '→ Submit Idea'}
+                    </button>
+                </form>
             </div>
-
-            <form className='bi-submit__form' onSubmit={handleSubmit}>
-                <div className='bi-form-row bi-form-row--2col'>
-                    <div className='bi-field'>
-                        <label className='bi-label'>Bot Name</label>
-                        <input
-                            className='bi-input'
-                            placeholder='e.g. Boom Spike Hunter'
-                            value={form.name}
-                            onChange={e => set('name', e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className='bi-field'>
-                        <label className='bi-label'>Strategy Type</label>
-                        <input
-                            className='bi-input'
-                            placeholder='e.g. Trend Following, Martingale'
-                            value={form.strategy}
-                            onChange={e => set('strategy', e.target.value)}
-                            required
-                        />
-                    </div>
-                </div>
-
-                <div className='bi-field'>
-                    <label className='bi-label'>Market</label>
-                    <select className='bi-select' value={form.market} onChange={e => set('market', e.target.value)}>
-                        {MARKETS.map(m => (
-                            <option key={m} value={m}>
-                                {m}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className='bi-field'>
-                    <label className='bi-label'>Risk Level</label>
-                    <div className='bi-risk-selector'>
-                        {RISK_OPTIONS.map(opt => (
-                            <button
-                                key={opt.value}
-                                type='button'
-                                className={`bi-risk-card ${form.risk === opt.value ? 'bi-risk-card--selected' : ''}`}
-                                onClick={() => set('risk', opt.value)}
-                            >
-                                <span className='bi-risk-card__emoji'>{opt.emoji}</span>
-                                <span className='bi-risk-card__label'>{opt.value}</span>
-                                <span className='bi-risk-card__desc'>{opt.desc}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className='bi-field'>
-                    <label className='bi-label'>Expected Logic / Strategy Description</label>
-                    <textarea
-                        className='bi-textarea'
-                        rows={5}
-                        placeholder='Describe how your bot should work. Entry conditions, exit rules, stake size logic, etc.'
-                        value={form.logic}
-                        onChange={e => set('logic', e.target.value)}
-                        required
-                    />
-                </div>
-
-                <button className='bi-btn bi-btn--primary bi-btn--lg bi-btn--full' type='submit'>
-                    🚀 Submit Bot Idea
-                </button>
-            </form>
         </div>
     );
 };
 
-export default SubmitForm;
+export default BotPitchForm;

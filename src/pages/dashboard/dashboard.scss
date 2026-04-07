@@ -395,17 +395,20 @@
             }
 
             &__images {
-                background-color: var(--general-section-1);
+                background-color: rgb(28 90 227 / 10%);
+                border: 1.5px solid rgb(28 90 227 / 25%);
                 margin-bottom: 0.8rem;
                 border-radius: 0.8rem;
                 padding: 1.6rem;
                 cursor: pointer;
                 transition:
                     background-color 0.2s ease,
+                    border-color 0.2s ease,
                     transform 0.15s ease;
 
                 &:hover {
-                    background-color: #e8effe;
+                    background-color: rgb(28 90 227 / 20%);
+                    border-color: #1c5ae3;
                     transform: translateY(-2px);
                 }
 
