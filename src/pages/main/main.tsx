@@ -36,6 +36,7 @@ import ChartModal from '../chart/chart-modal';
 import Combo from '../combo';
 import Dashboard from '../dashboard';
 import RunStrategy from '../dashboard/run-strategy';
+import { DTrader } from '../dtrader';
 import './main.scss';
 
 const AppWrapper = observer(() => {
@@ -310,9 +311,7 @@ const AppWrapper = observer(() => {
                                 }
                                 id='id-dtrader'
                             >
-                                <div className='placeholder-tab'>
-                                    <p>{localize('DTrader — Coming Soon')}</p>
-                                </div>
+                                <DTrader />
                             </div>
                             <div
                                 label={
