@@ -33,6 +33,7 @@ import RunPanel from '../../components/run-panel';
 import BestBots from '../best-bots';
 import BotIdeas from '../bot-ideas';
 import ChartModal from '../chart/chart-modal';
+import Combo from '../combo';
 import Dashboard from '../dashboard';
 import RunStrategy from '../dashboard/run-strategy';
 import './main.scss';
@@ -326,9 +327,7 @@ const AppWrapper = observer(() => {
                                 }
                                 id='id-combo'
                             >
-                                <div className='placeholder-tab'>
-                                    <p>{localize('Combo — Coming Soon')}</p>
-                                </div>
+                                <Combo />
                             </div>
                             <div
                                 label={
