@@ -1,91 +1,125 @@
 import { action, computed, makeObservable, observable } from 'mobx';
-import { ContentFlag, isEmptyObject } from '@/components/shared';
-import { isEuCountry, isMultipliersOnly, isOptionsBlocked } from '@/components/shared/common/utility';
+/* [AI] - Analytics removed - utility functions moved to @/utils/account-helpers */
+import { getAccountId } from '@/utils/account-helpers';
+/* [/AI] */
+import { isEmptyObject } from '@/components/shared';
+import { isMultipliersOnly, isOptionsBlocked } from '@/components/shared/common/utility';
 import { removeCookies } from '@/components/shared/utils/storage/storage';
-import { api_base } from '@/external/bot-skeleton';
+import { observer as globalObserver, observer } from '@/external/bot-skeleton';
+import { api_base } from '@/external/bot-skeleton/services/api/api-base';
+import { ErrorLogger } from '@/utils/error-logger';
+import type { Balance } from '@deriv/api-types';
 import {
     authData$,
     setAccountList,
     setAuthData,
     setIsAuthorized,
-} from '@/external/bot-skeleton/services/api/observables/connection-status-stream';
-import type { TAuthData, TLandingCompany } from '@/types/api-types';
-import type { Balance, GetAccountStatus, GetSettings, WebsiteStatus } from '@deriv/api-types';
-import { Analytics } from '@deriv-com/analytics';
+} from '../external/bot-skeleton/services/api/observables/connection-status-stream';
+import type { TAuthData } from '../types/api-types';
+import type RootStore from './root-store';
 
-const eu_shortcode_regex = /^maltainvest$/;
-const eu_excluded_regex = /^mt$/;
 export default class ClientStore {
     loginid = '';
     account_list: TAuthData['account_list'] = [];
     balance = '0';
     currency = 'AUD';
     is_logged_in = false;
-    account_status: GetAccountStatus | undefined;
-    account_settings: GetSettings | undefined;
-    website_status: WebsiteStatus | undefined;
-    landing_companies: TLandingCompany | undefined;
-    upgradeable_landing_companies: string[] = [];
+    is_account_regenerating = false;
+
     accounts: Record<string, TAuthData['account_list'][number]> = {};
-    is_landing_company_loaded: boolean | undefined;
     all_accounts_balance: Balance | null = null;
     is_logging_out = false;
 
-    // TODO: fix with self exclusion
-    updateSelfExclusion = () => {};
-
     private authDataSubscription: { unsubscribe: () => void } | null = null;
+    private root_store: RootStore;
+    private tab_visibility_handler: ((event: Event) => void) | null = null;
+    private ws_login_id: string | null = null;
+    private is_regenerating = false;
+    private instance_id: string = '';
 
-    constructor() {
-        // Subscribe to auth data changes
-        this.authDataSubscription = authData$.subscribe(authData => {
-            if (authData?.upgradeable_landing_companies) {
-                this.setUpgradeableLandingCompanies(authData.upgradeable_landing_companies);
+    // TODO: fix with self exclusion
+
+    onAuthorizeEvent = (data: {
+        account_list?: TAuthData['account_list'];
+        current_account?: { loginid: string; currency: string; is_virtual: number; balance?: number };
+    }) => {
+        if (data?.account_list) {
+            this.setAccountList(data.account_list);
+        }
+
+        // Update current account details from new API structure
+        if (data?.current_account) {
+            this.setLoginId(data.current_account.loginid);
+            this.setCurrency(data.current_account.currency);
+            this.setIsLoggedIn(true);
+            localStorage.setItem('active_loginid', data.current_account.loginid);
+
+            // Store the login ID used for WebSocket connection
+            this.setWebSocketLoginId(data.current_account.loginid);
+
+            if (typeof data.current_account.balance === 'number') {
+                this.setBalance(data.current_account.balance.toString());
             }
-        });
+        }
+    };
+
+    constructor(root_store: RootStore) {
+        this.root_store = root_store;
+        // Subscribe to auth data changes
+        this.authDataSubscription = authData$.subscribe(() => {});
+
+        observer.register('api.authorize', this.onAuthorizeEvent);
+
+        // Clean up any existing instance before registering new one to prevent memory leaks
+        const existingId = globalObserver.getState('client.store.id');
+        if (existingId) {
+            globalObserver.setState({ 'client.store': null, 'client.store.id': null });
+        }
+
+        // Register this instance with the global observer so api-base can access it
+        // Store a reference to this instance with a cryptographically secure unique ID to prevent memory leaks
+        // Use crypto.getRandomValues for better uniqueness and security than Math.random()
+        this.instance_id = `client_store_${Date.now()}_${crypto.getRandomValues(new Uint32Array(1))[0].toString(36)}`;
+        globalObserver.setState({ 'client.store': this, 'client.store.id': this.instance_id });
+
+        // Set up visibility change listener to regenerate WebSocket when tab becomes visible
+        this.setupVisibilityListener();
 
         makeObservable(this, {
             accounts: observable,
             account_list: observable,
-            account_settings: observable,
-            account_status: observable,
+
             all_accounts_balance: observable,
             balance: observable,
             currency: observable,
-            is_landing_company_loaded: observable,
+
             is_logged_in: observable,
-            landing_companies: observable,
+            is_account_regenerating: observable,
             loginid: observable,
-            upgradeable_landing_companies: observable,
-            website_status: observable,
             is_logging_out: observable,
             active_accounts: computed,
-            clients_country: computed,
             is_bot_allowed: computed,
-            is_eu: computed,
-            is_eu_country: computed,
+
             is_eu_or_multipliers_only: computed,
             is_low_risk: computed,
             is_multipliers_only: computed,
             is_options_blocked: computed,
             is_virtual: computed,
-            landing_company_shortcode: computed,
+
             residence: computed,
-            should_show_eu_error: computed,
+
             logout: action,
+            onAuthorizeEvent: action,
             setAccountList: action,
-            setAccountSettings: action,
-            setAccountStatus: action,
+
             setAllAccountsBalance: action,
+            setIsAccountRegenerating: action,
             setBalance: action,
             setCurrency: action,
             setIsLoggedIn: action,
             setIsLoggingOut: action,
-            setLandingCompany: action,
             setLoginId: action,
-            setWebsiteStatus: action,
-            setUpgradeableLandingCompanies: action,
-            updateTncStatus: action,
+
             is_trading_experience_incomplete: computed,
             is_cr_account: computed,
             account_open_date: computed,
@@ -98,64 +132,18 @@ export default class ClientStore {
             : [];
     }
 
-    get clients_country() {
-        return this.website_status?.clients_country;
-    }
-
     get is_bot_allowed() {
         return this.isBotAllowed();
     }
     get is_trading_experience_incomplete() {
-        return this.account_status?.status?.some(status => status === 'trading_experience_not_complete');
-    }
-
-    get is_eu() {
-        if (!this.landing_companies) return false;
-        const { gaming_company, financial_company, mt_gaming_company } = this.landing_companies;
-        const financial_shortcode = financial_company?.shortcode;
-        const gaming_shortcode = gaming_company?.shortcode;
-        const mt_gaming_shortcode = mt_gaming_company?.financial.shortcode || mt_gaming_company?.swap_free.shortcode;
-        const is_current_mf = this.landing_company_shortcode === 'maltainvest';
-        return (
-            is_current_mf || //is_currently logged in mf account via tradershub
-            (financial_shortcode || gaming_shortcode || mt_gaming_shortcode
-                ? (eu_shortcode_regex.test(financial_shortcode) && gaming_shortcode !== 'svg') ||
-                  eu_shortcode_regex.test(gaming_shortcode)
-                : eu_excluded_regex.test(this.residence))
-        );
-    }
-
-    get is_eu_country() {
-        const country = this.website_status?.clients_country;
-        if (country) return isEuCountry(country);
         return false;
     }
 
     get is_low_risk() {
-        const { gaming_company, financial_company } = this.landing_companies ?? {};
-        const low_risk_landing_company =
-            financial_company?.shortcode === 'maltainvest' && gaming_company?.shortcode === 'svg';
-        return low_risk_landing_company;
-    }
-
-    get should_show_eu_error() {
-        if (!this.is_landing_company_loaded) {
-            return false;
-        }
-        return this.is_eu && !this.is_low_risk;
-    }
-
-    get landing_company_shortcode() {
-        if (this.accounts[this.loginid]) {
-            return this.accounts[this.loginid].landing_company_name;
-        }
-        return undefined;
+        return false;
     }
 
     get residence() {
-        if (this.is_logged_in) {
-            return this.account_settings?.country_code ?? '';
-        }
         return '';
     }
 
@@ -168,8 +156,8 @@ export default class ClientStore {
     }
 
     get is_eu_or_multipliers_only() {
-        // Check whether account is multipliers only and if the account is from eu countries
-        return !this.is_multipliers_only ? !isEuCountry(this.residence) : !this.is_multipliers_only;
+        // Always return false - EU restrictions now handled by backend
+        return false;
     }
 
     get is_virtual() {
@@ -184,49 +172,12 @@ export default class ClientStore {
         return this.all_loginids.find(loginid => !!this.accounts[loginid].is_virtual);
     }
 
-    get content_flag() {
-        const { is_logged_in, landing_companies, residence, is_landing_company_loaded } = this;
-        if (is_landing_company_loaded) {
-            const { financial_company, gaming_company } = landing_companies ?? {};
-
-            //this is a conditional check for countries like Australia/Norway which fulfills one of these following conditions
-            const restricted_countries = financial_company?.shortcode === 'svg' || gaming_company?.shortcode === 'svg';
-
-            if (!is_logged_in) return '';
-            if (!gaming_company?.shortcode && financial_company?.shortcode === 'maltainvest') {
-                if (this.is_virtual) return ContentFlag.EU_DEMO;
-                return ContentFlag.EU_REAL;
-            } else if (
-                financial_company?.shortcode === 'maltainvest' &&
-                gaming_company?.shortcode === 'svg' &&
-                !this.is_virtual
-            ) {
-                if (this.is_eu) return ContentFlag.LOW_RISK_CR_EU;
-                return ContentFlag.LOW_RISK_CR_NON_EU;
-            } else if (
-                ((financial_company?.shortcode === 'svg' && gaming_company?.shortcode === 'svg') ||
-                    restricted_countries) &&
-                !this.is_virtual
-            ) {
-                return ContentFlag.HIGH_RISK_CR;
-            }
-
-            // Default Check
-            if (isEuCountry(residence)) {
-                if (this.is_virtual) return ContentFlag.EU_DEMO;
-                return ContentFlag.EU_REAL;
-            }
-            if (this.is_virtual) return ContentFlag.CR_DEMO;
-        }
-        return ContentFlag.LOW_RISK_CR_NON_EU;
-    }
-
     get is_cr_account() {
         return this.loginid?.startsWith('CR');
     }
 
     get should_hide_header() {
-        return (this.is_eu && this.should_show_eu_error) || (!this.is_logged_in && this.is_eu_country);
+        return false;
     }
 
     get account_open_date() {
@@ -237,10 +188,7 @@ export default class ClientStore {
     }
 
     isBotAllowed = () => {
-        // Stop showing Bot, DBot, DSmartTrader for logged out EU IPs
-        if (!this.is_logged_in && this.is_eu_country) return false;
-        const is_mf = this.landing_company_shortcode === 'maltainvest';
-        return this.is_virtual ? this.is_eu_or_multipliers_only : !is_mf && !this.is_options_blocked;
+        return this.is_virtual ? this.is_eu_or_multipliers_only : !this.is_options_blocked;
     };
 
     setLoginId = (loginid: string) => {
@@ -277,120 +225,227 @@ export default class ClientStore {
         return accountList[this.loginid] ?? '';
     };
 
-    setAccountStatus(status: GetAccountStatus | undefined) {
-        this.account_status = status;
-    }
-
-    setAccountSettings(settings: GetSettings | undefined) {
-        try {
-            const is_equal_settings = JSON.stringify(settings) === JSON.stringify(this.account_settings);
-            if (!is_equal_settings) {
-                this.account_settings = settings;
-            }
-        } catch (error) {
-            console.error('setAccountSettings error', error);
-        }
-    }
-
-    updateTncStatus(landing_company_shortcode: string, status: number) {
-        try {
-            if (!this.account_settings) return;
-
-            const updated_settings = {
-                ...this.account_settings,
-                tnc_status: {
-                    ...this.account_settings.tnc_status,
-                    [landing_company_shortcode]: status,
-                },
-            };
-
-            this.setAccountSettings(updated_settings);
-        } catch (error) {
-            console.error('updateTncStatus error', error);
-        }
-    }
-
-    setWebsiteStatus(status: WebsiteStatus | undefined) {
-        this.website_status = status;
-    }
-
-    setLandingCompany(landing_companies: TLandingCompany) {
-        this.landing_companies = landing_companies;
-        this.is_landing_company_loaded = true;
-    }
-
-    setUpgradeableLandingCompanies = (upgradeable_landing_companies: string[]) => {
-        this.upgradeable_landing_companies = upgradeable_landing_companies;
-    };
-
     setAllAccountsBalance = (all_accounts_balance: Balance | undefined) => {
         this.all_accounts_balance = all_accounts_balance ?? null;
+    };
+    setIsAccountRegenerating = (is_loading: boolean) => {
+        this.is_account_regenerating = is_loading;
     };
 
     setIsLoggingOut = (is_logging_out: boolean) => {
         this.is_logging_out = is_logging_out;
     };
 
+    /**
+     * Request logout via WebSocket (legacy method for backward compatibility)
+     * @returns Promise with logout response
+     */
+
     logout = async () => {
-        // reset all the states
-        this.account_list = [];
-        this.account_status = undefined;
-        this.account_settings = undefined;
-        this.landing_companies = undefined;
-        this.accounts = {};
-        this.is_logged_in = false;
-        this.loginid = '';
-        this.balance = '0';
-        this.currency = 'USD';
+        if (localStorage.getItem('active_loginid')) {
+            // Clear DerivAPI singleton instance and close WebSocket
+            const { clearDerivApiInstance } = await import('@/external/bot-skeleton/services/api/appId');
+            clearDerivApiInstance();
 
-        this.is_landing_company_loaded = false;
+            // Clear accounts cache from DerivWSAccountsService
+            const { DerivWSAccountsService } = await import('@/services/derivws-accounts.service');
+            DerivWSAccountsService.clearStoredAccounts();
+            DerivWSAccountsService.clearCache();
 
-        this.all_accounts_balance = null;
+            // Clear OAuth token from sessionStorage
+            const { OAuthTokenExchangeService } = await import('@/services/oauth-token-exchange.service');
+            OAuthTokenExchangeService.clearAuthInfo();
 
-        localStorage.removeItem('active_loginid');
-        localStorage.removeItem('accountsList');
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('clientAccounts');
-        removeCookies('client_information');
+            // Reset all the states
+            this.account_list = [];
+            this.accounts = {};
+            this.is_logged_in = false;
+            this.loginid = '';
+            this.balance = '0';
+            this.currency = 'USD';
+            this.all_accounts_balance = null;
 
-        setIsAuthorized(false);
-        setAccountList([]);
-        setAuthData(null);
+            // Clear localStorage
+            localStorage.removeItem('active_loginid');
+            localStorage.removeItem('accountsList');
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('clientAccounts');
+            localStorage.removeItem('account_type');
 
-        this.setIsLoggingOut(false);
+            // Clear sessionStorage
+            sessionStorage.clear();
 
-        Analytics.reset();
+            // Clear cookies
+            removeCookies('client_information');
 
-        // disable livechat
-        window.LC_API?.close_chat?.();
-        window.LiveChatWidget?.call('hide');
+            // Reset observables
+            setIsAuthorized(false);
+            setAccountList([]);
+            setAuthData(null);
 
-        // shutdown and initialize intercom
-        if (window.Intercom) {
-            window.Intercom('shutdown');
-            window.DerivInterCom.initialize({
-                hideLauncher: true,
-                token: null,
-            });
+            this.setIsLoggingOut(false);
+
+            // Disable livechat
+            window.LC_API?.close_chat?.();
+            window.LiveChatWidget?.call('hide');
+
+            // Shutdown and initialize intercom
+            if (window.Intercom) {
+                window.Intercom('shutdown');
+                window.DerivInterCom.initialize({
+                    hideLauncher: true,
+                    token: null,
+                });
+            }
         }
+    };
 
-        const resolveNavigation = () => {
-            if (window.history.length > 1) {
-                history.back();
-            } else {
-                window.location.replace('/');
+    /**
+     * Sets up visibility change listener to regenerate WebSocket when tab becomes visible
+     */
+    setupVisibilityListener() {
+        // Remove existing listener if any
+        this.removeVisibilityListener();
+
+        // Create handler function
+        this.tab_visibility_handler = async () => {
+            if (document.visibilityState === 'visible' && !this.is_regenerating) {
+                // Tab became visible - check if WebSocket needs regeneration
+                if (this.is_logged_in) {
+                    this.checkAndRegenerateWebSocket();
+                }
             }
         };
-        return api_base?.api
-            ?.logout()
-            .then(() => {
-                resolveNavigation();
-                return Promise.resolve();
-            })
-            .catch((error: Error) => {
-                console.error('test Logout failed:', error);
-                resolveNavigation();
-                return Promise.reject(error);
-            });
-    };
+
+        // Add listener
+        document.addEventListener('visibilitychange', this.tab_visibility_handler);
+    }
+
+    /**
+     * Set the current WebSocket login ID
+     * @param login_id The login ID used for the WebSocket connection
+     */
+    setWebSocketLoginId(login_id: string) {
+        this.ws_login_id = login_id;
+    }
+
+    /**
+     * Check if WebSocket needs to be regenerated based on login ID comparison
+     * @returns True if WebSocket needs regeneration, false otherwise
+     */
+    needsWebSocketRegeneration(): boolean {
+        const active_login_id = getAccountId();
+        return (
+            !this.is_regenerating &&
+            !!active_login_id &&
+            !!this.ws_login_id &&
+            active_login_id !== this.ws_login_id &&
+            !api_base.is_running
+        );
+    }
+
+    /**
+     * Check if WebSocket needs regeneration and regenerate if needed
+     */
+    checkAndRegenerateWebSocket() {
+        if (this.needsWebSocketRegeneration()) {
+            this.regenerateWebSocket();
+        }
+    }
+
+    /**
+     * Regenerate WebSocket connection with the new login ID
+     * This method clears all data and creates a new connection with the current active login ID
+     * Protected against race conditions with the is_regenerating flag
+     * Includes error handling to prevent users from being stuck in loading state
+     */
+    async regenerateWebSocket() {
+        if (this.is_regenerating) return;
+
+        this.is_regenerating = true;
+        this.setIsAccountRegenerating(true);
+
+        try {
+            const active_login_id = getAccountId();
+
+            if (active_login_id) {
+                // Clear DerivAPI singleton instance to force new connection
+                const { clearDerivApiInstance } = await import('@/external/bot-skeleton/services/api/appId');
+                clearDerivApiInstance();
+
+                // Clear accounts cache but keep stored accounts for reuse
+                const { DerivWSAccountsService } = await import('@/services/derivws-accounts.service');
+                DerivWSAccountsService.clearCache();
+
+                this.account_list = [];
+
+                this.accounts = {};
+                this.setIsLoggedIn(false);
+
+                this.balance = '0';
+                this.currency = 'USD';
+
+                this.all_accounts_balance = null;
+
+                localStorage.removeItem('accountsList');
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('clientAccounts');
+                localStorage.removeItem('account_type'); // Clear account type on logout
+                removeCookies('client_information');
+
+                setIsAuthorized(false);
+                setAccountList([]);
+                setAuthData(null);
+
+                this.setIsLoggingOut(false);
+
+                // disable livechat
+                window.LC_API?.close_chat?.();
+                window.LiveChatWidget?.call('hide');
+
+                // Force create a new connection with the current active login ID
+                // Wrap the potentially failing init call in a try-catch
+                try {
+                    await api_base.init(true); // ✅ Await the async call
+                } catch (initError) {
+                    ErrorLogger.error('ClientStore', 'WebSocket initialization failed', initError);
+                    this.setIsAccountRegenerating(false);
+                    throw initError; // Re-throw to be caught by outer catch if needed
+                }
+
+                // Update the tracked WebSocket login ID
+                this.setWebSocketLoginId(active_login_id);
+            }
+        } catch (error) {
+            ErrorLogger.error('ClientStore', 'WebSocket regeneration failed', error);
+            this.setIsAccountRegenerating(false);
+            // Consider showing user-facing error notification here
+            // or dispatching an event that UI components can listen to
+        } finally {
+            this.is_regenerating = false;
+        }
+    }
+
+    /**
+     * Removes the visibility change listener
+     */
+    removeVisibilityListener() {
+        if (this.tab_visibility_handler) {
+            document.removeEventListener('visibilitychange', this.tab_visibility_handler);
+            this.tab_visibility_handler = null;
+        }
+    }
+
+    destroy() {
+        this.authDataSubscription?.unsubscribe();
+        observer.unregister('api.authorize', this.onAuthorizeEvent);
+        this.removeVisibilityListener();
+
+        // Properly clean up the global observer reference
+        // Only clear if this instance is the one referenced by checking the instance ID
+        const storedId = globalObserver.getState('client.store.id');
+        if (storedId === this.instance_id) {
+            globalObserver.setState({ 'client.store': null, 'client.store.id': null });
+        }
+    }
 }

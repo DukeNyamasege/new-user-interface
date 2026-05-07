@@ -1,44 +1,22 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
+/* [AI] - Analytics removed - rudderstack event tracking removed */
+/* [/AI] */
+import ChunkLoader from '@/components/loader/chunk-loader';
 import chart_api from '@/external/bot-skeleton/services/api/chart-api';
-import { useApiBase } from '@/hooks/useApiBase';
+import { useSmartChartAdaptor } from '@/hooks/useSmartChartAdaptor';
 import { useStore } from '@/hooks/useStore';
-import {
-    ActiveSymbolsRequest,
-    ServerTimeRequest,
-    TicksHistoryResponse,
-    TicksStreamRequest,
-    TradingTimesRequest,
-} from '@deriv/api-types';
-import { ChartTitle, SmartChart } from '@deriv/deriv-charts';
+import { ChartTitle, SmartChart, TGranularity, TStateChangeListener } from '@deriv-com/smartcharts-champion';
 import { useDevice } from '@deriv-com/ui';
 import ToolbarWidgets from './toolbar-widgets';
-import '@deriv/deriv-charts/dist/smartcharts.css';
-
-type TSubscription = {
-    [key: string]: null | {
-        unsubscribe?: () => void;
-    };
-};
-
-type TError = null | {
-    error?: {
-        code?: string;
-        message?: string;
-    };
-};
-
-const subscriptions: TSubscription = {};
+import '@deriv-com/smartcharts-champion/dist/smartcharts.css';
 
 const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) => {
     const barriers: [] = [];
     const { common, ui } = useStore();
     const { chart_store, run_panel, dashboard } = useStore();
     const [isSafari, setIsSafari] = useState(false);
-    // Boolean state to control whether to refresh active symbols
-    const [activeSymbols, setActiveSymbols] = useState<any[]>([]);
-    const { activeLoginid } = useApiBase();
 
     const {
         chart_type,
@@ -50,13 +28,15 @@ const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) =
         updateChartType,
         updateGranularity,
         updateSymbol,
-        setChartSubscriptionId,
-        chart_subscription_id,
     } = chart_store;
-    const chartSubscriptionIdRef = useRef(chart_subscription_id);
+
+    // Use the custom hook for SmartChart Adaptor
+    const { chartData, getQuotes, subscribeQuotes, unsubscribeQuotes } = useSmartChartAdaptor();
+
     const { isDesktop, isMobile } = useDevice();
     const { is_drawer_open } = run_panel;
     const { is_chart_modal_visible } = dashboard;
+
     const settings = {
         assetInformation: false, // ui.is_chart_asset_info_visible,
         countdown: true,
@@ -67,10 +47,16 @@ const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) =
     };
 
     useEffect(() => {
-        // Safari browser detection
+        // Safari browser detection using feature detection
+        // More robust than user agent sniffing
         const isSafariBrowser = () => {
-            const ua = navigator.userAgent.toLowerCase();
-            return ua.indexOf('safari') !== -1 && ua.indexOf('chrome') === -1 && ua.indexOf('android') === -1;
+            // Check for Safari-specific features
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+            // Additional check: Safari has specific webkit features
+            const hasWebkitFeatures = 'webkitAudioContext' in window || 'WebKitMediaSource' in window;
+
+            return isSafari && hasWebkitFeatures;
         };
 
         setIsSafari(isSafariBrowser());
@@ -81,63 +67,24 @@ const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) =
     }, []);
 
     useEffect(() => {
-        chartSubscriptionIdRef.current = chart_subscription_id;
-    }, [chart_subscription_id]);
-
-    useEffect(() => {
         if (!symbol) updateSymbol();
     }, [symbol, updateSymbol]);
 
-    // Function to fetch active symbols using chart_api
-    const fetchActiveSymbols = async () => {
-        try {
-            // Then fetch active symbols
-            const response = await chart_api.api.send({ active_symbols: 'brief' });
-            if (response && response.active_symbols) {
-                setActiveSymbols(response.active_symbols);
-            }
-        } catch (error) {
-            console.error('Failed to fetch active symbols:', error);
-        }
-    };
-
-    // Initialize previousLoginIdRef when component mounts and detect account changes
-    useEffect(() => {
-        // First time initialization
-        if (activeLoginid && chart_api.is_authorized) {
-            fetchActiveSymbols();
-        }
-    }, [activeLoginid, chart_api.is_authorized]);
-
-    const requestAPI = (req: ServerTimeRequest | ActiveSymbolsRequest | TradingTimesRequest) => {
-        return chart_api.api.send(req);
-    };
-    const requestForgetStream = (subscription_id: string) => {
-        subscription_id && chart_api.api.forget(subscription_id);
-    };
-
-    const requestSubscribe = async (req: TicksStreamRequest, callback: (data: any) => void) => {
-        try {
-            requestForgetStream(chartSubscriptionIdRef.current);
-            const history = await chart_api.api.send(req);
-            setChartSubscriptionId(history?.subscription.id);
-            if (history) callback(history);
-            if (req.subscribe === 1) {
-                subscriptions[history?.subscription.id] = chart_api.api
-                    .onMessage()
-                    ?.subscribe(({ data }: { data: TicksHistoryResponse }) => {
-                        callback(data);
-                    });
-            }
-        } catch (e) {
-            // eslint-disable-next-line no-console
-            (e as TError)?.error?.code === 'MarketIsClosed' && callback([]); //if market is closed sending a empty array  to resolve
-            console.log((e as TError)?.error?.message);
-        }
-    };
-
-    if (!symbol) return null;
     const is_connection_opened = !!chart_api?.api;
+
+    const handleStateChange: TStateChangeListener = (state, options) => {
+        /* [AI] - Analytics removed - rudderstack event call removed */
+        // Handle state changes: INITIAL, READY, SCROLL_TO_LEFT
+        /* [/AI] */
+        if (state === 'READY') {
+            setChartStatus(true);
+        }
+    };
+
+    if (!symbol || chartData.activeSymbols.length === 0) {
+        return <ChunkLoader message='' />;
+    }
+
     return (
         <div
             className={classNames('dashboard__chart-wrapper', {
@@ -148,12 +95,13 @@ const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) =
             dir='ltr'
         >
             <SmartChart
-                id='dbot'
+                id={`dbot-${symbol}`}
+                key={`chart-${symbol}`}
                 barriers={barriers}
                 showLastDigitStats={show_digits_stats}
                 chartControlsWidgets={null}
                 enabledChartFooter={false}
-                chartStatusListener={(v: boolean) => setChartStatus(!v)}
+                stateChangeListener={handleStateChange}
                 toolbarWidget={() => (
                     <ToolbarWidgets
                         updateChartType={updateChartType}
@@ -165,21 +113,19 @@ const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) =
                 chartType={chart_type}
                 isMobile={isMobile}
                 enabledNavigationWidget={isDesktop}
-                granularity={granularity}
-                requestAPI={requestAPI}
-                requestForget={() => {}}
-                requestForgetStream={() => {}}
-                requestSubscribe={requestSubscribe}
+                granularity={granularity as TGranularity}
+                getQuotes={getQuotes}
+                subscribeQuotes={subscribeQuotes}
+                unsubscribeQuotes={unsubscribeQuotes}
+                chartData={{ activeSymbols: chartData.activeSymbols, tradingTimes: chartData.tradingTimes }}
                 settings={settings}
                 symbol={symbol}
                 topWidgets={() => <ChartTitle onChange={onSymbolChange} />}
                 isConnectionOpened={is_connection_opened}
                 getMarketsOrder={getMarketsOrder}
-                chartData={{
-                    activeSymbols: JSON.parse(JSON.stringify(activeSymbols)),
-                }}
                 isLive
                 leftMargin={80}
+                drawingToolFloatingMenuPosition={isMobile ? { x: 100, y: 100 } : { x: 200, y: 200 }}
             />
         </div>
     );

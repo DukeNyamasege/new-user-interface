@@ -1,22 +1,6 @@
 .mobile-menu {
     height: 100%;
 
-    &__theme-toggle {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        padding: 0.6rem;
-        border-radius: 50%;
-        transition: background 0.2s ease;
-
-        &:hover {
-            background: rgb(28 90 227 / 12%);
-        }
-    }
-
     &__toggle {
         padding-inline-start: 1rem;
         padding-inline-end: 1rem;
@@ -86,6 +70,7 @@
                 .deriv-toggle-switch {
                     margin-left: auto;
                     margin-right: 1.6rem;
+                    min-width: 4.4rem;
                 }
 
                 &--active {

@@ -4,6 +4,7 @@ import { Field, FieldProps, useFormikContext } from 'formik';
 import Autocomplete from '@/components/shared_ui/autocomplete';
 import { TItem } from '@/components/shared_ui/dropdown-list';
 import { useStore } from '@/hooks/useStore';
+import { localize } from '@deriv-com/translations';
 import { TDurationUnitItem, TFormData } from '../types';
 
 type TDurationUnit = {
@@ -15,15 +16,20 @@ type TSellConditionItem = {
     value: string;
 };
 
-const list_options = [
-    { text: 'Take Profit', value: 'take_profit' },
-    { text: 'Tick Count', value: 'tick_count' },
-];
-
 const SellConditions: React.FC<TDurationUnit> = ({ attached }: TDurationUnit) => {
     const { quick_strategy } = useStore();
     const { setValue } = quick_strategy;
     const { setFieldValue, values } = useFormikContext<TFormData>();
+
+    // Define list_options inside component to ensure localize() is called on each render
+    const takeProfitText = localize('Take Profit');
+    const tickCountText = localize('Tick Count');
+
+    const list_options = [
+        { text: takeProfitText, value: 'take_profit' },
+        { text: tickCountText, value: 'tick_count' },
+    ];
+
     const [selectedValue, setSelectedValue] = useState<TSellConditionItem>(
         values.boolean_tick_count ? list_options[1] : list_options[0]
     );
@@ -32,7 +38,9 @@ const SellConditions: React.FC<TDurationUnit> = ({ attached }: TDurationUnit) =>
         if ((item as TDurationUnitItem)?.value) {
             const { value } = item as TDurationUnitItem;
             const is_take_profit = value === 'take_profit';
-            const text = is_take_profit ? 'Take Profit' : 'Tick Count';
+            // Using hardcoded strings here for internal state management
+            // The actual display uses localized values from list_options
+            const text = is_take_profit ? localize('Take Profit') : localize('Tick Count');
             setValue('boolean_tick_count', !is_take_profit);
             setFieldValue?.('boolean_tick_count', !is_take_profit);
             setSelectedValue({ ...selectedValue, text });
@@ -51,7 +59,6 @@ const SellConditions: React.FC<TDurationUnit> = ({ attached }: TDurationUnit) =>
                         <Autocomplete
                             {...field}
                             readOnly
-                            inputMode='none'
                             data-testid='dt_qs_sell_conditions'
                             autoComplete='off'
                             className='qs__select'

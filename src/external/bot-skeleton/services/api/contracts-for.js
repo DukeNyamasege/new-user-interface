@@ -1,3 +1,4 @@
+import { DURATIONS, TRADE_TYPE_CATEGORIES, TRADE_TYPES } from '../../../../components/shared/utils/common-data';
 import { config } from '../../constants/config';
 import PendingPromise from '../../utils/pending-promise';
 import { api_base } from './api-base';
@@ -67,7 +68,9 @@ export default class ContractsFor {
 
                     const has_matching_category = c.contract_category === real_trade_type;
                     const has_matching_duration = durations.findIndex(d => d.unit === duration) !== -1;
-                    const has_matching_barrier_category = c.barrier_category === barrier_category;
+                    // barrier_category field may not be available in API response anymore
+                    const has_matching_barrier_category =
+                        !c.barrier_category || c.barrier_category === barrier_category;
                     const has_matching_barrier_type =
                         // Match offset type barriers.
                         (has_selected_offset_type && isOffset(c.barrier || c[barrier_props[index]])) ||
@@ -175,50 +178,89 @@ export default class ContractsFor {
     async getContractsByTradeType(symbol, trade_type) {
         const contracts = await this.getContractsFor(symbol);
         const contract_category = this.getContractCategoryByTradeType(trade_type);
-        const barrier_category = this.getBarrierCategoryByTradeType(trade_type);
+        // barrier_category field may not be available in API response anymore
+        // const barrier_category = this.getBarrierCategoryByTradeType(trade_type);
 
         return contracts.filter(contract => {
             const has_matching_category = contract.contract_category === contract_category;
-            const has_matching_barrier = contract.barrier_category === barrier_category;
+            // barrier_category field may not be available in API response anymore
+            // const has_matching_barrier = contract.barrier_category === barrier_category;
 
-            return has_matching_category && has_matching_barrier;
+            return has_matching_category;
         });
     }
 
     async getContractsFor(symbol) {
-        if (!symbol || symbol === 'na') {
+        if (!symbol || symbol === 'na' || symbol === 'DEFAULT') {
+            console.warn('Invalid symbol provided to getContractsFor:', symbol);
+            return [];
+        }
+
+        // Check if API is available
+        if (!api_base.api) {
             return [];
         }
 
         const getContractsForFromApi = async () => {
             if (this.retrieving_contracts_for[symbol]) {
                 await this.retrieving_contracts_for[symbol];
-                return this.contracts_for[symbol].contracts;
+                return this.contracts_for[symbol]?.contracts || [];
             }
 
             this.retrieving_contracts_for[symbol] = new PendingPromise();
-            const response = await api_base.api.send({ contracts_for: symbol });
 
-            if (response.error) {
+            try {
+                const response = await api_base.api.send({ contracts_for: symbol });
+
+                if (!response || response.error) {
+                    console.warn('contracts_for API error for symbol:', symbol, response?.error);
+                    if (this.retrieving_contracts_for[symbol]) {
+                        this.retrieving_contracts_for[symbol].resolve();
+                        delete this.retrieving_contracts_for[symbol];
+                    }
+                    return [];
+                }
+
+                if (
+                    !response.contracts_for ||
+                    !response.contracts_for.available ||
+                    !Array.isArray(response.contracts_for.available)
+                ) {
+                    console.warn('No contracts_for data available for symbol:', symbol);
+                    if (this.retrieving_contracts_for[symbol]) {
+                        this.retrieving_contracts_for[symbol].resolve();
+                        delete this.retrieving_contracts_for[symbol];
+                    }
+                    return [];
+                }
+
+                const {
+                    contracts_for: { available: contracts },
+                } = response;
+
+                // We don't offer forward-starting contracts in bot.
+                // Note: start_type field may not be available in API response anymore
+                const filtered_contracts = contracts.filter(c => !c.start_type || c.start_type !== 'forward');
+
+                this.contracts_for[symbol] = {
+                    contracts: filtered_contracts,
+                    timestamp: this.server_time.unix(),
+                };
+
+                if (this.retrieving_contracts_for[symbol]) {
+                    this.retrieving_contracts_for[symbol].resolve();
+                    delete this.retrieving_contracts_for[symbol];
+                }
+
+                return filtered_contracts;
+            } catch (error) {
+                console.error('Error in contracts_for API call:', error);
+                if (this.retrieving_contracts_for[symbol]) {
+                    this.retrieving_contracts_for[symbol].resolve();
+                    delete this.retrieving_contracts_for[symbol];
+                }
                 return [];
             }
-
-            const {
-                contracts_for: { available: contracts },
-            } = response;
-
-            // We don't offer forward-starting contracts in bot.
-            const filtered_contracts = contracts.filter(c => c.start_type !== 'forward');
-
-            this.contracts_for[symbol] = {
-                contracts: filtered_contracts,
-                timestamp: this.server_time.unix(),
-            };
-
-            this.retrieving_contracts_for[symbol].resolve();
-            delete this.retrieving_contracts_for[symbol];
-
-            return filtered_contracts;
         };
 
         if (this.contracts_for[symbol]) {
@@ -226,12 +268,11 @@ export default class ContractsFor {
             const is_expired = this.server_time.unix() - timestamp > this.cache_age_in_min * 60;
 
             if (is_expired) {
-                getContractsForFromApi();
+                return getContractsForFromApi();
             }
 
             return contracts;
         }
-
         return getContractsForFromApi();
     }
 
@@ -241,10 +282,11 @@ export default class ContractsFor {
         }
 
         const contracts = await this.getContractsFor(symbol);
-        const { NOT_AVAILABLE_DURATIONS, DEFAULT_DURATION_DROPDOWN_OPTIONS } = config();
+        const { DEFAULT_DURATION_DROPDOWN_OPTIONS } = config();
 
+        // Duration fallbacks when no contracts available
         if (contracts.length === 0) {
-            return NOT_AVAILABLE_DURATIONS;
+            return DURATIONS;
         }
 
         const contracts_for_category = await this.getContractsByTradeType(symbol, trade_type);
@@ -314,9 +356,8 @@ export default class ContractsFor {
         }
 
         if (durations.length === 0) {
-            return NOT_AVAILABLE_DURATIONS;
+            return DURATIONS;
         }
-
         // Maintain order based on duration unit
         return durations.sort((a, b) => getDurationIndex(a.unit) - getDurationIndex(b.unit));
     }
@@ -351,21 +392,53 @@ export default class ContractsFor {
     };
 
     async getMultiplierRange(symbol, trade_type) {
-        const contracts = await this.getContractsByTradeType(symbol, trade_type);
-        const multiplier_range = [];
-        const { opposites } = config();
+        try {
+            const contracts = await this.getContractsByTradeType(symbol, trade_type);
+            const multiplier_range = [];
+            const { opposites } = config();
 
-        const contract = contracts.find(c => {
-            return Object.keys(opposites).some(category => {
-                return opposites[category].map(subcategory => Object.keys(subcategory)[0]).includes(c.contract_type);
+            // For multiplier contracts, look for MULTUP or MULTDOWN contract types
+            const multiplier_contract_types = ['MULTUP', 'MULTDOWN'];
+
+            const contract = contracts.find(c => {
+                // Check if contract type is one of the multiplier types
+                if (multiplier_contract_types.includes(c.contract_type)) {
+                    return true;
+                }
+
+                // Fallback: check through opposites mapping
+                const multiplier_opposites = opposites['MULTIPLIER'] || [];
+                return multiplier_opposites.some(opposite => Object.keys(opposite).includes(c.contract_type));
             });
-        });
 
-        if (contract?.multiplier_range) {
-            multiplier_range.push(...contract.multiplier_range);
+            if (contract?.multiplier_range) {
+                multiplier_range.push(...contract.multiplier_range);
+            }
+
+            // If no multiplier range found, try to find any contract with multiplier_range
+            if (multiplier_range.length === 0) {
+                const any_contract_with_multipliers = contracts.find(
+                    c => c.multiplier_range && c.multiplier_range.length > 0
+                );
+                if (any_contract_with_multipliers?.multiplier_range) {
+                    multiplier_range.push(...any_contract_with_multipliers.multiplier_range);
+                }
+            }
+
+            if (multiplier_range.length === 0) {
+                console.warn(
+                    'No multiplier range found for symbol:',
+                    symbol,
+                    'Available contracts:',
+                    contracts.map(c => ({ contract_type: c.contract_type, has_multiplier_range: !!c.multiplier_range }))
+                );
+            }
+
+            return multiplier_range;
+        } catch (error) {
+            console.error('Error in getMultiplierRange:', error);
+            return [];
         }
-
-        return multiplier_range;
     }
 
     async getMarketBySymbol(symbol) {
@@ -485,7 +558,6 @@ export default class ContractsFor {
             const is_muliplier = ['multiplier'].includes(trade_type.value);
 
             // TODO: Render extra inputs for barrier + prediction and multiplier types.
-            // For now, exclude all multipliers from Quick Strategy (they were already excluded)
             if (!has_barrier && !has_prediction && !is_muliplier) {
                 trade_type_options.push({
                     text: trade_type.name,
@@ -545,7 +617,7 @@ export default class ContractsFor {
     }
 
     async getTradeTypeCategories(market, submarket, symbol) {
-        const { TRADE_TYPE_CATEGORY_NAMES, NOT_AVAILABLE_DROPDOWN_OPTIONS } = config();
+        const { TRADE_TYPE_CATEGORY_NAMES } = config();
         const contracts = await this.getContractsFor(symbol);
         const trade_type_categories = [];
 
@@ -582,7 +654,8 @@ export default class ContractsFor {
             });
         }
 
-        return NOT_AVAILABLE_DROPDOWN_OPTIONS;
+        // Fallback trade type categories
+        return TRADE_TYPE_CATEGORIES;
     }
 
     async getTradeTypes(market, submarket, symbol, trade_type_category) {
@@ -611,7 +684,12 @@ export default class ContractsFor {
             }
         }
 
-        return trade_types.length > 0 ? trade_types : config().NOT_AVAILABLE_DROPDOWN_OPTIONS;
+        // Fallback trade types based on category
+        if (trade_types.length === 0) {
+            return TRADE_TYPES[trade_type_category] || [['Default', 'callput']];
+        }
+
+        return trade_types;
     }
 
     isDisabledOption(compare_obj) {

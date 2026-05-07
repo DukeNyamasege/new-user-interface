@@ -3,9 +3,11 @@ import { getUrlBase } from '@/components/shared';
 import OpenLiveChatLink from '@/components/shared_ui/open-livechat-link';
 import Text from '@/components/shared_ui/text';
 import { DBOT_TABS } from '@/constants/bot-contents';
+import { localizeAccumulators } from '@/utils/conditional-localize';
 import { Localize, localize } from '@deriv-com/translations';
-import { rudderStackSendOpenEvent } from '../../../analytics/rudderstack-common-events';
-import { showInstallPrompt } from '../../../utils/pwa-utils';
+/* [AI] - Analytics removed - see migrate-docs/ANALYTICS_IMPLEMENTATION_GUIDE.md */
+// import { rudderStackSendOpenEvent } from '../../../analytics/rudderstack-common-events';
+/* [/AI] */
 import { handleOnConfirmAccumulator } from './utils/accumulator-helper-functions';
 import { IconAnnounce } from './announcement-components';
 
@@ -77,7 +79,7 @@ export const ANNOUNCEMENTS: Record<string, TAnnouncement> = {
                     id: 2,
                     text: (
                         <Localize
-                            i18n_default_text='<0>Integration of Accumulators Options</0> for direct strategy application within the QS modal.'
+                            i18n_default_text={`<0>Integration of ${localizeAccumulators()} Options</0> for direct strategy application within the QS modal.`}
                             components={[<strong key={0} />]}
                         />
                     ),
@@ -130,13 +132,16 @@ export const ANNOUNCEMENTS: Record<string, TAnnouncement> = {
         should_not_be_cancel: true,
         should_toggle_load_modal: true,
         switch_tab_on_confirm: DBOT_TABS.BOT_BUILDER,
-        onConfirm: () => {
-            rudderStackSendOpenEvent({
-                subpage_name: 'bot_builder',
-                subform_source: 'dashboard',
-                subform_name: 'quick_strategy',
-            });
-        },
+        /* [AI] - Analytics removed - onConfirm only contained analytics tracking */
+        // onConfirm: () => {
+        //     rudderStackSendOpenEvent({
+        //         subpage_name: 'bot_builder',
+        //         subform_source: 'announcements',
+        //         subform_name: 'load_strategy',
+        //         load_strategy_tab: 'recent',
+        //     });
+        // },
+        /* [/AI] */
     },
 
     BLOCKLY_ANNOUNCE: {
@@ -182,20 +187,20 @@ export const ANNOUNCEMENTS: Record<string, TAnnouncement> = {
     ACCUMULATOR_ANNOUNCE: {
         announcement: {
             id: 'ACCUMULATOR_ANNOUNCE',
-            main_title: localize('Accumulators now on Deriv Bot'),
+            main_title: `${localizeAccumulators()} ${localize('now on Deriv Bot')}`,
             confirm_button_text: localize('Try now'),
             cancel_button_text: localize('Learn more'),
             base_classname: 'announcement-dialog',
             title: (
                 <Localize
-                    i18n_default_text='<0>Boost your trading strategy with Accumulators</0>'
+                    i18n_default_text={`<0>Boost your trading strategy with ${localizeAccumulators()}</0>`}
                     components={[<strong key={0} />]}
                 />
             ),
             content: [
                 {
                     id: 0,
-                    text: localize('Trade Accumulators to build up potential profits with a structured approach.'),
+                    text: `${localize('Trade')} ${localizeAccumulators()} ${localize('to build up potential profits with a structured approach.')}`,
                 },
                 {
                     id: 1,
@@ -208,45 +213,11 @@ export const ANNOUNCEMENTS: Record<string, TAnnouncement> = {
         switch_tab_on_confirm: DBOT_TABS.BOT_BUILDER,
         onConfirm: () => handleOnConfirmAccumulator(),
     },
-
-    PWA_INSTALL_ANNOUNCE: {
-        announcement: {
-            id: 'PWA_INSTALL_ANNOUNCE',
-            main_title: localize('Install Deriv Bot as an App'),
-            confirm_button_text: localize('Install Now'),
-            cancel_button_text: localize('Maybe later'),
-            base_classname: 'announcement-dialog announcement-dialog--pwa',
-            title: (
-                <Localize i18n_default_text='<0>Get the full app experience</0>' components={[<strong key={0} />]} />
-            ),
-            content: [
-                {
-                    id: 0,
-                    text: localize(
-                        'Install Deriv Bot directly on your device for faster access and better performance.'
-                    ),
-                },
-                {
-                    id: 1,
-                    text: localize('Work offline and get instant access from your desktop or home screen.'),
-                },
-                {
-                    id: 2,
-                    text: localize('Enjoy a native app-like experience with all the features you love.'),
-                },
-            ],
-        },
-        should_not_be_cancel: false,
-        onConfirm: () => {
-            // Trigger actual PWA install prompt
-            showInstallPrompt();
-        },
-    },
 };
 
 export type TAnnouncementItem = {
     id: string;
-    icon: React.ComponentType<{ announce: boolean }>;
+    icon: React.ReactElement;
     title: string;
     message: string;
     date: string;
@@ -270,15 +241,6 @@ export const BUTTON_ACTION_TYPE = {
 };
 
 export const BOT_ANNOUNCEMENTS_LIST: TAnnouncementItem[] = [
-    {
-        id: 'PWA_INSTALL_ANNOUNCE',
-        icon: IconAnnounce,
-        title: localize('Install Deriv Bot as an App'),
-        message: localize('Get faster access and better performance by installing Deriv Bot on your device.'),
-        date: '29 August 2025 00:00 UTC',
-        buttonAction: BUTTON_ACTION_TYPE.MODAL_BUTTON_ACTION,
-        actionText: '',
-    },
     {
         id: 'UPDATES_QUICK_STRATEGY_MODAL_ANNOUNCE',
         icon: IconAnnounce,
@@ -309,8 +271,8 @@ export const BOT_ANNOUNCEMENTS_LIST: TAnnouncementItem[] = [
     {
         id: 'ACCUMULATOR_ANNOUNCE',
         icon: IconAnnounce,
-        title: localize('Accumulators is now on Deriv Bot'),
-        message: localize('Boost your trading strategy with Accumulators.'),
+        title: `${localizeAccumulators()} ${localize('is now on Deriv Bot')}`,
+        message: `${localize('Boost your trading strategy with')} ${localizeAccumulators()}.`,
         date: '2 July 2024 00:00 UTC',
         buttonAction: BUTTON_ACTION_TYPE.MODAL_BUTTON_ACTION,
         actionText: '',

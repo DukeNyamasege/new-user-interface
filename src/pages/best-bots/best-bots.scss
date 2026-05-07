@@ -68,6 +68,110 @@
         flex: 1;
     }
 
+    &__developer {
+        margin: 0 0 0.4rem;
+        font-size: 1.2rem;
+        color: var(--text-less-prominent);
+    }
+
+    &__stats {
+        display: flex;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+        margin: 0.4rem 0 0.8rem;
+    }
+
+    &__rating {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+        margin: 0 0 0.8rem;
+        font-size: 1.3rem;
+
+        &--new {
+            color: var(--text-less-prominent);
+            font-size: 1.2rem;
+            font-style: italic;
+        }
+    }
+
+    &__star {
+        color: rgb(0 0 0 / 18%);
+        line-height: 1;
+
+        &--filled {
+            color: #f5a623;
+        }
+    }
+
+    &__rating-value {
+        margin-left: 0.4rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-less-prominent);
+    }
+
+    &__stat {
+        font-size: 1.2rem;
+        font-weight: 600;
+        border-radius: 0.6rem;
+        padding: 0.35rem 0.8rem;
+
+        &--profit {
+            background: rgb(0 168 85 / 12%);
+            color: #00a855;
+        }
+
+        &--loss {
+            background: rgb(236 64 64 / 12%);
+            color: #ec4040;
+        }
+    }
+
+    &__record {
+        display: flex;
+        gap: 0.6rem;
+        margin-bottom: 0.8rem;
+    }
+
+    &__record-btn {
+        flex: 1;
+        padding: 0.65rem 0.8rem;
+        border: none;
+        border-radius: 0.7rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+            background 0.15s ease,
+            transform 0.15s ease;
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        &--profit {
+            background: rgb(0 168 85 / 15%);
+            color: #00a855;
+
+            &:hover:not([disabled]) {
+                background: rgb(0 168 85 / 28%);
+                transform: translateY(-1px);
+            }
+        }
+
+        &--loss {
+            background: rgb(236 64 64 / 15%);
+            color: #ec4040;
+
+            &:hover:not([disabled]) {
+                background: rgb(236 64 64 / 28%);
+                transform: translateY(-1px);
+            }
+        }
+    }
+
     &__btn {
         width: 100%;
         padding: 1.1rem 1.6rem;

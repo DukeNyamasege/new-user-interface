@@ -4,7 +4,7 @@
 # ==================================================================================
 # ==================================================================================
 #
-#  Configuration of code ownership and review approvals for the deriv-com/bot repo.
+#  Configuration of code ownership and review approvals for the deriv-com/trading-bot-template repo.
 #
 #  More info: https://help.github.com/articles/about-codeowners/
 #
@@ -37,7 +37,7 @@
 
 #  matin-deriv
 #  nijil-deriv
-#  mayuran-deriv
+#  ahmed-deriv
 
 ######################################################################################################
 #
@@ -57,4 +57,4 @@
 # (in case no pattern matches a path in a PR - this should be treated as a bug and result in adding the path to CODEOWNERS)
 # ==============================================================
 
-*  @matin-deriv @nijil-deriv @mayuran-deriv
+*  @matin-deriv @nijil-deriv @ahmed-deriv

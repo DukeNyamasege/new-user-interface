@@ -71,7 +71,11 @@ export default class ChartStore {
             return block.type === 'trade_definition_market';
         });
 
-        const symbol = market_block?.getFieldValue('SYMBOL_LIST') ?? api_base?.active_symbols[0]?.symbol;
+        const symbol =
+            market_block?.getFieldValue('SYMBOL_LIST') ??
+            (api_base?.active_symbols[0]
+                ? (api_base.active_symbols[0] as any).underlying_symbol || (api_base.active_symbols[0] as any).symbol
+                : undefined);
         this.symbol = symbol;
     };
 
@@ -123,13 +127,16 @@ export default class ChartStore {
         }
     };
 
-    getMarketsOrder = (active_symbols: { market: string; display_name: string }[]) => {
+    getMarketsOrder = (active_symbols: any[]) => {
         const synthetic_index = 'synthetic_index';
 
+        if (!active_symbols || !Array.isArray(active_symbols)) {
+            return [synthetic_index];
+        }
+
         const has_synthetic_index = !!active_symbols.find(s => s.market === synthetic_index);
+
         return active_symbols
-            .slice()
-            .sort((a, b) => (a.display_name < b.display_name ? -1 : 1))
             .map(s => s.market)
             .reduce(
                 (arr, market) => {
@@ -139,6 +146,7 @@ export default class ChartStore {
                 has_synthetic_index ? [synthetic_index] : []
             );
     };
+
     setChartSubscriptionId = (chartSubscriptionId: string) => {
         this.chart_subscription_id = chartSubscriptionId;
     };

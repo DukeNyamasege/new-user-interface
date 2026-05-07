@@ -2,11 +2,13 @@ import React from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import { useStore } from '@/hooks/useStore';
+import { browserOptimizer } from '@/utils/browser-performance-optimizer';
+import { clickRateLimiter } from '@/utils/click-rate-limiter';
 import GTM from '@/utils/gtm';
 import { help_content_config } from '@/utils/help-content/help-content.config';
 import { LabelPairedCircleExclamationCaptionFillIcon } from '@deriv/quill-icons';
 import { localize } from '@deriv-com/translations';
-import { getPlatformSettings } from '../shared';
+import { getPlatformConfig } from '../shared';
 import Input from '../shared_ui/input';
 import Text from '../shared_ui/text';
 import ThemedScrollbars from '../shared_ui/themed-scrollbars';
@@ -75,7 +77,7 @@ const FlyoutContent = (props: TFlyoutContent) => {
                         <span className='flyout__content-disclaimer-text'>
                             {localize(
                                 'Indicators on the chart tab are for indicative purposes only and may vary slightly from the ones on the {{platform_name_dbot}} workspace.',
-                                { platform_name_dbot: getPlatformSettings('dbot').name }
+                                { platform_name_dbot: getPlatformConfig().name }
                             )}
                         </span>
                     </div>
@@ -152,19 +154,35 @@ const FlyoutContent = (props: TFlyoutContent) => {
                                             `${node.getAttribute('className')}`
                                         )}
                                         onClick={button => {
-                                            const workspace = window.Blockly.derivWorkspace;
-                                            const button_cb = workspace.getButtonCallback(callback_key);
-                                            const callback = button_cb;
+                                            // Safari-specific rate limiting and operation queuing with reduced lag
+                                            if (browserOptimizer.isSafariBrowser() && !clickRateLimiter.canClick()) {
+                                                console.warn('Flyout button click rate limit exceeded');
+                                                return;
+                                            }
 
-                                            // Workaround for not having a flyout workspace.
-                                            // eslint-disable-next-line no-underscore-dangle
-                                            button.targetWorkspace_ = workspace;
-                                            button.getTargetWorkspace = () => {
+                                            const executeButtonCallback = () => {
+                                                const workspace = window.Blockly.derivWorkspace;
+                                                const button_cb = workspace.getButtonCallback(callback_key);
+                                                const callback = button_cb;
+
+                                                // Workaround for not having a flyout workspace.
                                                 // eslint-disable-next-line no-underscore-dangle
-                                                return button.targetWorkspace_;
+                                                button.targetWorkspace_ = workspace;
+                                                button.getTargetWorkspace = () => {
+                                                    // eslint-disable-next-line no-underscore-dangle
+                                                    return button.targetWorkspace_;
+                                                };
+
+                                                callback?.(button);
                                             };
 
-                                            callback?.(button);
+                                            // Only queue operations for Safari/Firefox, execute directly for Chrome
+                                            if (browserOptimizer.needsPerformanceOptimization()) {
+                                                const operationId = `flyout-button-${callback_key}-${callback_id}`;
+                                                browserOptimizer.queueOperation(operationId, executeButtonCallback);
+                                            } else {
+                                                executeButtonCallback();
+                                            }
                                         }}
                                     >
                                         {node.getAttribute('text')}
@@ -208,6 +226,7 @@ const Flyout = observer(() => {
 
     const total_result = Object.keys(flyout_content).length;
     const is_empty = total_result === 0;
+    const is_loading = selected_category && flyout_content.length === 0 && !is_search_flyout;
 
     return (
         is_visible && (
@@ -225,6 +244,12 @@ const Flyout = observer(() => {
                 )}
                 {is_help_content ? (
                     <HelpBase />
+                ) : is_loading ? (
+                    <div className='flyout__loading'>
+                        <Text as='h2' weight='bold' lineHeight='xs'>
+                            {localize('Loading...')}
+                        </Text>
+                    </div>
                 ) : (
                     <FlyoutContent
                         is_empty={is_empty}

@@ -3,6 +3,7 @@ import classNames from 'classnames';
 import ContentLoader from 'react-content-loader';
 import { getContractTypeName } from '@/external/bot-skeleton';
 import { isDbotRTL } from '@/external/bot-skeleton/utils/workspace';
+import { getSymbolDisplayNameSync } from '@/utils/symbol-display-name';
 import { localize } from '@deriv-com/translations';
 import { MarketIcon } from '../market/market-icon';
 import { convertDateFormat } from '../shared';
@@ -78,8 +79,11 @@ export default function MobileTransactionCards({ transaction }: { transaction: T
                     label={
                         <div className={`${PARENT_CLASS}__icon-wrapper`}>
                             <IconContainer
-                                message={transaction?.display_name}
-                                icon={<MarketIcon type={transaction?.underlying} size='md' />}
+                                message={
+                                    transaction?.display_name ||
+                                    getSymbolDisplayNameSync(transaction?.underlying_symbol || '')
+                                }
+                                icon={<MarketIcon type={transaction?.underlying_symbol} size='md' />}
                             />
                             <IconContainer
                                 message={getContractTypeName(transaction)}
@@ -103,18 +107,18 @@ export default function MobileTransactionCards({ transaction }: { transaction: T
                 />
                 <CardColumn
                     title='Entry Spot'
-                    label={transaction?.entry_tick}
+                    label={transaction?.entry_spot}
                     right_aligned
-                    loader={!transaction.entry_tick}
+                    loader={!transaction.entry_spot}
                 />
             </div>
             <div className={`${PARENT_CLASS}__card__row`}>
                 <CardColumn title='Buy Price' label={Math.abs(transaction?.buy_price ?? 0).toFixed(2)} />
                 <CardColumn
                     title='Exit Spot'
-                    label={transaction?.exit_tick}
+                    label={transaction?.exit_spot}
                     right_aligned
-                    loader={!transaction.exit_tick}
+                    loader={!transaction.exit_spot}
                 />
             </div>
 

@@ -1,12 +1,20 @@
 import { useMemo } from 'react';
+/* [AI] - Analytics removed - utility functions moved to @/utils/account-helpers */
+import { isVirtualAccount } from '@/utils/account-helpers';
+/* [/AI] */
 import { CurrencyIcon } from '@/components/currency/currency-icon';
 import { addComma, getDecimalPlaces } from '@/components/shared';
 import { useApiBase } from '@/hooks/useApiBase';
 import { Balance } from '@deriv/api-types';
-import { localize } from '@deriv-com/translations';
 
 /** A custom hook that returns the account object for the current active account. */
-const useActiveAccount = ({ allBalanceData }: { allBalanceData: Balance | null }) => {
+const useActiveAccount = ({
+    allBalanceData,
+    directBalance,
+}: {
+    allBalanceData: Balance | null;
+    directBalance?: string;
+}) => {
     const { accountList, activeLoginid } = useApiBase();
 
     const activeAccount = useMemo(
@@ -17,25 +25,25 @@ const useActiveAccount = ({ allBalanceData }: { allBalanceData: Balance | null }
     const currentBalanceData = allBalanceData?.accounts?.[activeAccount?.loginid ?? ''];
 
     const modifiedAccount = useMemo(() => {
-        return activeAccount
-            ? {
-                  ...activeAccount,
-                  balance:
-                      addComma(currentBalanceData?.balance?.toFixed(getDecimalPlaces(currentBalanceData.currency))) ??
-                      '0',
-                  currencyLabel: activeAccount?.is_virtual ? localize('Demo') : activeAccount?.currency,
-                  icon: (
-                      <CurrencyIcon
-                          currency={activeAccount?.currency?.toLowerCase()}
-                          isVirtual={Boolean(activeAccount?.is_virtual)}
-                      />
-                  ),
-                  isVirtual: Boolean(activeAccount?.is_virtual),
-                  isActive: activeAccount?.loginid === activeLoginid,
-              }
-            : undefined;
+        if (!activeAccount) return undefined;
+
+        // Use centralized utility to determine if demo account
+        const isVirtual = isVirtualAccount(activeAccount.loginid);
+
+        return {
+            ...activeAccount,
+            balance: currentBalanceData?.balance
+                ? addComma(currentBalanceData.balance.toFixed(getDecimalPlaces(currentBalanceData.currency)))
+                : directBalance
+                  ? addComma(parseFloat(directBalance).toFixed(getDecimalPlaces(activeAccount.currency)))
+                  : addComma(parseFloat('0').toFixed(getDecimalPlaces(activeAccount.currency))),
+            currencyLabel: isVirtual ? 'Demo' : activeAccount?.currency,
+            icon: <CurrencyIcon currency={activeAccount?.currency?.toLowerCase()} isVirtual={isVirtual} />,
+            isVirtual: isVirtual,
+            isActive: activeAccount?.loginid === activeLoginid,
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeAccount, activeLoginid, allBalanceData]);
+    }, [activeAccount, activeLoginid, allBalanceData, directBalance]);
 
     return {
         /** User's current active account. */

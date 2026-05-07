@@ -68,7 +68,13 @@ export default class TransactionsStore {
         );
         const statistics = trxs.reduce(
             (stats, { data }) => {
-                const { profit = 0, is_completed = false, buy_price = 0, payout, bid_price } = data as TContractInfo;
+                const contract = data as TContractInfo;
+                const profit = Number(contract.profit) || 0;
+                const is_completed = contract.is_completed || false;
+                const buy_price = Number(contract.buy_price) || 0;
+                const payout = Number(contract.payout) || Number(contract.bid_price) || 0;
+                const bid_price = Number(contract.bid_price) || 0;
+
                 if (is_completed) {
                     if (profit > 0) {
                         stats.won_contracts += 1;
@@ -113,9 +119,9 @@ export default class TransactionsStore {
             is_completed,
             run_id,
             date_start: formatDate(data.date_start, 'YYYY-M-D HH:mm:ss [GMT]'),
-            entry_tick: data.entry_tick_display_value,
+            entry_tick: data.entry_spot,
             entry_tick_time: data.entry_tick_time && formatDate(data.entry_tick_time, 'YYYY-M-D HH:mm:ss [GMT]'),
-            exit_tick: data.exit_tick_display_value,
+            exit_tick: (data as any).exit_spot || data.exit_tick,
             exit_tick_time: data.exit_tick_time && formatDate(data.exit_tick_time, 'YYYY-M-D HH:mm:ss [GMT]'),
             profit: is_completed ? data.profit : 0,
         };

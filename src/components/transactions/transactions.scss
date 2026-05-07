@@ -97,12 +97,13 @@
         $header-grid-items: (string.unquote('type'), string.unquote('spot'), string.unquote('profit'));
 
         &-column {
+            display: flex;
+            align-items: center;
+            word-break: break-word;
+
             @include mobile-or-tablet-screen {
                 padding: 0.5rem;
-                display: flex;
                 justify-content: left;
-                align-items: center;
-                word-break: break-word;
                 text-align: center;
                 margin-right: 0.2rem;
             }
@@ -110,14 +111,22 @@
 
         @each $item in $header-grid-items {
             &-#{$item} {
-                grid-column: $item;
+                grid-area: $item;
 
                 @if $item == 'spot' {
-                    text-align: start;
+                    text-align: center;
+                    justify-content: center;
+                    margin: 0 0.8rem;
                 }
 
                 @if $item == 'profit' {
+                    text-align: end;
+                    justify-content: flex-end;
+                }
+
+                @if $item == 'type' {
                     text-align: start;
+                    justify-content: flex-start;
                 }
             }
         }

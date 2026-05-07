@@ -8,6 +8,8 @@ import { removeKeyValue } from '@/utils/settings';
 import { LegacyPlay1pxIcon } from '@deriv/quill-icons/Legacy';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
+/* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
+/* [/AI] */
 
 type TGuideList = {
     content?: string;
@@ -64,10 +66,6 @@ const GuideContent = ({ guide_tab_content, video_tab_content, is_dialog_open }: 
         }
     };
 
-    const handleKeyboardEvent = (e: KeyboardEvent) => {
-        if (e.key === 'Enter') triggerTour('OnBoard');
-    };
-
     const has_guide_content = guide_tab_content.length > 0 || video_tab_content.length > 0;
 
     return React.useMemo(
@@ -93,8 +91,16 @@ const GuideContent = ({ guide_tab_content, video_tab_content, is_dialog_open }: 
                                         <div className='tutorials-wrap__group__cards' key={id}>
                                             <div
                                                 className='tutorials-wrap--tour'
-                                                onClick={() => triggerTour(subtype)}
-                                                onKeyDown={handleKeyboardEvent}
+                                                onClick={() => {
+                                                    if (subtype) {
+                                                        triggerTour(subtype);
+                                                        /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
+                                                        /* [/AI] */
+                                                    }
+                                                }}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter') triggerTour('OnBoard');
+                                                }}
                                             >
                                                 <div
                                                     className={classNames('tutorials-wrap__placeholder__tours', {
@@ -151,12 +157,14 @@ const GuideContent = ({ guide_tab_content, video_tab_content, is_dialog_open }: 
                                                         className='tutorials-wrap__placeholder__button-group--play'
                                                         width='42px'
                                                         height='42px'
-                                                        onClick={() =>
+                                                        onClick={() => {
                                                             showVideoDialog({
                                                                 type: 'url',
                                                                 url,
-                                                            })
-                                                        }
+                                                            });
+                                                            /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
+                                                            /* [/AI] */
+                                                        }}
                                                     />
                                                 </div>
                                             </div>
@@ -188,6 +196,7 @@ const GuideContent = ({ guide_tab_content, video_tab_content, is_dialog_open }: 
                         className={'dc-dialog'}
                         has_close_icon
                         onClose={onOkButtonClick}
+                        login={() => {}}
                     >
                         <iframe width='100%' height='100%' src={dialog_options.url} frameBorder='0' allowFullScreen />
                     </Dialog>

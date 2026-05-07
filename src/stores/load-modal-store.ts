@@ -13,12 +13,8 @@ import { isDbotRTL } from '@/external/bot-skeleton/utils/workspace';
 import { TStores } from '@deriv/stores/types';
 import { localize } from '@deriv-com/translations';
 import { TStrategy } from 'Types';
-import {
-    rudderStackSendUploadStrategyCompletedEvent,
-    rudderStackSendUploadStrategyFailedEvent,
-    rudderStackSendUploadStrategyStartEvent,
-} from '../analytics/rudderstack-common-events';
-import { getStrategyType } from '../analytics/utils';
+/* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
+/* [/AI] */
 import { tabs_title } from '../constants/load-modal';
 import { waitForDomElement } from '../utils/dom-observer';
 import RootStore from './root-store';
@@ -175,10 +171,8 @@ export default class LoadModalStore {
             google_drive.upload_id = uuidv4();
         }
 
-        rudderStackSendUploadStrategyStartEvent({
-            upload_provider: 'google_drive',
-            upload_id: google_drive.upload_id,
-        });
+        /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
+        /* [/AI] */
 
         const { loadFile } = this.root_store.google_drive;
         const load_file = await loadFile();
@@ -482,12 +476,8 @@ export default class LoadModalStore {
         derivWorkspace.clearUndo();
         derivWorkspace.current_strategy_id = strategy_id;
 
-        const upload_type = getStrategyType(block_string ?? '');
-        rudderStackSendUploadStrategyCompletedEvent({
-            upload_provider: 'my_computer',
-            upload_type,
-            upload_id: this.upload_id,
-        });
+        /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
+        /* [/AI] */
     };
 
     updateXmlValuesOnStrategySelection = () => {
@@ -542,17 +532,11 @@ export default class LoadModalStore {
             (load_options.workspace as any).RTL = isDbotRTL();
         }
 
-        const upload_type = getStrategyType(load_options?.block_string ?? '');
+        /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
+        /* [/AI] */
+
         const result = await load({ ...load_options, show_snackbar: false });
-        if (!result?.error) {
-            rudderStackSendUploadStrategyStartEvent({ upload_provider: 'my_computer', upload_id: this.upload_id });
-        } else if (result?.error) {
-            rudderStackSendUploadStrategyFailedEvent({
-                upload_provider: 'my_computer',
-                upload_id: this.upload_id,
-                upload_type,
-                error_message: result.error,
-            });
-        }
+        /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
+        /* [/AI] */
     };
 }

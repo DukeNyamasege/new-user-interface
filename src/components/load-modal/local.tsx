@@ -2,9 +2,10 @@ import React from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import Button from '@/components/shared_ui/button';
+import { DBOT_TABS } from '@/constants/bot-contents';
 import { useStore } from '@/hooks/useStore';
+import { DerivLightLocalDeviceIcon, DerivLightMyComputerIcon } from '@deriv/quill-icons/Illustration';
 import { LegacyClose1pxIcon, LegacyInfo1pxIcon } from '@deriv/quill-icons/Legacy';
-import { StandaloneComputerFillIcon } from '@deriv/quill-icons/Standalone';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 import { botNotification } from '../bot-notification/bot-notification';
@@ -39,7 +40,7 @@ const LocalComponent = observer(() => {
             <div className='load-strategy__container load-strategy__container--has-footer'>
                 <div
                     className={classNames('load-strategy__local-preview', {
-                        'load-strategy__local-preview--active': active_tab === 1 && active_tour,
+                        'load-strategy__local-preview--active': active_tab === DBOT_TABS.BOT_BUILDER && active_tour,
                     })}
                 >
                     <div className='load-strategy__title'>
@@ -104,9 +105,15 @@ const LocalComponent = observer(() => {
                         handleFileChange(e, false);
                     }}
                 >
-                    <StandaloneComputerFillIcon iconSize='2xl' className='load-strategy__local-icon' />
-                    {isDesktop && (
+                    {!isDesktop ? (
+                        <DerivLightLocalDeviceIcon height='96px' width='96px' className='load-strategy__local-icon' />
+                    ) : (
                         <React.Fragment>
+                            <DerivLightMyComputerIcon
+                                height='128px'
+                                width='128px'
+                                className='load-strategy__local-icon'
+                            />
                             <div className='load-strategy__local-title'>
                                 <Localize i18n_default_text='Drag your XML file here' />
                             </div>

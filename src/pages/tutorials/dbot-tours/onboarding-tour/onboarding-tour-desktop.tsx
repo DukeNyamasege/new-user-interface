@@ -1,5 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
+import { DBOT_TABS } from '@/constants/bot-contents';
 import { useStore } from '@/hooks/useStore';
 import { getSetting } from '@/utils/settings';
 import ReactJoyrideWrapper from '../common/react-joyride-wrapper';
@@ -9,7 +10,7 @@ import { useTourHandler } from '../useTourHandler';
 
 const OnboardingTourDesktop = observer(() => {
     const { dashboard } = useStore();
-    const { active_tab, active_tour, setActiveTour, setTourDialogVisibility } = dashboard;
+    const { active_tab, active_tour, setActiveTour, setTourDialogVisibility, is_tour_dialog_visible } = dashboard;
     const { is_close_tour, is_finished, handleJoyrideCallback, setIsCloseTour } = useTourHandler();
     React.useEffect(() => {
         if (is_close_tour || is_finished) {
@@ -18,8 +19,19 @@ const OnboardingTourDesktop = observer(() => {
         }
     }, [is_close_tour, is_finished, setActiveTour, setIsCloseTour]);
 
-    const token = getSetting('onboard_tour_token');
-    if (!token && active_tab === 0) setTourDialogVisibility(true);
+    // Check if tour should be shown with setTimeout to prevent showing on every reload
+    React.useEffect(() => {
+        if (active_tab === DBOT_TABS.DASHBOARD) {
+            const timeoutId = setTimeout(() => {
+                const token = getSetting('onboard_tour_token');
+                if (!token && !is_tour_dialog_visible) {
+                    setTourDialogVisibility(true);
+                }
+            }, 100);
+
+            return () => clearTimeout(timeoutId);
+        }
+    }, [active_tab, is_tour_dialog_visible, setTourDialogVisibility]);
 
     return (
         <>

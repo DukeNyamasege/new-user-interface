@@ -2,7 +2,6 @@ import React from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import Journal from '@/components/journal';
-import SelfExclusion from '@/components/self-exclusion';
 import Button from '@/components/shared_ui/button';
 import Drawer from '@/components/shared_ui/drawer';
 import Modal from '@/components/shared_ui/modal';
@@ -14,7 +13,6 @@ import TradeAnimation from '@/components/trade-animation';
 import Transactions from '@/components/transactions';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { popover_zindex } from '@/constants/z-indexes';
-import usePWA from '@/hooks/usePWA';
 import { useStore } from '@/hooks/useStore';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
@@ -144,7 +142,7 @@ const DrawerContent = ({ active_index, is_drawer_open, active_tour, setActiveTab
         return () => {
             document.body.style.overflow = '';
         };
-    }, [is_drawer_open]);
+    }, [is_drawer_open, isDesktop]);
 
     return (
         <>
@@ -182,9 +180,8 @@ const DrawerFooter = ({ is_clear_stat_disabled, onClearStatClick }: TDrawerFoote
 );
 
 const MobileDrawerFooter = () => {
-    const { isPWALaunch, isIOS } = usePWA();
     return (
-        <div className={classNames('controls__section', { 'controls__section--ios-pwa': isIOS && isPWALaunch })}>
+        <div className='controls__section'>
             <div className='controls__buttons'>
                 <TradeAnimation className='controls__animation' should_show_overlay />
             </div>
@@ -261,7 +258,7 @@ const RunPanel = observer(() => {
         is_clear_stat_disabled,
         onClearStatClick,
         onMount,
-        onRunButtonClick,
+        onRunButtonClick, // eslint-disable-line @typescript-eslint/no-unused-vars
         onUnmount,
         setActiveTabIndex,
         toggleDrawer,
@@ -278,10 +275,11 @@ const RunPanel = observer(() => {
     }, [onMount, onUnmount]);
 
     React.useEffect(() => {
-        if (isDesktop && !is_drawer_open) {
-            toggleDrawer(true);
+        if (!isDesktop) {
+            toggleDrawer(false);
         }
-    }, [isDesktop, is_drawer_open, toggleDrawer]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const content = (
         <DrawerContent
@@ -313,10 +311,7 @@ const RunPanel = observer(() => {
     );
 
     const show_run_panel = [BOT_BUILDER, CHART].includes(active_tab) || active_tour;
-    // On desktop the panel floats (position:fixed) over every page — always show.
-    // On mobile keep the original tab-based gating.
-    if (active_tour === 'bot_builder') return null;
-    if (!isDesktop && !show_run_panel) return null;
+    if ((!show_run_panel && isDesktop) || active_tour === 'bot_builder') return null;
 
     return (
         <>
@@ -339,7 +334,7 @@ const RunPanel = observer(() => {
                 </Drawer>
                 {!isDesktop && <MobileDrawerFooter />}
             </div>
-            <SelfExclusion onRunButtonClick={onRunButtonClick} />
+
             <StatisticsInfoModal
                 is_mobile={!isDesktop}
                 is_statistics_info_modal_open={is_statistics_info_modal_open}

@@ -5,7 +5,8 @@ import { isDbotRTL } from '@/external/bot-skeleton/utils/workspace';
 import { LabelPairedChevronLeftMdFillIcon, LabelPairedChevronRightMdFillIcon } from '@deriv/quill-icons/LabelPaired';
 import { Localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
-import { rudderStackSendSelectQsStrategyGuideEvent } from '../../../analytics/rudderstack-tutorials';
+/* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
+/* [/AI] */
 import { STRATEGIES } from '../../bot-builder/quick-strategy/config';
 import StrategyTabContent from '../../bot-builder/quick-strategy/form-wrappers/strategy-tab-content';
 
@@ -43,7 +44,8 @@ const QuickStrategyGuidesDetail = observer(
                                 key={type}
                                 onClick={() => {
                                     setTutorialSelectedStrategy(qs_name);
-                                    rudderStackSendSelectQsStrategyGuideEvent({ selected_strategy: qs_name });
+                                    /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
+                                    /* [/AI] */
                                     scrollToTop();
                                 }}
                                 tabIndex={index}
@@ -108,13 +110,11 @@ const QuickStrategyGuidesDetail = observer(
                                 <Localize i18n_default_text={'Quick strategy guides >'} />
                             </Text>
                             <Text color='less-prominent' lineHeight='s' size={text_size} as='div'>
-                                <Localize
-                                    i18n_default_text={`About ${STRATEGIES()[tutorial_selected_strategy].label}`}
-                                />
+                                <Localize i18n_default_text='About' /> {STRATEGIES()[tutorial_selected_strategy].label}
                             </Text>
                         </div>
                         <Text color='prominent' lineHeight='s' size={text_size} weight='bold' as='div'>
-                            <Localize i18n_default_text={`About ${STRATEGIES()[tutorial_selected_strategy].label}`} />
+                            <Localize i18n_default_text='About' /> {STRATEGIES()[tutorial_selected_strategy].label}
                         </Text>
                         <StrategyTabContent tutorial_selected_strategy={tutorial_selected_strategy} />
                     </>

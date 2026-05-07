@@ -3,6 +3,7 @@ import classNames from 'classnames';
 import { Field, Form, Formik } from 'formik';
 import { observer } from 'mobx-react-lite';
 import Button from '@/components/shared_ui/button';
+import { DBOT_TABS } from '@/constants/bot-contents';
 import Input from '@/components/shared_ui/input';
 import MobileFullPageModal from '@/components/shared_ui/mobile-full-page-modal';
 import Modal from '@/components/shared_ui/modal';
@@ -178,7 +179,7 @@ const SaveModal = observer(() => {
     const { active_tab } = dashboard;
 
     useEffect(() => {
-        if (active_tab === 1) {
+        if (active_tab === DBOT_TABS.BOT_BUILDER) {
             updateBotName(dashboard_strategies?.[0]?.name ?? '');
         }
     }, [active_tab, dashboard_strategies, updateBotName]);

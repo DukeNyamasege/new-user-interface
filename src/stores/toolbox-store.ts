@@ -1,5 +1,7 @@
 import { action, makeObservable, observable, reaction } from 'mobx';
 import { scrollWorkspace } from '@/external/bot-skeleton';
+import { browserOptimizer } from '@/utils/browser-performance-optimizer';
+import { clickRateLimiter } from '@/utils/click-rate-limiter';
 import GTM from '@/utils/gtm';
 import { TStores } from '@deriv/stores/types';
 import { localize } from '@deriv-com/translations';
@@ -10,6 +12,10 @@ export default class ToolboxStore {
     core: TStores;
     disposeToolboxToggleReaction: (() => void) | undefined = undefined;
     typing_timer: ReturnType<typeof setTimeout> | undefined = undefined;
+    click_debounce_timer: ReturnType<typeof setTimeout> | undefined = undefined;
+    last_clicked_category: string | null = null;
+    workspace_adjust_timer: ReturnType<typeof setTimeout> | undefined = undefined;
+    is_adjusting_workspace = false;
     constructor(root_store: RootStore, core: TStores) {
         makeObservable(this, {
             is_toolbox_open: observable,
@@ -60,7 +66,6 @@ export default class ToolboxStore {
             () => this.is_toolbox_open,
             is_toolbox_open => {
                 if (is_toolbox_open) {
-                    //this.adjustWorkspace();
                     // Emit event to GTM
                     GTM?.pushDataLayer?.({ event: 'dbot_toolbox_visible', value: true });
                 }
@@ -71,6 +76,19 @@ export default class ToolboxStore {
     onUnmount() {
         if (typeof this.disposeToolboxToggleReaction === 'function') {
             this.disposeToolboxToggleReaction();
+        }
+        // Clean up timers to prevent memory leaks
+        if (this.typing_timer) {
+            clearTimeout(this.typing_timer);
+            this.typing_timer = undefined;
+        }
+        if (this.click_debounce_timer) {
+            clearTimeout(this.click_debounce_timer);
+            this.click_debounce_timer = undefined;
+        }
+        if (this.workspace_adjust_timer) {
+            clearTimeout(this.workspace_adjust_timer);
+            this.workspace_adjust_timer = undefined;
         }
     }
 
@@ -101,8 +119,27 @@ export default class ToolboxStore {
     }
     // eslint-disable-next-line class-methods-use-this
     adjustWorkspace() {
+        // Throttle workspace adjustments to prevent excessive calculations
+        if (this.is_adjusting_workspace) {
+            return;
+        }
+
+        if (this.workspace_adjust_timer) {
+            clearTimeout(this.workspace_adjust_timer);
+        }
+
+        // Browser-specific throttle delay (Safari/Firefox)
+        const throttleDelay = browserOptimizer.getThrottleDelay();
+
+        this.workspace_adjust_timer = setTimeout(() => {
+            this.performWorkspaceAdjustment();
+        }, throttleDelay);
+    }
+
+    private performWorkspaceAdjustment() {
         // NOTE: added this load modal open check to prevent scroll when load modal is open
         if (!this.is_workspace_scroll_adjusted && !this.root_store.load_modal.is_load_modal_open) {
+            this.is_adjusting_workspace = true;
             this.is_workspace_scroll_adjusted = true;
 
             setTimeout(() => {
@@ -129,6 +166,7 @@ export default class ToolboxStore {
                 }
 
                 this.is_workspace_scroll_adjusted = false;
+                this.is_adjusting_workspace = false;
             }, 300);
         }
     }
@@ -138,27 +176,61 @@ export default class ToolboxStore {
     }
 
     onToolboxItemClick(category: HTMLElement) {
-        const { flyout } = this.root_store;
         const category_id = category.getAttribute('id');
-        const flyout_content = this.getCategoryContents(category) as Element[];
+        const { flyout } = this.root_store;
 
-        flyout.setIsSearchFlyout(false);
-
+        // Handle toolbar click independently - immediate response
         if (flyout.selected_category?.getAttribute('id') === category_id) {
             flyout.setVisibility(false);
-        } else {
-            flyout.setSelectedCategory(category);
-            flyout.setContents(flyout_content);
+            return;
         }
+
+        // Set selection immediately for visual feedback
+        flyout.setSelectedCategory(category);
+        flyout.setVisibility(true);
+
+        // Load flyout content after selection is complete
+        setTimeout(() => {
+            this.loadFlyoutContent(category);
+        }, 0);
+    }
+
+    private loadFlyoutContent(category: HTMLElement) {
+        const { flyout } = this.root_store;
+
+        const flyout_content = this.getCategoryContents(category) as Element[];
+        flyout.setIsSearchFlyout(false);
+        flyout.setContents(flyout_content);
     }
 
     onToolboxItemExpand(index: number) {
-        if ((this.sub_category_index as number[]).includes(index)) {
-            const open_ids = this.sub_category_index.filter(open_id => open_id !== index);
-            this.sub_category_index = open_ids;
-        } else {
-            this.sub_category_index = [...this.sub_category_index, index];
+        // Global rate limiting to prevent Safari freezing
+        if (!clickRateLimiter.canClick()) {
+            console.warn('Click rate limit exceeded, ignoring expand');
+            return;
         }
+
+        // Prevent rapid expand/collapse operations
+        if (this.click_debounce_timer) {
+            return;
+        }
+
+        // Browser-specific debounce delay (Safari/Firefox)
+        const debounceDelay = browserOptimizer.getDebounceDelay();
+
+        this.click_debounce_timer = setTimeout(() => {
+            this.click_debounce_timer = undefined;
+        }, debounceDelay);
+
+        // Browser-specific DOM operation (Safari/Firefox)
+        browserOptimizer.safeDOMOperation(() => {
+            if ((this.sub_category_index as number[]).includes(index)) {
+                const open_ids = this.sub_category_index.filter(open_id => open_id !== index);
+                this.sub_category_index = open_ids;
+            } else {
+                this.sub_category_index = [...this.sub_category_index, index];
+            }
+        });
     }
 
     getCategoryContents = (category: HTMLElement): ChildNode[] => {
@@ -204,7 +276,8 @@ export default class ToolboxStore {
         return false;
     };
 
-    onSearch = ({ search = '' }) => {
+    onSearch = (values: any) => {
+        const search = values?.search || '';
         this.is_search_focus = true;
         this.showSearch(search);
     };
@@ -239,8 +312,6 @@ export default class ToolboxStore {
         const all_variables = workspace.getVariablesOfType('');
         const all_procedures = window.Blockly.Procedures.allProcedures(workspace);
         const { flyout } = this.root_store;
-
-        flyout.setVisibility(false);
 
         // avoid general term which the result will return most of the blocks
         const general_term = [
@@ -419,5 +490,7 @@ export default class ToolboxStore {
 
         flyout.setIsSearchFlyout(true);
         flyout.setContents(flyout_content, search);
+        // Explicitly ensure flyout is visible after search completes
+        flyout.setVisibility(true);
     };
 }

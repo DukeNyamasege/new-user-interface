@@ -623,8 +623,7 @@ export default class BlockConversion {
                     if (field) {
                         if (field instanceof window.Blockly.FieldVariable) {
                             const variable_id = el_block_child.getAttribute('id');
-                            const getNodeText = n => (n?.textContent ?? n?.innerText ?? '').trim();
-                            const variable_name = getNodeText(el_block_child);
+                            const variable_name = el_block_child.innerText.trim();
                             const variable = window.Blockly.Variables.getOrCreateVariablePackage(
                                 this.workspace,
                                 variable_id,

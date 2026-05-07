@@ -1,117 +1,79 @@
-import { LocalStorageConstants, LocalStorageUtils, URLUtils } from '@deriv-com/utils';
-import { isStaging } from '../url/helpers';
+import { DerivWSAccountsService } from '@/services/derivws-accounts.service';
+import { OAuthTokenExchangeService } from '@/services/oauth-token-exchange.service';
+import brandConfig from '../../../../../brand.config.json';
 
-export const APP_IDS = {
-    LOCALHOST: 36300,
-    TMP_STAGING: 64584,
-    STAGING: 29934,
-    STAGING_BE: 29934,
-    STAGING_ME: 29934,
-    PRODUCTION: 65555,
-    PRODUCTION_BE: 65556,
-    PRODUCTION_ME: 65557,
-};
+// =============================================================================
+// Constants - Domain & Server Configuration (from brand.config.json)
+// =============================================================================
 
-export const livechat_license_id = 12049137;
-export const livechat_client_id = '66aa088aad5a414484c1fd1fa8a5ace7';
+// Production app domains
+export const PRODUCTION_DOMAINS = {
+    COM: brandConfig.platform.hostname.production.com,
+} as const;
 
-export const domain_app_ids = {
-    'www.riskmanager.site': 71937,
-    'riskmanager.site': 71937,
-};
+// Staging app domains
+export const STAGING_DOMAINS = {
+    COM: brandConfig.platform.hostname.staging.com,
+} as const;
 
-export const getCurrentProductionDomain = () =>
-    !/^staging\./.test(window.location.hostname) &&
-    Object.keys(domain_app_ids).find(domain => window.location.hostname === domain);
+// WebSocket server URLs
+export const WS_SERVERS = {
+    STAGING: `${brandConfig.platform.derivws.url.staging}options/ws/public`,
+    PRODUCTION: `${brandConfig.platform.derivws.url.production}options/ws/public`,
+} as const;
 
+// =============================================================================
+// Helper Functions
+// =============================================================================
+
+// Helper to check if we're on production domains
 export const isProduction = () => {
-    const all_domains = Object.keys(domain_app_ids).map(domain => `(www\\.)?${domain.replace('.', '\\.')}`);
-    return new RegExp(`^(${all_domains.join('|')})$`, 'i').test(window.location.hostname);
-};
-
-export const isTestLink = () => {
-    return (
-        window.location.origin?.includes('.binary.sx') ||
-        window.location.origin?.includes('bot-65f.pages.dev') ||
-        isLocal()
-    );
+    const hostname = window.location.hostname;
+    const productionDomains = Object.values(PRODUCTION_DOMAINS) as string[];
+    return productionDomains.includes(hostname);
 };
 
 export const isLocal = () => /localhost(:\d+)?$/i.test(window.location.hostname);
 
 const getDefaultServerURL = () => {
-    const server = 'ws';
-    const server_url = `${server}.derivws.com`;
+    const isProductionEnv = isProduction();
 
-    return server_url;
-};
-
-export const getDefaultAppIdAndUrl = () => {
-    const server_url = getDefaultServerURL();
-
-    if (isTestLink()) {
-        return { app_id: APP_IDS.LOCALHOST, server_url };
+    try {
+        return isProductionEnv ? WS_SERVERS.PRODUCTION : WS_SERVERS.STAGING;
+    } catch (error) {
+        console.error('Error in getDefaultServerURL:', error);
     }
 
-    const current_domain = getCurrentProductionDomain() ?? '';
-    const app_id = domain_app_ids[current_domain as keyof typeof domain_app_ids] ?? APP_IDS.PRODUCTION;
-
-    return { app_id, server_url };
+    // Production defaults to demov2, staging/preview defaults to qa194 (demo)
+    return isProductionEnv ? WS_SERVERS.PRODUCTION : WS_SERVERS.STAGING;
 };
 
-export const getAppId = () => {
-    let app_id = null;
-    const current_domain = getCurrentProductionDomain() ?? '';
-
-    if (isStaging()) {
-        app_id = APP_IDS.STAGING;
-    } else if (isTestLink()) {
-        app_id = APP_IDS.LOCALHOST;
-    } else {
-        app_id = domain_app_ids[current_domain as keyof typeof domain_app_ids] ?? APP_IDS.PRODUCTION;
-    }
-
-    window.localStorage.setItem('config.app_id', app_id.toString());
-    return app_id;
-};
-
-export const getSocketURL = () => {
-    const local_storage_server_url = window.localStorage.getItem('config.server_url');
-    if (local_storage_server_url) return local_storage_server_url;
-
-    const server_url = getDefaultServerURL();
-
-    return server_url;
-};
-
-export const checkAndSetEndpointFromUrl = () => {
-    if (isTestLink()) {
-        const url_params = new URLSearchParams(location.search.slice(1));
-
-        if (url_params.has('qa_server') && url_params.has('app_id')) {
-            const qa_server = url_params.get('qa_server') || '';
-            const app_id = url_params.get('app_id') || '';
-
-            url_params.delete('qa_server');
-            url_params.delete('app_id');
-
-            if (/^(^(www\.)?qa[0-9]{1,4}\.deriv.dev|(.*)\.derivws\.com)$/.test(qa_server) && /^[0-9]+$/.test(app_id)) {
-                localStorage.setItem('config.app_id', app_id);
-                localStorage.setItem('config.server_url', qa_server.replace(/"/g, ''));
-            }
-
-            const params = url_params.toString();
-            const hash = location.hash;
-
-            location.href = `${location.protocol}//${location.hostname}${location.pathname}${
-                params ? `?${params}` : ''
-            }${hash || ''}`;
-
-            return true;
+/**
+ * Gets the WebSocket URL using the new authenticated flow
+ * This function orchestrates the complete flow:
+ * 1. Get access token from auth_info
+ * 2. Fetch accounts list from derivatives/accounts
+ * 3. Store accounts in sessionStorage
+ * 4. Get default account (first from list)
+ * 5. Fetch OTP and WebSocket URL for that account
+ *
+ * @returns Promise with WebSocket URL or fallback to default server
+ */
+export const getSocketURL = async (): Promise<string> => {
+    try {
+        // Check if user is authenticated
+        const authInfo = OAuthTokenExchangeService.getAuthInfo();
+        if (!authInfo || !authInfo.access_token) {
+            return getDefaultServerURL();
         }
-    }
 
-    return false;
+        // Use the DerivWSAccountsService to get authenticated WebSocket URL
+        const wsUrl = await DerivWSAccountsService.getAuthenticatedWebSocketURL(authInfo.access_token);
+        return wsUrl;
+    } catch (error) {
+        console.error('[DerivWS] Error in getSocketURL:', error);
+        return getDefaultServerURL();
+    }
 };
 
 export const getDebugServiceWorker = () => {
@@ -121,21 +83,193 @@ export const getDebugServiceWorker = () => {
     return false;
 };
 
-export const generateOAuthURL = () => {
-    const { getOauthURL } = URLUtils;
-    const oauth_url = getOauthURL();
-    const original_url = new URL(oauth_url);
-    const configured_server_url = (LocalStorageUtils.getValue(LocalStorageConstants.configServerURL) ||
-        localStorage.getItem('config.server_url') ||
-        original_url.hostname) as string;
+/**
+ * Generates a cryptographically secure CSRF token
+ * @returns A random base64url-encoded string
+ */
+const generateCSRFToken = (): string => {
+    // Generate 32 random bytes (256 bits) for strong security
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
 
-    const valid_server_urls = ['green.derivws.com', 'red.derivws.com', 'blue.derivws.com'];
-    if (
-        typeof configured_server_url === 'string'
-            ? !valid_server_urls.includes(configured_server_url)
-            : !valid_server_urls.includes(JSON.stringify(configured_server_url))
-    ) {
-        original_url.hostname = configured_server_url;
+    // Convert to base64url encoding (URL-safe)
+    const base64 = btoa(String.fromCharCode(...array));
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+};
+
+/**
+ * Generates a PKCE code verifier (random string)
+ * @returns A cryptographically random base64url-encoded string (43-128 characters)
+ */
+const generateCodeVerifier = (): string => {
+    // Generate 32 random bytes (will result in 43 characters after base64url encoding)
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+
+    // Convert to base64url encoding (URL-safe, no padding)
+    const base64 = btoa(String.fromCharCode(...array));
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+};
+
+/**
+ * Generates a PKCE code challenge from a code verifier using SHA-256
+ * @param verifier The code verifier string
+ * @returns Promise that resolves to the base64url-encoded SHA-256 hash
+ */
+const generateCodeChallenge = async (verifier: string): Promise<string> => {
+    // Encode the verifier as UTF-8
+    const encoder = new TextEncoder();
+    const data = encoder.encode(verifier);
+
+    // Hash with SHA-256
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+
+    // Convert to base64url encoding
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const base64 = btoa(String.fromCharCode(...hashArray));
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+};
+
+/**
+ * Stores PKCE code verifier in sessionStorage for token exchange
+ * @param verifier The code verifier to store
+ */
+const storeCodeVerifier = (verifier: string): void => {
+    sessionStorage.setItem('oauth_code_verifier', verifier);
+    // Also store timestamp for verifier expiration (e.g., 10 minutes)
+    sessionStorage.setItem('oauth_code_verifier_timestamp', Date.now().toString());
+};
+
+/**
+ * Retrieves and validates the stored PKCE code verifier
+ * @returns The code verifier if valid and not expired, null otherwise
+ */
+export const getCodeVerifier = (): string | null => {
+    const verifier = sessionStorage.getItem('oauth_code_verifier');
+    const timestamp = sessionStorage.getItem('oauth_code_verifier_timestamp');
+
+    if (!verifier || !timestamp) {
+        return null;
     }
-    return original_url.toString() || oauth_url;
+
+    // Check if verifier is expired (10 minutes = 600000ms)
+    const verifierAge = Date.now() - parseInt(timestamp, 10);
+    if (verifierAge > 600000) {
+        // Clean up expired verifier
+        sessionStorage.removeItem('oauth_code_verifier');
+        sessionStorage.removeItem('oauth_code_verifier_timestamp');
+        return null;
+    }
+
+    return verifier;
+};
+
+/**
+ * Clears PKCE code verifier from sessionStorage after successful token exchange
+ */
+export const clearCodeVerifier = (): void => {
+    sessionStorage.removeItem('oauth_code_verifier');
+    sessionStorage.removeItem('oauth_code_verifier_timestamp');
+};
+
+/**
+ * Stores CSRF token in sessionStorage for validation after OAuth callback
+ * @param token The CSRF token to store
+ */
+const storeCSRFToken = (token: string): void => {
+    sessionStorage.setItem('oauth_csrf_token', token);
+    // Also store timestamp for token expiration (e.g., 10 minutes)
+    sessionStorage.setItem('oauth_csrf_token_timestamp', Date.now().toString());
+};
+
+/**
+ * Validates CSRF token from OAuth callback
+ * @param token The token to validate
+ * @returns true if token is valid and not expired
+ */
+export const validateCSRFToken = (token: string): boolean => {
+    const storedToken = sessionStorage.getItem('oauth_csrf_token');
+    const timestamp = sessionStorage.getItem('oauth_csrf_token_timestamp');
+
+    if (!storedToken || !timestamp) {
+        return false;
+    }
+
+    // Check if token matches
+    if (storedToken !== token) {
+        return false;
+    }
+
+    // Check if token is expired (10 minutes = 600000ms)
+    const tokenAge = Date.now() - parseInt(timestamp, 10);
+    if (tokenAge > 600000) {
+        // Clean up expired token
+        sessionStorage.removeItem('oauth_csrf_token');
+        sessionStorage.removeItem('oauth_csrf_token_timestamp');
+        return false;
+    }
+
+    return true;
+};
+
+/**
+ * Clears CSRF token from sessionStorage after successful validation
+ */
+export const clearCSRFToken = (): void => {
+    sessionStorage.removeItem('oauth_csrf_token');
+    sessionStorage.removeItem('oauth_csrf_token_timestamp');
+};
+
+export const generateOAuthURL = async (prompt?: string) => {
+    try {
+        // Use brand config for login URLs
+        const environment = isProduction() ? 'production' : 'staging';
+        const hostname = brandConfig?.platform.auth2_url?.[environment];
+        const clientId = process.env.CLIENT_ID;
+
+        if (hostname && clientId) {
+            // Generate CSRF token for security
+            const csrfToken = generateCSRFToken();
+
+            // Store token for validation after callback
+            storeCSRFToken(csrfToken);
+
+            // Generate PKCE parameters
+            const codeVerifier = generateCodeVerifier();
+            const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+            // Store code verifier for token exchange
+            storeCodeVerifier(codeVerifier);
+
+            // Build redirect URL
+            const protocol = window.location.protocol;
+            const host = window.location.host;
+            const redirectUrl = `${protocol}//${host}`;
+            const scopes = 'trade';
+
+            // Build OAuth URL with PKCE parameters
+            // - state: CSRF token for security
+            // - code_challenge: SHA-256 hash of code_verifier
+            // - code_challenge_method: S256 (SHA-256)
+            let oauthUrl = `${hostname}auth?scope=${scopes}&response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUrl)}&state=${csrfToken}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+
+            // Optional: prompt parameter (e.g. 'registration' for signup flow)
+            if (prompt) {
+                oauthUrl += `&prompt=${encodeURIComponent(prompt)}`;
+            }
+
+            // Optional: legacy app_id for routing users on the Legacy Deriv API platform
+            const appId = process.env.APP_ID;
+            if (appId) {
+                oauthUrl += `&app_id=${encodeURIComponent(appId)}`;
+            }
+
+            return oauthUrl;
+        }
+    } catch (error) {
+        console.error('Error generating OAuth URL:', error);
+    }
+
+    // Fallback to hardcoded URLs if brand config fails
+    return ``;
 };

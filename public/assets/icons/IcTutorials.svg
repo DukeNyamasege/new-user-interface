@@ -1,9 +1,1 @@
-<svg width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="icon">
-<rect id="Rectangle 533" x="1" y="0.5" width="15" height="11" rx="0.5" stroke="#333333"/>
-<path id="Polygon 1" d="M11.75 5.56699C12.0833 5.75944 12.0833 6.24056 11.75 6.43301L7.25 9.03109C6.91667 9.22354 6.5 8.98298 6.5 8.59808L6.5 3.40192C6.5 3.01702 6.91667 2.77646 7.25 2.96891L11.75 5.56699Z" stroke="#333333"/>
-<line id="Line 1" x1="1" y1="14.5" x2="5" y2="14.5" stroke="#333333" stroke-linecap="round"/>
-<line id="Line 2" x1="8" y1="14.5" x2="16" y2="14.5" stroke="#333333" stroke-linecap="round"/>
-<circle id="Ellipse 23" cx="5" cy="14.5" r="1.5" fill="#333333"/>
-</g>
-</svg>
+PHN2ZyB3aWR0aD0iMTciIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNyAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgaWQ9Imljb24iPgo8cmVjdCBpZD0iUmVjdGFuZ2xlIDUzMyIgeD0iMSIgeT0iMC41IiB3aWR0aD0iMTUiIGhlaWdodD0iMTEiIHJ4PSIwLjUiIHN0cm9rZT0iIzMzMzMzMyIvPgo8cGF0aCBpZD0iUG9seWdvbiAxIiBkPSJNMTEuNzUgNS41NjY5OUMxMi4wODMzIDUuNzU5NDQgMTIuMDgzMyA2LjI0MDU2IDExLjc1IDYuNDMzMDFMNy4yNSA5LjAzMTA5QzYuOTE2NjcgOS4yMjM1NCA2LjUgOC45ODI5OCA2LjUgOC41OTgwOEw2LjUgMy40MDE5MkM2LjUgMy4wMTcwMiA2LjkxNjY3IDIuNzc2NDYgNy4yNSAyLjk2ODkxTDExLjc1IDUuNTY2OTlaIiBzdHJva2U9IiMzMzMzMzMiLz4KPGxpbmUgaWQ9IkxpbmUgMSIgeDE9IjEiIHkxPSIxNC41IiB4Mj0iNSIgeTI9IjE0LjUiIHN0cm9rZT0iIzMzMzMzMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CjxsaW5lIGlkPSJMaW5lIDIiIHgxPSI4IiB5MT0iMTQuNSIgeDI9IjE2IiB5Mj0iMTQuNSIgc3Ryb2tlPSIjMzMzMzMzIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPGNpcmNsZSBpZD0iRWxsaXBzZSAyMyIgY3g9IjUiIGN5PSIxNC41IiByPSIxLjUiIGZpbGw9IiMzMzMzMzMiLz4KPC9nPgo8L3N2Zz4K

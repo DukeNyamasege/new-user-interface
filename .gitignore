@@ -10,8 +10,6 @@ packages/**/scripts/CNAME
 .DS_Store
 tsconfig.tsbuildinfo
 *.swp
-npm-debug.log
-lerna-debug.log
 coverage
 
 key.pem
@@ -36,6 +34,16 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+
+.cursorrules
+.clinerules
+cline_instructions.md
+.roo_config.md
+.roo-config.json
+.ai-instructions.md
+.chatgpt-instructions.md
+.claude-instructions.md
+.ai-rules.md
 
 # AI Tool Configuration Files
 .cursorrules

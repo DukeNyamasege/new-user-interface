@@ -1,5 +1,6 @@
 /* eslint-disable no-promise-executor-return */
 import debounce from 'lodash.debounce';
+import { getLocalizedErrorMessage } from '@/constants/backend-error-messages';
 import { localize } from '@deriv-com/translations';
 import { getLast } from '../../../utils/binary-utils';
 import { observer as globalObserver } from '../../../utils/observer';
@@ -55,19 +56,27 @@ export default Engine =>
         }
 
         getLastTick(raw, toString = false) {
-            return new Promise(resolve =>
+            return new Promise((resolve, reject) =>
                 this.$scope.ticksService
                     .request({ symbol: this.symbol })
                     .then(ticks => {
-                        let last_tick = raw ? getLast(ticks) : getLast(ticks).quote;
-                        if (!raw && toString) {
-                            last_tick = last_tick.toFixed(this.getPipSize());
+                        try {
+                            let last_tick = raw ? getLast(ticks) : getLast(ticks).quote;
+                            if (!raw && toString) {
+                                last_tick = last_tick.toFixed(this.getPipSize());
+                            }
+                            resolve(last_tick);
+                        } catch (error) {
+                            reject(error);
                         }
-                        resolve(last_tick);
                     })
                     .catch(e => {
                         if (e.code === 'MarketIsClosed') {
-                            globalObserver.emit('Error', e);
+                            const localizedError = {
+                                ...e,
+                                message: getLocalizedErrorMessage(e.code, e.details),
+                            };
+                            globalObserver.emit('Error', localizedError);
                             resolve(e.code);
                         }
                     })
@@ -130,7 +139,7 @@ export default Engine =>
                 growth_rate: this?.tradeOptions?.growth_rate,
                 proposal: 1,
                 subscribe: 1,
-                symbol: this?.tradeOptions?.symbol,
+                underlying_symbol: this?.tradeOptions?.symbol,
             };
             if (!subscription_id && !is_proposal_requested) {
                 this.is_proposal_requested_for_accumulators = true;

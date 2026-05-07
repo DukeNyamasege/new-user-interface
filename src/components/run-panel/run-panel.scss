@@ -7,12 +7,10 @@
     height: 0;
 
     &__container {
-        position: fixed !important;
-        height: calc(100vh - 4.9rem) !important;
-        top: 4.9rem !important;
+        height: var(--bot-content-height) !important;
+        top: 10.4rem !important;
         width: 36.6rem !important;
         right: 0;
-        z-index: 999;
 
         &--mobile {
             position: absolute;
@@ -215,11 +213,6 @@
         &.ios-device {
             bottom: env(safe-area-inset-bottom, 0);
             padding-bottom: env(safe-area-inset-bottom, 0);
-        }
-
-        &--ios-pwa {
-            bottom: 0 !important;
-            padding-bottom: unset !important;
         }
     }
 
@@ -453,6 +446,8 @@
     &__button {
         @include mobile-or-tablet-screen {
             flex-basis: 100%;
+            white-space: normal;
+            word-break: break-word;
         }
     }
 }

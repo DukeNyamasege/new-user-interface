@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDomServer from 'react-dom/server';
 import { localize } from '@deriv-com/translations';
-import { isMultipliersAvailable } from '../../../external/bot-skeleton/scratch/utils/multiplier-utils';
 
 const Arg = ({ ...props }) => {
     return React.createElement('arg', props);
@@ -51,10 +50,8 @@ const Xml = ({ ...props }) => {
     return React.createElement('xml', props);
 };
 
-export const ToolboxItems = () => {
-    const multipliersAvailable = isMultipliersAvailable();
-
-    return ReactDomServer.renderToStaticMarkup(
+export const ToolboxItems = () =>
+    ReactDomServer.renderToStaticMarkup(
         <Xml xmlns='http://www.w3.org/1999/xhtml' id='toolbox'>
             <Category id='trade_parameters' name={localize('Trade parameters')}>
                 <Block type='trade_definition'>
@@ -120,36 +117,30 @@ export const ToolboxItems = () => {
                     </Value>
                     <Field name='AMOUNT_LIMITS' />
                 </Block>
-                {multipliersAvailable && (
-                    <Block type='trade_definition_multiplier'>
-                        <Field name='MULTIPLIERTYPE_LIST' />
-                        <Field name='CURRENCY_LIST'>USD</Field>
-                        <Value name='AMOUNT'>
-                            <Shadow type='math_number'>
-                                <Field name='NUM'>1</Field>
-                            </Shadow>
-                        </Value>
-                        <Field name='AMOUNT_LIMITS' />
-                    </Block>
-                )}
-                {multipliersAvailable && (
-                    <Block type='multiplier_take_profit'>
-                        <Value name='AMOUNT'>
-                            <Shadow type='math_number'>
-                                <Field name='NUM'>0</Field>
-                            </Shadow>
-                        </Value>
-                    </Block>
-                )}
-                {multipliersAvailable && (
-                    <Block type='multiplier_stop_loss'>
-                        <Value name='AMOUNT'>
-                            <Shadow type='math_number'>
-                                <Field name='NUM'>0</Field>
-                            </Shadow>
-                        </Value>
-                    </Block>
-                )}
+                <Block type='trade_definition_multiplier'>
+                    <Field name='MULTIPLIERTYPE_LIST' />
+                    <Field name='CURRENCY_LIST'>USD</Field>
+                    <Value name='AMOUNT'>
+                        <Shadow type='math_number'>
+                            <Field name='NUM'>1</Field>
+                        </Shadow>
+                    </Value>
+                    <Field name='AMOUNT_LIMITS' />
+                </Block>
+                <Block type='multiplier_take_profit'>
+                    <Value name='AMOUNT'>
+                        <Shadow type='math_number'>
+                            <Field name='NUM'>0</Field>
+                        </Shadow>
+                    </Value>
+                </Block>
+                <Block type='multiplier_stop_loss'>
+                    <Value name='AMOUNT'>
+                        <Shadow type='math_number'>
+                            <Field name='NUM'>0</Field>
+                        </Shadow>
+                    </Value>
+                </Block>
                 <Block type='trade_definition_accumulator'>
                     <Field name='GROWTHRATE_LIST' />
                     <Field name='CURRENCY_LIST'>USD</Field>
@@ -1666,4 +1657,3 @@ export const ToolboxItems = () => {
             </Examples>
         </Xml>
     );
-};

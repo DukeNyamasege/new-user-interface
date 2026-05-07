@@ -49,9 +49,6 @@ export const performButtonAction = (
             }
             return false;
         }
-        case BUTTON_ACTION_TYPE.NO_ACTION: {
-            return false;
-        }
         default:
             return false;
     }

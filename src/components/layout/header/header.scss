@@ -221,26 +221,6 @@
         inset-inline-end: 0;
     }
 
-    &__logout {
-        align-items: center;
-        display: flex;
-        grid-column: 2 / 3;
-        justify-content: flex-end;
-        justify-self: end;
-        padding: 1.6em 1.3em;
-
-        &-text {
-            margin-inline-end: 1rem;
-            font-size: var(--text-size-xs);
-        }
-
-        &--loader {
-            display: flex;
-            justify-content: flex-end;
-            padding: 16px;
-        }
-    }
-
     &__tradershub-link {
         background: var(--du-general-main-2);
         color: var(--text-prominent);
@@ -275,49 +255,34 @@
 
 .auth-actions {
     display: flex;
-    align-items: center;
     padding-block: 8px;
-    gap: 0.8rem;
+    align-items: center;
 
-    // Log in — outlined blue
-    .dc-btn--tertiary {
-        background: transparent !important;
-        border: 1.5px solid #1c5ae3 !important;
-        border-radius: 0.6rem;
-        margin-inline-end: 0;
-
-        .dc-btn__text {
-            color: #1c5ae3 !important;
-        }
-
-        &:hover:not([disabled]) {
-            background: rgb(28 90 227 / 8%) !important;
-        }
+    button {
+        font-weight: 400;
+        margin-inline-end: 1.6rem;
+        border-radius: 16px;
     }
 
-    // Sign up — solid blue
-    .dc-btn--primary {
-        background: #1c5ae3 !important;
-        border: 1.5px solid #1c5ae3 !important;
-        border-radius: 0.6rem;
-        margin-inline-end: 0;
-
-        .dc-btn__text {
-            color: #fff !important;
-        }
-
-        &:hover:not([disabled]) {
-            background: #1749c0 !important;
-            border-color: #1749c0 !important;
-        }
+    &--loading {
+        align-items: center;
+        margin-inline-end: 1.6rem;
     }
-}
 
-.deposit-button,
-.manage-funds-button {
-    margin-inline-end: 1.6rem;
+    &__spinner {
+        width: 2rem;
+        height: 2rem;
+        color: var(--text-prominent);
+        animation: auth-spinner-rotate 0.8s linear infinite;
+    }
+
 }
 
 .deriv-accordion--underline {
     border-bottom: none;
+}
+
+@keyframes auth-spinner-rotate {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
 }

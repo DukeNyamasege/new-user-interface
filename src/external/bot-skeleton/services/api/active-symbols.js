@@ -1,5 +1,6 @@
 /* eslint-disable no-confusing-arrow */
-import { localize } from '@deriv-com/translations';
+import { MARKET_OPTIONS, SUBMARKET_OPTIONS, SYMBOL_OPTIONS } from '../../../../components/shared/utils/common-data';
+import { activeSymbolCategorizationService } from '../../../../services/active-symbol-categorization.service';
 import { config } from '../../constants/config';
 import PendingPromise from '../../utils/pending-promise';
 import { api_base } from './api-base';
@@ -11,10 +12,36 @@ export default class ActiveSymbols {
         this.disabled_submarkets = config().DISABLED_SUBMARKETS;
         this.init_promise = new PendingPromise();
         this.is_initialised = false;
+        this.has_initialization_error = false;
         this.processed_symbols = {};
         this.trading_times = trading_times;
     }
 
+    clearCache() {
+        this.active_symbols = [];
+        this.processed_symbols = {};
+        this.is_initialised = false;
+        this.has_initialization_error = false;
+        this.init_promise = new PendingPromise();
+    }
+
+    /**
+     * Retrieves active symbols from the API with retry logic.
+     *
+     * @param {boolean} is_forced_update - Force refresh even if already initialized
+     * @returns {Promise<Array>} Array of active symbol objects
+     *
+     * @important Callers MUST check `this.has_initialization_error` after calling this method.
+     * If true, the returned array may be empty due to API failure, and UI should display
+     * an appropriate error message to the user instead of showing empty dropdowns.
+     *
+     * @example
+     * await activeSymbols.retrieveActiveSymbols();
+     * if (activeSymbols.has_initialization_error) {
+     *   // Show error message to user
+     *   showError('Unable to load trading symbols. Please try again.');
+     * }
+     */
     async retrieveActiveSymbols(is_forced_update = false) {
         await this.trading_times.initialise();
 
@@ -23,18 +50,41 @@ export default class ActiveSymbols {
             return this.active_symbols;
         }
 
-        this.is_initialised = true;
-
+        // Wait for api_base to have symbols available
         if (api_base.has_active_symbols) {
             this.active_symbols = api_base?.active_symbols ?? [];
         } else {
-            await api_base.active_symbols_promise;
-            this.active_symbols = api_base?.active_symbols ?? [];
+            // If promise doesn't exist, trigger the fetch
+            if (!api_base.active_symbols_promise) {
+                api_base.active_symbols_promise = api_base.getActiveSymbols();
+            }
+            // Wait for the promise and use its resolved value
+            const symbols = await api_base.active_symbols_promise;
+            this.active_symbols = symbols ?? api_base?.active_symbols ?? [];
         }
 
+        // If still no symbols after waiting, try one more time with a fresh fetch
+        if (!this.active_symbols || this.active_symbols.length === 0) {
+            console.warn('No symbols found, attempting fresh fetch...');
+            try {
+                const symbols = await api_base.getActiveSymbols();
+                this.active_symbols = symbols ?? [];
+
+                // If still no symbols after retry, mark as error state
+                if (!this.active_symbols || this.active_symbols.length === 0) {
+                    this.has_initialization_error = true;
+                    console.error('Failed to fetch active symbols: No symbols returned after retry');
+                }
+            } catch (error) {
+                console.error('Failed to fetch active symbols:', error);
+                this.active_symbols = [];
+                this.has_initialization_error = true;
+            }
+        }
+
+        this.is_initialised = true;
         this.processed_symbols = this.processActiveSymbols();
 
-        // TODO: fix need to look into it as the method is not present
         this.trading_times.onMarketOpenCloseChanged = changes => {
             Object.keys(changes).forEach(symbol_name => {
                 const symbol_obj = this.active_symbols[symbol_name];
@@ -49,50 +99,20 @@ export default class ActiveSymbols {
         };
 
         this.init_promise.resolve();
-
-        console.log(this.active_symbols);
         return this.active_symbols;
     }
 
     processActiveSymbols() {
-        return this.active_symbols.reduce((processed_symbols, symbol) => {
-            if (
-                config().DISABLED_SYMBOLS.includes(symbol.symbol) ||
-                config().DISABLED_SUBMARKETS.includes(symbol.submarket)
-            ) {
-                return processed_symbols;
-            }
+        if (this.active_symbols.length === 0) {
+            return {};
+        }
 
-            const isExistingValue = (object, prop) => Object.keys(object).findIndex(a => a === symbol[prop]) !== -1;
-
-            if (!isExistingValue(processed_symbols, 'market')) {
-                processed_symbols[symbol.market] = {
-                    display_name: symbol.market_display_name,
-                    submarkets: {},
-                };
-            }
-
-            const { submarkets } = processed_symbols[symbol.market];
-
-            if (!isExistingValue(submarkets, 'submarket')) {
-                submarkets[symbol.submarket] = {
-                    display_name: symbol.submarket_display_name,
-                    symbols: {},
-                };
-            }
-
-            const { symbols } = submarkets[symbol.submarket];
-
-            if (!isExistingValue(symbols, 'symbol')) {
-                symbols[symbol.symbol] = {
-                    display_name: symbol.display_name,
-                    pip_size: `${symbol.pip}`.length - 2,
-                    is_active: !symbol.is_trading_suspended && symbol.exchange_is_open,
-                };
-            }
-
-            return processed_symbols;
-        }, {});
+        // Use the centralized service for processing
+        return activeSymbolCategorizationService.processActiveSymbols(
+            this.active_symbols,
+            config().DISABLED_SYMBOLS,
+            config().DISABLED_SUBMARKETS
+        );
     }
 
     /**
@@ -138,53 +158,35 @@ export default class ActiveSymbols {
      */
     getSymbolsForBot() {
         const { DISABLED } = config().QUICK_STRATEGY;
-        const symbols_for_bot = [];
-        Object.keys(this.processed_symbols).forEach(market_name => {
-            if (this.isMarketClosed(market_name)) return;
 
-            const market = this.processed_symbols[market_name];
-            const { submarkets } = market;
-
-            Object.keys(submarkets).forEach(submarket_name => {
-                if (DISABLED.SUBMARKETS.includes(submarket_name)) return;
-                const submarket = submarkets[submarket_name];
-                const { symbols } = submarket;
-
-                Object.keys(symbols).forEach(symbol_name => {
-                    if (DISABLED.SYMBOLS.includes(symbol_name)) return;
-                    const symbol = symbols[symbol_name];
-                    symbols_for_bot.push({
-                        group: submarket.display_name,
-                        text: symbol.display_name,
-                        value: symbol_name,
-                        submarket: submarket_name,
-                    });
-                });
-            });
-        });
-
-        return symbols_for_bot;
+        // Use the centralized service for generating bot symbols
+        return activeSymbolCategorizationService.getSymbolsForBot(
+            this.processed_symbols,
+            DISABLED.SYMBOLS,
+            DISABLED.SUBMARKETS,
+            this.isMarketClosed.bind(this)
+        );
     }
 
     getMarketDropdownOptions() {
-        const market_options = [];
+        // Use the centralized service for market dropdown options
+        const market_options = activeSymbolCategorizationService.getMarketDropdownOptions(
+            this.processed_symbols,
+            this.isMarketClosed.bind(this)
+        );
 
-        Object.keys(this.processed_symbols).forEach(market_name => {
-            const { display_name } = this.processed_symbols[market_name];
-            const market_display_name =
-                display_name + (this.isMarketClosed(market_name) ? ` ${localize('(Closed)')}` : '');
-            market_options.push([market_display_name, market_name]);
-        });
-
+        // Fallback markets if no processed symbols available
         if (market_options.length === 0) {
-            return config().NOT_AVAILABLE_DROPDOWN_OPTIONS;
+            return MARKET_OPTIONS;
         }
-        market_options.sort(a => (a[1] === 'synthetic_index' ? -1 : 1));
 
         const has_closed_markets = market_options.some(market_option => this.isMarketClosed(market_option[1]));
 
         if (has_closed_markets) {
-            const sorted_options = this.sortDropdownOptions(market_options, this.isMarketClosed);
+            const sorted_options = activeSymbolCategorizationService.sortDropdownOptions(
+                market_options,
+                this.isMarketClosed.bind(this)
+            );
 
             if (this.isMarketClosed('forex')) {
                 return sorted_options.sort(a => (a[1] === 'synthetic_index' ? -1 : 1));
@@ -197,54 +199,39 @@ export default class ActiveSymbols {
     }
 
     getSubmarketDropdownOptions(market) {
-        const submarket_options = [];
-        const market_obj = this.processed_symbols[market];
+        // Use the centralized service for submarket dropdown options
+        const submarket_options = activeSymbolCategorizationService.getSubmarketDropdownOptions(
+            this.processed_symbols,
+            market,
+            this.isSubmarketClosed.bind(this)
+        );
 
-        if (market_obj) {
-            const { submarkets } = market_obj;
-
-            Object.keys(submarkets).forEach(submarket_name => {
-                const { display_name } = submarkets[submarket_name];
-                const submarket_display_name =
-                    display_name + (this.isSubmarketClosed(submarket_name) ? ` ${localize('(Closed)')}` : '');
-                submarket_options.push([submarket_display_name, submarket_name]);
-            });
-        }
-
+        // Fallback submarkets based on market
         if (submarket_options.length === 0) {
-            return config().NOT_AVAILABLE_DROPDOWN_OPTIONS;
-        }
-        if (market === 'synthetic_index') {
-            submarket_options.sort(a => (a[1] === 'random_index' ? -1 : 1));
+            return SUBMARKET_OPTIONS[market] || [['Default', 'default']];
         }
 
-        return this.sortDropdownOptions(submarket_options, this.isSubmarketClosed);
+        return activeSymbolCategorizationService.sortDropdownOptions(
+            submarket_options,
+            this.isSubmarketClosed.bind(this)
+        );
     }
 
     getSymbolDropdownOptions(submarket) {
-        const symbol_options = Object.keys(this.processed_symbols).reduce((accumulator, market_name) => {
-            const { submarkets } = this.processed_symbols[market_name];
+        // Use the centralized service for symbol dropdown options
+        const symbol_options = activeSymbolCategorizationService.getSymbolDropdownOptions(
+            this.processed_symbols,
+            submarket,
+            this.isSymbolClosed.bind(this)
+        );
 
-            Object.keys(submarkets).forEach(submarket_name => {
-                if (submarket_name === submarket) {
-                    const { symbols } = submarkets[submarket_name];
-                    Object.keys(symbols).forEach(symbol_name => {
-                        const { display_name } = symbols[symbol_name];
-                        const symbol_display_name =
-                            display_name + (this.isSymbolClosed(symbol_name) ? ` ${localize('(Closed)')}` : '');
-                        accumulator.push([symbol_display_name, symbol_name]);
-                    });
-                }
-            });
-
-            return accumulator;
-        }, []);
-
+        // Fallback symbols based on submarket
         if (symbol_options.length === 0) {
-            return config().NOT_AVAILABLE_DROPDOWN_OPTIONS;
+            // Return empty array instead of invalid 'DEFAULT' symbol to prevent API errors
+            return SYMBOL_OPTIONS[submarket] || [];
         }
 
-        return this.sortDropdownOptions(symbol_options, this.isSymbolClosed);
+        return activeSymbolCategorizationService.sortDropdownOptions(symbol_options, this.isSymbolClosed.bind(this));
     }
 
     isMarketClosed(market_name) {
@@ -279,28 +266,13 @@ export default class ActiveSymbols {
     }
 
     isSymbolClosed(symbol_name) {
-        return this.active_symbols.some(
-            active_symbol =>
-                active_symbol.symbol === symbol_name &&
-                (!active_symbol.exchange_is_open || active_symbol.is_trading_suspended)
-        );
+        return this.active_symbols.some(active_symbol => {
+            const symbol_code = active_symbol.underlying_symbol || active_symbol.symbol;
+            return (
+                symbol_code === symbol_name && (!active_symbol.exchange_is_open || active_symbol.is_trading_suspended)
+            );
+        });
     }
 
-    sortDropdownOptions = (dropdown_options, closedFunc) => {
-        const options = [...dropdown_options];
-
-        options.sort((a, b) => {
-            const is_a_closed = closedFunc.call(this, a[1]);
-            const is_b_closed = closedFunc.call(this, b[1]);
-
-            if (is_a_closed && !is_b_closed) {
-                return 1;
-            } else if (is_a_closed === is_b_closed) {
-                return 0;
-            }
-            return -1;
-        });
-
-        return options;
-    };
+    // Removed sortDropdownOptions - now using centralized service
 }

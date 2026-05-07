@@ -1,4 +1,5 @@
 import { getCurrencyDisplayCode, getDecimalPlaces } from '@/components/shared';
+import { getLocalizedErrorMessage } from '@/constants/backend-error-messages';
 import { localize } from '@deriv-com/translations';
 import { config } from '../../../../constants/config';
 import ApiHelpers from '../../../../services/api/api-helpers';
@@ -194,17 +195,47 @@ window.Blockly.Blocks.trade_definition_multiplier = {
             contracts_for
                 ?.getMultiplierRange?.(this.selected_symbol, this.selected_trade_type)
                 ?.then(multiplier_range => {
-                    if (multiplier_range.length > 0) {
+                    if (multiplier_range && multiplier_range.length > 0) {
                         const multiplier_list_dropdown = this.getField('MULTIPLIERTYPE_LIST');
                         const multiplier_options = multiplier_range.map(value => {
                             const option = value.toString();
                             return [option, option];
                         });
-
                         multiplier_list_dropdown?.updateOptions(multiplier_options, {
                             default_value: should_use_default_value ? undefined : multiplier_list_dropdown.getValue(),
                         });
+                    } else {
+                        // If no multiplier range available, set default fallback options
+                        console.warn('DEBUG: No multiplier range available, using fallback options');
+                        const multiplier_list_dropdown = this.getField('MULTIPLIERTYPE_LIST');
+                        const fallback_options = [
+                            ['100', '100'],
+                            ['200', '200'],
+                            ['300', '300'],
+                            ['500', '500'],
+                            ['1000', '1000'],
+                        ];
+
+                        multiplier_list_dropdown?.updateOptions(fallback_options, {
+                            default_value: should_use_default_value ? undefined : multiplier_list_dropdown.getValue(),
+                        });
                     }
+                })
+                ?.catch(error => {
+                    console.error('DEBUG: Error getting multiplier range:', error);
+                    // Set fallback options on error
+                    const multiplier_list_dropdown = this.getField('MULTIPLIERTYPE_LIST');
+                    const fallback_options = [
+                        ['100', '100'],
+                        ['200', '200'],
+                        ['300', '300'],
+                        ['500', '500'],
+                        ['1000', '1000'],
+                    ];
+
+                    multiplier_list_dropdown?.updateOptions(fallback_options, {
+                        default_value: should_use_default_value ? undefined : multiplier_list_dropdown.getValue(),
+                    });
                 });
             return;
         }
@@ -263,18 +294,18 @@ window.Blockly.Blocks.trade_definition_multiplier = {
                 const max_payout = this.amount_limits?.max_payout;
                 const min_stake = this.amount_limits?.min_stake;
                 if (min_stake && input_number < min_stake) {
-                    this.error_message = localize("Please enter a stake amount that's at least {{min_stake}}.", {
-                        min_stake,
+                    this.error_message = getLocalizedErrorMessage('InvalidMinStake', {
+                        param1: min_stake,
                     });
                     return input_number < min_stake;
                 }
                 if (max_payout && input_number > max_payout) {
-                    this.error_message = localize("Please enter a payout amount that's lower than {{max_payout}}.", {
-                        max_payout,
+                    this.error_message = getLocalizedErrorMessage('PayoutLimitExceeded', {
+                        param1: max_payout,
                     });
                     return input_number > max_payout;
                 }
-                this.error_message = localize('Amount must be a positive number.');
+                this.error_message = getLocalizedErrorMessage('AmountValidationFailed');
                 return !isNaN(input_number) && input_number <= 0;
             },
         };

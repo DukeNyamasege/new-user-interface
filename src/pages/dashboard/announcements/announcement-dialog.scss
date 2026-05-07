@@ -1,26 +1,6 @@
 @use 'components/shared/styles/mixins' as *;
 
 .announcement-dialog {
-    .announcement-dialog--pwa__body-main-content {
-        padding: 20px;
-
-        .announcement-dialog--pwa__body-item {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 1rem;
-
-            @include mobile-or-tablet-screen {
-                justify-content: left;
-                align-items: flex-start;
-            }
-
-            p {
-                margin-left: 1rem;
-            }
-        }
-    }
-
     .dc-dialog {
         &__dialog {
             max-width: calc(440px - 4.8rem);
@@ -91,13 +71,6 @@
                     margin-bottom: 0;
                 }
             }
-
-            // Make secondary button text black
-            &.dc-btn--secondary {
-                .dc-btn__text {
-                    color: var(--text-general);
-                }
-            }
         }
 
         &__button:last-child {
@@ -116,8 +89,7 @@
     &__body-icon {
         &--accumulator_announce,
         &--moving_strategies_announce,
-        &--blockly_announce,
-        &--pwa_install_announce {
+        &--blockly_announce {
             display: flex;
             justify-content: center;
             align-items: center;
@@ -132,22 +104,6 @@
         &--accumulator_announce {
             border-radius: 0.8rem;
             background-color: var(--general-section-1);
-        }
-
-        &--pwa_install_announce {
-            border-radius: 0.8rem;
-            background-color: var(--general-section-1);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding: 2rem;
-
-            // Add PWA icon styling if needed
-            svg {
-                width: 6rem;
-                height: 6rem;
-            }
         }
     }
 
@@ -197,26 +153,6 @@
 
         &--accumulator_announce {
             text-align: center;
-        }
-
-        &--pwa_install_announce {
-            text-align: center;
-            font-weight: 600;
-            color: var(--text-prominent);
-        }
-    }
-
-    // PWA announcement specific styling
-    &--pwa {
-        .dc-dialog__footer {
-            .dc-btn--primary {
-                background-color: var(--status-danger) !important;
-                border-color: var(--status-danger) !important;
-
-                .dc-btn__text {
-                    color: var(--text-colored-background) !important;
-                }
-            }
         }
     }
 }

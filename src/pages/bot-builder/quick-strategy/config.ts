@@ -1,4 +1,16 @@
 import { config as qs_config } from '@/external/bot-skeleton';
+import {
+    localize1326,
+    localizeDAlembergOnStatReset,
+    localizeDAlembert,
+    localizeMartingale,
+    localizeMartingaleOnStatReset,
+    localizeOscarsGrind,
+    localizeReverseDAlembergOnStatReset,
+    localizeReverseDAlembert,
+    localizeReverseMartingale,
+    localizeReverseMartingaleOnStatReset,
+} from '@/utils/conditional-localize';
 import { localize } from '@deriv-com/translations';
 import {
     D_ALEMBERT,
@@ -10,6 +22,20 @@ import {
 } from '../../../constants/quick-strategies';
 import { LocalizeHTMLForSellConditions } from './localize_html';
 import { TConfigItem, TStrategies, TValidationItem } from './types';
+
+// Block ID constants for better maintainability and readability
+export const RESET_STRATEGIES_BLOCK_IDS = [
+    'YBm3.OP{L7y^WWz%GM#R',
+    'Ym$v.ix]r{xp0?1EOEDP',
+    'M(`gZ)-p}|aY(Aj2111K',
+    '=},I)bcka#FK`KQ3PQ%5',
+];
+export const RESET_STRATEGIES = [
+    'accumulators_martingale_on_stat_reset',
+    'accumulators_dalembert_on_stat_reset',
+    'accumulators_reverse_martingale_on_stat_reset',
+    'accumulators_reverse_dalembert_on_stat_reset',
+];
 
 export const FORM_TABS = () => [
     {
@@ -150,18 +176,7 @@ const LABEL_STAKE = (): TConfigItem => ({
 const STAKE = (): TConfigItem => ({
     type: 'number',
     name: 'stake',
-    validation: [
-        'number',
-        'required',
-        'ceil',
-
-        {
-            type: 'max',
-            value: 1000,
-            getMessage: (max: string | number) => localize('Maximum stake allowed is {{ max }}', { max }),
-            getDynamicValue: (store: any) => store.quick_strategy?.additional_data?.max_stake || 1000,
-        },
-    ],
+    validation: ['number', 'required', 'ceil'],
     has_currency_unit: true,
 });
 
@@ -299,7 +314,7 @@ const LAST_DIGIT_PREDICTION = (): TConfigItem => ({
 export const STRATEGIES = (): TStrategies => ({
     MARTINGALE: {
         name: 'martingale_max-stake',
-        label: localize('Martingale'),
+        label: localizeMartingale(),
         rs_strategy_name: 'martingale',
         description: MARTINGALE(),
         fields: [
@@ -332,7 +347,7 @@ export const STRATEGIES = (): TStrategies => ({
     },
     D_ALEMBERT: {
         name: 'dalembert_max-stake',
-        label: localize('D’Alembert'),
+        label: localizeDAlembert(),
         rs_strategy_name: `d'alembert`,
         description: D_ALEMBERT(),
         fields: [
@@ -365,7 +380,7 @@ export const STRATEGIES = (): TStrategies => ({
     },
     OSCARS_GRIND: {
         name: 'oscars_grind_max-stake',
-        label: localize('Oscar’s Grind'),
+        label: localizeOscarsGrind(),
         rs_strategy_name: `oscar's-grind`,
         description: OSCARS_GRIND(),
         fields: [
@@ -389,7 +404,7 @@ export const STRATEGIES = (): TStrategies => ({
     },
     REVERSE_MARTINGALE: {
         name: 'reverse_martingale',
-        label: localize('Reverse Martingale'),
+        label: localizeReverseMartingale(),
         rs_strategy_name: 'reverse martingale',
         description: REVERSE_MARTINGALE(),
         fields: [
@@ -422,7 +437,7 @@ export const STRATEGIES = (): TStrategies => ({
     },
     REVERSE_D_ALEMBERT: {
         name: 'reverse_dalembert',
-        label: localize('Reverse D’Alembert'),
+        label: localizeReverseDAlembert(),
         rs_strategy_name: `reverse d'alembert`,
         description: REVERSE_D_ALEMBERT(),
         fields: [
@@ -455,7 +470,7 @@ export const STRATEGIES = (): TStrategies => ({
     },
     STRATEGY_1_3_2_6: {
         name: '1_3_2_6',
-        label: localize('1-3-2-6'),
+        label: localize1326(),
         rs_strategy_name: '1-3-2-6',
         description: STRATEGY_1_3_2_6(),
         fields: [
@@ -479,7 +494,7 @@ export const STRATEGIES = (): TStrategies => ({
     },
     ACCUMULATORS_MARTINGALE: {
         name: 'accumulators_martingale',
-        label: localize('Martingale'),
+        label: localizeMartingale(),
         rs_strategy_name: 'accumulators_martingale',
         description: [],
         fields: [
@@ -502,7 +517,7 @@ export const STRATEGIES = (): TStrategies => ({
     },
     ACCUMULATORS_DALEMBERT: {
         name: 'accumulators_dalembert',
-        label: localize('D’Alembert'),
+        label: localizeDAlembert(),
         rs_strategy_name: 'accumulators_dalembert',
         description: [],
         fields: [
@@ -525,7 +540,7 @@ export const STRATEGIES = (): TStrategies => ({
     },
     ACCUMULATORS_MARTINGALE_ON_STAT_RESET: {
         name: 'accumulators_martingale_on_stat_reset',
-        label: localize('Martingale on Stat Reset'),
+        label: localizeMartingaleOnStatReset(),
         rs_strategy_name: 'accumulators_martingale_on_stat_reset',
         description: [],
         fields: [
@@ -548,7 +563,7 @@ export const STRATEGIES = (): TStrategies => ({
     },
     ACCUMULATORS_DALEMBERT_ON_STAT_RESET: {
         name: 'accumulators_dalembert_on_stat_reset',
-        label: localize("D'Alembert on Stat Reset"),
+        label: localizeDAlembergOnStatReset(),
         rs_strategy_name: 'accumulators_dalembert_on_stat_reset',
         description: [],
         fields: [
@@ -571,7 +586,7 @@ export const STRATEGIES = (): TStrategies => ({
     },
     ACCUMULATORS_REVERSE_MARTINGALE: {
         name: 'accumulators_reverse_martingale',
-        label: localize('Reverse Martingale'),
+        label: localizeReverseMartingale(),
         rs_strategy_name: 'accumulators_reverse_martingale',
         description: [],
         fields: [
@@ -594,7 +609,7 @@ export const STRATEGIES = (): TStrategies => ({
     },
     ACCUMULATORS_REVERSE_MARTINGALE_ON_STAT_RESET: {
         name: 'accumulators_reverse_martingale_on_stat_reset',
-        label: localize('Reverse Martingale on Stat Reset'),
+        label: localizeReverseMartingaleOnStatReset(),
         rs_strategy_name: 'accumulators_reverse_martingale_on_stat_reset',
         description: [],
         fields: [
@@ -617,7 +632,7 @@ export const STRATEGIES = (): TStrategies => ({
     },
     ACCUMULATORS_REVERSE_DALEMBERT: {
         name: 'accumulators_reverse_dalembert',
-        label: localize("Reverse D'Alembert"),
+        label: localizeReverseDAlembert(),
         rs_strategy_name: 'accumulators_reverse_dalembert',
         description: [],
         fields: [
@@ -640,7 +655,7 @@ export const STRATEGIES = (): TStrategies => ({
     },
     ACCUMULATORS_REVERSE_DALEMBERT_ON_STAT_RESET: {
         name: 'accumulators_reverse_dalembert_on_stat_reset',
-        label: localize("Reverse D'Alembert on Stat Reset"),
+        label: localizeReverseDAlembergOnStatReset(),
         rs_strategy_name: 'accumulators_reverse_dalembert_on_stat_reset',
         description: [],
         fields: [

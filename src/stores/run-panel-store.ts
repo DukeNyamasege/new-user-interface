@@ -1,15 +1,16 @@
 import { action, computed, makeObservable, observable, reaction, runInAction } from 'mobx';
 import { botNotification } from '@/components/bot-notification/bot-notification';
 import { notification_message } from '@/components/bot-notification/bot-notification-utils';
-import { isSafari, mobileOSDetect, standalone_routes } from '@/components/shared';
-import { redirectToSignUp } from '@/components/shared';
+import { generateOAuthURL, isSafari, mobileOSDetect, standalone_routes } from '@/components/shared';
 import { contract_stages, TContractStage } from '@/constants/contract-stage';
 import { run_panel } from '@/constants/run-panel';
 import { ErrorTypes, MessageTypes, observer, unrecoverable_errors } from '@/external/bot-skeleton';
 import { getSelectedTradeType } from '@/external/bot-skeleton/scratch/utils';
+import { handleBackendError, isBackendError } from '@/utils/error-handler';
 // import { journalError, switch_account_notification } from '@/utils/bot-notifications';
 import GTM from '@/utils/gtm';
 import { helpers } from '@/utils/store-helpers';
+import { generateUrlWithRedirect } from '@/utils/url-redirect-utils';
 import { Buy, ProposalOpenContract } from '@deriv/api-types';
 import { TStores } from '@deriv/stores/types';
 import { localize } from '@deriv-com/translations';
@@ -53,8 +54,8 @@ export default class RunPanelStore {
             setHasOpenContract: action,
             setIsRunning: action,
             onRunButtonClick: action,
-            is_contracy_buying_in_progress: observable,
-            OpenPositionLimitExceededEvent: action,
+            is_contract_buying_in_progress: observable,
+            SetpurchaseInProgress: action,
             onStopButtonClick: action,
             onClearStatClick: action,
             clearStat: action,
@@ -106,7 +107,7 @@ export default class RunPanelStore {
     is_dialog_open = false;
     is_sell_requested = false;
     show_bot_stop_message = false;
-    is_contracy_buying_in_progress = false;
+    is_contract_buying_in_progress = false;
 
     run_id = '';
     onOkButtonClick: (() => void) | null = null;
@@ -122,7 +123,7 @@ export default class RunPanelStore {
     }
 
     get is_stop_button_disabled() {
-        if (this.is_contracy_buying_in_progress) {
+        if (this.is_contract_buying_in_progress) {
             return false;
         }
         return [contract_stages.PURCHASE_SENT as number, contract_stages.IS_STOPPING as number].includes(
@@ -145,28 +146,17 @@ export default class RunPanelStore {
         if (!show_bot_stop_message) return;
         const handleNotificationClick = () => {
             const contract_type = getSelectedTradeType();
-            const url = new URL(standalone_routes.positions);
-            url.searchParams.set('contract_type_bots', contract_type);
+            const baseUrl = `${standalone_routes.positions}?contract_type_bots=${contract_type}`;
 
-            const getQueryParams = new URLSearchParams(window.location.search);
-            const account = getQueryParams.get('account') || sessionStorage.getItem('query_param_currency') || '';
-
-            if (account) {
-                url.searchParams.set('account', account);
-            }
-
-            window.location.assign(url.toString());
+            // Use generateUrlWithRedirect to add redirect parameter and account_type from localStorage
+            const urlWithRedirect = generateUrlWithRedirect(baseUrl);
+            window.location.assign(urlWithRedirect);
         };
 
         botNotification(notification_message().bot_stop, {
             label: localize('Reports'),
             onClick: handleNotificationClick,
         });
-    };
-
-    performSelfExclusionCheck = async () => {
-        const { self_exclusion } = this.root_store;
-        await self_exclusion.checkRestriction();
     };
 
     onRunButtonClick = async () => {
@@ -184,7 +174,7 @@ export default class RunPanelStore {
                 }
             }, 10000);
         }
-        const { summary_card, self_exclusion } = this.root_store;
+        const { summary_card } = this.root_store;
         const { client, ui } = this.core;
         const is_ios = mobileOSDetect() === 'iOS';
         this.dbot.saveRecentWorkspace();
@@ -200,12 +190,6 @@ export default class RunPanelStore {
          * syncronously, so keep above await.
          */
         if (is_ios || isSafari()) this.preloadAudio();
-
-        if (!self_exclusion.should_bot_run) {
-            self_exclusion.setIsRestricted(true);
-            return;
-        }
-        self_exclusion.setIsRestricted(false);
 
         this.registerBotListeners();
 
@@ -227,15 +211,13 @@ export default class RunPanelStore {
 
             summary_card.clear();
             this.setContractStage(contract_stages.STARTING);
-            // Show notification to keep screen alive after all validations pass
-            botNotification(notification_message().keep_screen_alive);
             this.dbot.runBot();
         });
         this.setShowBotStopMessage(false);
     };
 
     onStopButtonClick = () => {
-        this.is_contracy_buying_in_progress = false;
+        this.is_contract_buying_in_progress = false;
         const { is_multiplier } = this.root_store.summary_card;
 
         if (is_multiplier) {
@@ -246,6 +228,8 @@ export default class RunPanelStore {
     };
 
     onStopBotClick = () => {
+        this.is_contract_buying_in_progress = false;
+
         const { is_multiplier } = this.root_store.summary_card;
         const { summary_card } = this.root_store;
 
@@ -389,7 +373,9 @@ export default class RunPanelStore {
     showLoginDialog = () => {
         // Only allow closing through the buttons
         this.onOkButtonClick = () => {
-            redirectToSignUp();
+            generateOAuthURL('registration').then(url => {
+                if (url) window.location.replace(url);
+            });
             this.is_dialog_open = false;
         };
         this.onCancelButtonClick = () => {
@@ -464,11 +450,14 @@ export default class RunPanelStore {
         observer.register('bot.contract', this.onBotContractEvent);
         observer.register('bot.contract', summary_card.onBotContractEvent);
         observer.register('bot.contract', transactions.onBotContractEvent);
+        observer.register('bot.stop_button_click', this.onStopBotClick);
         observer.register('Error', this.onError);
-        observer.register('bot.recoverOpenPositionLimitExceeded', this.OpenPositionLimitExceededEvent);
+        observer.register('bot.setPurchaseInProgress', this.SetpurchaseInProgress);
     };
 
-    OpenPositionLimitExceededEvent = () => (this.is_contracy_buying_in_progress = true);
+    SetpurchaseInProgress = () => {
+        return (this.is_contract_buying_in_progress = true);
+    };
 
     registerReactions = () => {
         const { client, common } = this.core;
@@ -529,14 +518,6 @@ export default class RunPanelStore {
         // prevent new version update
         const ignore_new_version = new Event('IgnorePWAUpdate');
         document.dispatchEvent(ignore_new_version);
-        const { self_exclusion } = this.root_store;
-
-        if (self_exclusion.should_bot_run && self_exclusion.run_limit !== -1) {
-            self_exclusion.run_limit -= 1;
-            if (self_exclusion.run_limit < 0) {
-                this.onStopButtonClick();
-            }
-        }
     };
 
     onBotSellEvent = () => {
@@ -544,14 +525,13 @@ export default class RunPanelStore {
     };
 
     onBotStopEvent = () => {
-        const { self_exclusion, summary_card } = this.root_store;
+        const { summary_card } = this.root_store;
         const { ui } = this.core;
         const indicateBotStopped = () => {
             this.error_type = undefined;
             this.setContractStage(contract_stages.NOT_RUNNING);
             ui.setAccountSwitcherDisabledMessage();
             this.unregisterBotListeners();
-            self_exclusion.resetSelfExclusion();
         };
         if (this.error_type === ErrorTypes.RECOVERABLE_ERRORS) {
             // Bot should indicate it started in below cases:
@@ -580,7 +560,6 @@ export default class RunPanelStore {
             this.setContractStage(contract_stages.CONTRACT_CLOSED);
             ui.setAccountSwitcherDisabledMessage();
             this.unregisterBotListeners();
-            self_exclusion.resetSelfExclusion();
         }
 
         this.setHasOpenContract(false);
@@ -610,7 +589,7 @@ export default class RunPanelStore {
                 break;
             }
             case 'contract.purchase_received': {
-                this.is_contracy_buying_in_progress = false;
+                this.is_contract_buying_in_progress = false;
                 this.setContractStage(contract_stages.PURCHASE_RECEIVED);
                 const { buy } = contract_status;
                 const { is_virtual } = this.core.client;
@@ -663,14 +642,80 @@ export default class RunPanelStore {
             this.error_type = ErrorTypes.RECOVERABLE_ERRORS;
         }
 
-        const error_message = error?.message;
-        this.showErrorMessage(error_message);
+        // Check if this error has subcode and code_args for proper mapping
+        if (error.subcode && error.code_args) {
+            const { getLocalizedErrorMessage } = require('@/constants/backend-error-messages');
+
+            const details = {
+                param1: error.code_args[0],
+                param2: error.code_args[1],
+                param3: error.code_args[2],
+            };
+
+            const localizedMessage = getLocalizedErrorMessage(error.subcode, details);
+            this.showErrorMessage(localizedMessage, error);
+            return;
+        }
+
+        // Use localized error message if it's a backend error, otherwise fallback to original message
+        let error_message = error?.message;
+        if (isBackendError(error)) {
+            error_message = handleBackendError(error);
+        } else if (error?.code && typeof error.code === 'string') {
+            // Handle errors that have a code but might not be structured as BackendError
+            // This covers cases like "InvalidtoBuy" errors from bot-skeleton
+            const backendError = {
+                code: error.code,
+                message: error.message,
+                details: error.code_args ? { code_args: error.code_args } : error.details,
+            };
+            error_message = handleBackendError(backendError);
+        }
+
+        this.showErrorMessage(error_message, error);
     };
 
-    showErrorMessage = (data: string | Error) => {
+    showErrorMessage = (data: string | Error, originalError?: any) => {
+        let processedMessage = data;
+
+        // If it's a string with placeholder patterns, try to process it
+        if (typeof data === 'string' && data.includes('[_')) {
+            const { getLocalizedErrorMessage, getBackendErrorMessages } = require('@/constants/backend-error-messages');
+            const errorMessages = getBackendErrorMessages();
+
+            // Convert placeholders from [_1], [_2] format to {{param1}}, {{param2}} format for comparison
+            const normalizedMessage = data.replace(/\[_(\d+)\]/g, '{{param$1}}');
+
+            // Search through all error codes to find a match
+
+            let matchedErrorCode: string | null = null;
+            for (const [errorCode, errorTemplate] of Object.entries(errorMessages)) {
+                if (typeof errorTemplate === 'string' && errorTemplate === normalizedMessage) {
+                    matchedErrorCode = errorCode;
+                    break;
+                }
+            }
+
+            if (matchedErrorCode) {
+                // If we have the original error with code_args, use those values
+                if (originalError?.code_args && Array.isArray(originalError.code_args)) {
+                    const details = {
+                        param1: originalError.code_args[0],
+                        param2: originalError.code_args[1],
+                        param3: originalError.code_args[2],
+                        param4: originalError.code_args[3],
+                        param5: originalError.code_args[4],
+                    };
+                    processedMessage = getLocalizedErrorMessage(matchedErrorCode, details);
+                } else {
+                    processedMessage = getLocalizedErrorMessage(matchedErrorCode);
+                }
+            }
+        }
+
         const { journal } = this.root_store;
         const { ui } = this.core;
-        journal.onError(data);
+        journal.onError(processedMessage);
         if (journal.journal_filters.some(filter => filter === MessageTypes.ERROR)) {
             this.toggleDrawer(true);
             this.setActiveTabIndex(run_panel.JOURNAL);
@@ -697,10 +742,12 @@ export default class RunPanelStore {
         observer.unregisterAll('bot.running');
         observer.unregisterAll('bot.stop');
         observer.unregisterAll('bot.click_stop');
+        observer.unregisterAll('bot.stop_button_click');
         observer.unregisterAll('bot.trade_again');
         observer.unregisterAll('contract.status');
         observer.unregisterAll('bot.contract');
         observer.unregisterAll('Error');
+        observer.unregisterAll('bot.setPurchaseInProgress');
     };
 
     setContractStage = (contract_stage: TContractStage) => {
@@ -717,7 +764,78 @@ export default class RunPanelStore {
 
     onMount = () => {
         const { journal } = this.root_store;
-        observer.register('ui.log.error', this.showErrorMessage);
+
+        // Create a generic handler for ui.log.error that can extract error codes and use getLocalizedErrorMessage
+        const handleUiLogError = (errorMessage: string) => {
+            // Check if this is a stake/payout error message first
+            if (
+                typeof errorMessage === 'string' &&
+                errorMessage.includes('Minimum stake') &&
+                errorMessage.includes('maximum payout')
+            ) {
+                const { getLocalizedErrorMessage } = require('@/constants/backend-error-messages');
+
+                // Extract parameter values from the message
+                const stakeMatch = errorMessage.match(/Minimum stake of ([\d.]+)/);
+                const payoutMatch = errorMessage.match(/maximum payout of ([\d.]+)/);
+                const currentMatch = errorMessage.match(/Current (?:payout|stake) is ([\d.]+)/);
+
+                if (stakeMatch && payoutMatch && currentMatch) {
+                    const details = {
+                        param1: stakeMatch[1],
+                        param2: payoutMatch[1],
+                        param3: currentMatch[1],
+                    };
+
+                    // Determine which error code to use based on the message content
+                    let errorCode = 'InvalidtoBuy'; // default
+                    if (errorMessage.includes('Current payout')) {
+                        errorCode = errorMessage.includes('stake') ? 'StakeLimits' : 'PayoutLimits';
+                    } else if (errorMessage.includes('Current stake')) {
+                        errorCode = 'StakeLimits';
+                    }
+
+                    const processedMessage = getLocalizedErrorMessage(errorCode, details);
+                    this.showErrorMessage(processedMessage);
+                    return;
+                }
+            }
+
+            // If errorMessage is a string with placeholder patterns, try to extract the error code
+            if (typeof errorMessage === 'string' && errorMessage.includes('[_')) {
+                const {
+                    getLocalizedErrorMessage,
+                    getBackendErrorMessages,
+                } = require('@/constants/backend-error-messages');
+                const errorMessages = getBackendErrorMessages();
+
+                // Find the error code by matching the message pattern
+                let matchedErrorCode: string | null = null;
+
+                // Convert placeholders from [_1], [_2] format to {{param1}}, {{param2}} format for comparison
+                const normalizedMessage = errorMessage.replace(/\[_(\d+)\]/g, '{{param$1}}');
+                // Search through all error codes to find a match
+                for (const [errorCode, errorTemplate] of Object.entries(errorMessages)) {
+                    // errorTemplate is a string (the localized template)
+                    if (typeof errorTemplate === 'string' && errorTemplate === normalizedMessage) {
+                        matchedErrorCode = errorCode;
+                        break;
+                    }
+                }
+
+                if (matchedErrorCode) {
+                    // Use the localized message for this error code
+                    const localizedMessage = getLocalizedErrorMessage(matchedErrorCode);
+                    this.showErrorMessage(localizedMessage);
+                    return;
+                }
+            }
+
+            // Default behavior for other errors or when we can't find a match
+            this.showErrorMessage(errorMessage);
+        };
+
+        observer.register('ui.log.error', handleUiLogError);
         observer.register('ui.log.notify', journal.onNotify);
         observer.register('ui.log.success', journal.onLogSuccess);
         observer.register('client.invalid_token', this.handleInvalidToken);

@@ -1,5 +1,3 @@
 .main-body {
     flex-grow: 1;
-    min-height: 0; // allow shrinking in flex column so children can scroll
-    overflow: hidden;
 }

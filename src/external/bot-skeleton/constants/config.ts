@@ -2,9 +2,6 @@ import { localize } from '@deriv-com/translations';
 
 const CRYPTO_CURRENCIES = ['BTC', 'ETH', 'LTC', 'BCH', 'UST'];
 
-// Import the centralized function from multiplier-utils to avoid circular dependency
-import { isMultipliersAvailable } from '../scratch/utils/multiplier-utils';
-
 export const config = () => ({
     lists: {
         PAYOUTTYPE: [
@@ -57,131 +54,127 @@ export const config = () => ({
     opposites: {
         ACCUMULATOR: [
             {
-                ACCU: localize('Buy'),
+                ACCU: 'Buy',
             },
         ],
-        ...(isMultipliersAvailable()
-            ? {
-                  MULTIPLIER: [
-                      {
-                          MULTUP: localize('Up'),
-                      },
-                      {
-                          MULTDOWN: localize('Down'),
-                      },
-                  ],
-              }
-            : {}),
-        CALLPUT: [
+        MULTIPLIER: [
             {
-                CALL: localize('Rise'),
+                MULTUP: 'Up',
             },
             {
-                PUT: localize('Fall'),
+                MULTDOWN: 'Down',
+            },
+        ],
+        CALLPUT: [
+            {
+                CALL: 'Rise',
+            },
+            {
+                PUT: 'Fall',
             },
         ],
         CALLPUTEQUAL: [
             {
-                CALLE: localize('Rise Equals'),
+                CALLE: 'Rise Equals',
             },
             {
-                PUTE: localize('Fall Equals'),
+                PUTE: 'Fall Equals',
             },
         ],
         HIGHERLOWER: [
             {
-                CALL: localize('Higher'),
+                CALL: 'Higher',
             },
             {
-                PUT: localize('Lower'),
+                PUT: 'Lower',
             },
         ],
         TOUCHNOTOUCH: [
             {
-                ONETOUCH: localize('Touch'),
+                ONETOUCH: 'Touch',
             },
             {
-                NOTOUCH: localize('No Touch'),
+                NOTOUCH: 'No Touch',
             },
         ],
         ENDSINOUT: [
             {
-                EXPIRYRANGE: localize('Ends Between'),
+                EXPIRYRANGE: 'Ends Between',
             },
             {
-                EXPIRYMISS: localize('Ends Outside'),
+                EXPIRYMISS: 'Ends Outside',
             },
         ],
         STAYSINOUT: [
             {
-                RANGE: localize('Stays Between'),
+                RANGE: 'Stays Between',
             },
             {
-                UPORDOWN: localize('Goes Outside'),
+                UPORDOWN: 'Goes Outside',
             },
         ],
         ASIANS: [
             {
-                ASIANU: localize('Asian Up'),
+                ASIANU: 'Asian Up',
             },
             {
-                ASIAND: localize('Asian Down'),
+                ASIAND: 'Asian Down',
             },
         ],
         MATCHESDIFFERS: [
             {
-                DIGITMATCH: localize('Matches'),
+                DIGITMATCH: 'Matches',
             },
             {
-                DIGITDIFF: localize('Differs'),
+                DIGITDIFF: 'Differs',
             },
         ],
         EVENODD: [
             {
-                DIGITEVEN: localize('Even'),
+                DIGITEVEN: 'Even',
             },
             {
-                DIGITODD: localize('Odd'),
+                DIGITODD: 'Odd',
             },
         ],
         OVERUNDER: [
             {
-                DIGITOVER: localize('Over'),
+                DIGITOVER: 'Over',
             },
             {
-                DIGITUNDER: localize('Under'),
+                DIGITUNDER: 'Under',
             },
         ],
         HIGHLOWTICKS: [
             {
-                TICKHIGH: localize('High Tick'),
+                TICKHIGH: 'High Tick',
             },
             {
-                TICKLOW: localize('Low Tick'),
+                TICKLOW: 'Low Tick',
             },
         ],
         RESET: [
             {
-                RESETCALL: localize('Reset Call'),
+                RESETCALL: 'Reset Call',
             },
             {
-                RESETPUT: localize('Reset Put'),
+                RESETPUT: 'Reset Put',
             },
         ],
         RUNS: [
             {
-                RUNHIGH: localize('Only Ups'),
+                RUNHIGH: 'Only Ups',
             },
             {
-                RUNLOW: localize('Only Downs'),
+                RUNLOW: 'Only Downs',
             },
         ],
         CALLPUTSPREAD: [
             {
-                CALLSPREAD: localize('Call Spread'),
+                CALLSPREAD: 'Call Spread',
             },
             {
-                PUTSPREAD: localize('Put Spread'),
+                PUTSPREAD: 'Put Spread',
             },
         ],
     },
@@ -190,11 +183,11 @@ export const config = () => ({
         ['Offset -', '-'],
     ],
     ohlcFields: [
-        [localize('Open'), 'open'],
-        [localize('High'), 'high'],
-        [localize('Low'), 'low'],
-        [localize('Close'), 'close'],
-        [localize('Open Time'), 'epoch'],
+        ['Open', 'open'],
+        ['High', 'high'],
+        ['Low', 'low'],
+        ['Close', 'close'],
+        ['Open Time', 'epoch'],
     ],
     candleIntervals: [
         [localize('Default'), 'default'],
@@ -221,7 +214,7 @@ export const config = () => ({
         digits: ['matchesdiffers', 'evenodd', 'overunder'],
     },
     TRADE_TYPE_CATEGORIES: {
-        ...(isMultipliersAvailable() ? { multiplier: ['multiplier'] } : {}),
+        multiplier: ['multiplier'],
         callput: ['callput', 'callputequal', 'higherlower'],
         touchnotouch: ['touchnotouch'],
         inout: ['endsinout', 'staysinout'],
@@ -234,28 +227,22 @@ export const config = () => ({
         accumulator: ['accumulator'],
     },
     TRADE_TYPE_CATEGORY_NAMES: {
-        callput: localize('Up/Down'),
-        touchnotouch: localize('Touch/No Touch'),
-        inout: localize('In/Out'),
-        asian: localize('Asians'),
-        digits: localize('Digits'),
-        reset: localize('Reset Call/Reset Put'),
-        callputspread: localize('Call Spread/Put Spread'),
-        highlowticks: localize('High/Low Ticks'),
-        runs: localize('Only Ups/Only Downs'),
-        ...(isMultipliersAvailable() ? { multiplier: localize('Multipliers') } : {}),
-        accumulator: localize('Accumulators'),
+        callput: 'Up/Down',
+        touchnotouch: 'Touch/No Touch',
+        inout: 'In/Out',
+        asian: 'Asians',
+        digits: 'Digits',
+        reset: 'Reset Call/Reset Put',
+        callputspread: 'Call Spread/Put Spread',
+        highlowticks: 'High/Low Ticks',
+        runs: 'Only Ups/Only Downs',
+        multiplier: 'Multipliers',
+        accumulator: 'Accumulators',
     },
     BARRIER_CATEGORIES: {
         euro_atm: ['callput', 'callputequal'],
         euro_non_atm: ['endsinout', 'higherlower', 'callputspread'],
-        american: [
-            'staysinout',
-            'touchnotouch',
-            'highlowticks',
-            'runs',
-            ...(isMultipliersAvailable() ? ['multiplier'] : []),
-        ],
+        american: ['staysinout', 'touchnotouch', 'highlowticks', 'runs', 'multiplier'],
         non_financial: ['digits', 'overunder', 'evenodd', 'matchesdiffers'],
         asian: ['asians'],
         reset: ['reset'],
@@ -288,6 +275,12 @@ export const config = () => ({
         [localize('Signal'), '2'],
     ],
     GOOGLE_DRIVE: {
+        // Full drive access required to allow users to load existing strategy files
+        // that may not have been created by this application. The previous scope
+        // 'drive.file' only allowed access to files created by the app, which
+        // prevented users from loading their existing XML strategy files.
+        // This broader scope enables users to access and load any XML files
+        // from their Google Drive for importing strategies.
         SCOPE: 'https://www.googleapis.com/auth/drive',
         DISCOVERY_DOCS: 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
     },
@@ -300,21 +293,21 @@ export const config = () => ({
     strategies: {
         martingale: {
             index: 0,
-            label: localize('Martingale'),
+            label: 'Martingale',
             description: localize(
                 'The Martingale Strategy is a classic trading technique that has been used for more than a hundred years, popularised by the French mathematician Paul Pierre Levy in the 18th century.'
             ),
         },
         dalembert: {
             index: 1,
-            label: localize("D'Alembert"),
+            label: "D'Alembert",
             description: localize(
                 'The concept of the D’Alembert Strategy is said to be similar to the Martingale Strategy where you will increase your contract size after a loss. With the D’Alembert Strategy, you will also decrease your contract size after a successful trade.'
             ),
         },
         oscars_grind: {
             index: 2,
-            label: localize("Oscar's Grind"),
+            label: "Oscar's Grind",
             description: localize(
                 "The Oscar's Grind Strategy is a low-risk positive progression strategy that first appeared in 1965. By using this strategy, the size of your contract will increase after successful trades, but remains unchanged after unsuccessful trades."
             ),
@@ -334,7 +327,6 @@ export const config = () => ({
                 'staysinout',
                 'callputspread',
                 'accumulator',
-                ...(!isMultipliersAvailable() ? ['multiplier'] : []),
             ],
             PREDICTION_TRADE_TYPES: ['highlowticks'],
         },

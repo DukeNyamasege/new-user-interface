@@ -47,7 +47,6 @@ class DBot {
                 if (is_symbol_list_change || is_trade_type_cat_list_change) {
                     const { contracts_for } = ApiHelpers?.instance ?? {};
                     const top_parent_block = this.getTopParent();
-                    if (!top_parent_block) return;
                     const market_block = top_parent_block.getChildByType('trade_definition_market');
                     const market = market_block.getFieldValue('MARKET_LIST');
                     const submarket = market_block.getFieldValue('SUBMARKET_LIST');
@@ -58,16 +57,22 @@ class DBot {
                     if (!is_trade_type_accumulator) forgetAccumulatorsProposalRequest(that);
 
                     if (is_symbol_list_change) {
-                        contracts_for?.getTradeTypeCategories?.(market, submarket, symbol).then(categories => {
-                            const category_field = this.getField('TRADETYPECAT_LIST');
-                            if (category_field) {
-                                category_field.updateOptions(categories, {
-                                    default_value: category,
-                                    should_pretend_empty: true,
-                                    event_group: event.group,
-                                });
-                            }
-                        });
+                        contracts_for
+                            ?.getTradeTypeCategories?.(market, submarket, symbol)
+                            .then(categories => {
+                                const category_field = this.getField('TRADETYPECAT_LIST');
+                                if (category_field) {
+                                    category_field.updateOptions(categories, {
+                                        default_value: category,
+                                        should_pretend_empty: true,
+                                        event_group: event.group,
+                                    });
+                                }
+                            })
+                            .catch(error => {
+                                // Error getting trade type categories
+                                console.error('Error fetching trade type categories:', error);
+                            });
                         that.symbol = symbol;
                         if (
                             !that.is_bot_running &&
@@ -83,14 +88,22 @@ class DBot {
                             });
                         }
                     } else if (is_trade_type_cat_list_change && event.blockId === this.id) {
-                        contracts_for?.getTradeTypes?.(market, submarket, symbol, category).then(trade_types => {
-                            const trade_type_field = this.getField('TRADETYPE_LIST');
-                            trade_type_field.updateOptions(trade_types, {
-                                default_value: trade_type,
-                                should_pretend_empty: true,
-                                event_group: event.group,
+                        contracts_for
+                            ?.getTradeTypes?.(market, submarket, symbol, category)
+                            .then(trade_types => {
+                                const trade_type_field = this.getField('TRADETYPE_LIST');
+                                if (trade_type_field) {
+                                    trade_type_field.updateOptions(trade_types, {
+                                        default_value: trade_type,
+                                        should_pretend_empty: true,
+                                        event_group: event.group,
+                                    });
+                                }
+                            })
+                            .catch(error => {
+                                // Error getting trade types
+                                console.error('Error fetching trade types:', error);
                             });
-                        });
                     }
                 }
             }
@@ -111,13 +124,11 @@ class DBot {
                     } else {
                         const scratch_div_width = document.getElementById('scratch_div')?.offsetWidth;
                         const zoom_scale = scratch_div_width / window_width / 1.5;
-                        workspaceScale = zoom_scale;
+                        workspaceScale = zoom_scale > 0 ? zoom_scale : 0.7;
                     }
                 }
                 const el_scratch_div = document.getElementById('scratch_div');
-                if (!el_scratch_div) {
-                    return;
-                }
+                if (!el_scratch_div) return;
 
                 this.workspace = window.Blockly.inject(el_scratch_div, {
                     media: 'assets/media/',
@@ -574,12 +585,8 @@ class DBot {
                     const input = block.getInput(input_name);
 
                     if (!input && !block.domToMutation) {
-                        // eslint-disable-next-line no-console
-                        console.warn('Detected a non-existent required input.', {
-                            input_name,
-                            type: block.type,
-                        });
-                    } else if (input.connection) {
+                        // Detected a non-existent required input
+                    } else if (input && input?.connection) {
                         const order = window.Blockly.JavaScript.javascriptGenerator.ORDER_ATOMIC;
                         const value = window.Blockly.JavaScript.javascriptGenerator.valueToCode(
                             block,

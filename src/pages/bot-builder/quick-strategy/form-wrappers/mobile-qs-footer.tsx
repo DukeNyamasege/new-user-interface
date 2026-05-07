@@ -1,7 +1,5 @@
-import React from 'react';
 import { useFormikContext } from 'formik';
 import { observer } from 'mobx-react-lite';
-import { rudderStackSendQsRunStrategyEvent } from '@/analytics/rudderstack-quick-strategy';
 import Button from '@/components/shared_ui/button';
 import { useStore } from '@/hooks/useStore';
 import { localize } from '@deriv-com/translations';
@@ -16,18 +14,15 @@ type TMobileQSFooter = {
 
 export const MobileQSFooter = observer(({ current_step, setCurrentStep }: TMobileQSFooter) => {
     const { quick_strategy } = useStore();
-    const { selected_strategy } = quick_strategy;
-    const { isValid, values } = useFormikContext<TFormValues>();
+    const { isValid } = useFormikContext<TFormValues>();
     const { handleSubmit } = useQsSubmitHandler();
     const is_verified_or_completed_step =
         current_step === QsSteps.StrategyVerified || current_step === QsSteps.StrategyCompleted;
     const is_selected_strategy_step = current_step === QsSteps.StrategySelect;
 
     const onRun = () => {
-        rudderStackSendQsRunStrategyEvent({
-            form_values: values,
-            selected_strategy,
-        });
+        /* [AI] - Analytics removed - rudderstack event call removed */
+        /* [/AI] */
         handleSubmit();
     };
 

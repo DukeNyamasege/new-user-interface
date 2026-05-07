@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useScript } from 'usehooks-ts';
-import useGrowthbookGetFeatureValue from './growthbook/useGrowthbookGetFeatureValue';
+// Updated import path - Growthbook removed, using stub implementation
+import useRemoteConfig from './remote-config/useRemoteConfig';
 
 export const useIntercom = (token: string | null) => {
     const intercom_script = 'https://static.deriv.com/scripts/intercom/v1.0.2.js';
-    const { featureFlagValue: enable_intercom } = useGrowthbookGetFeatureValue({
-        featureFlag: 'enable_intercom_dbot',
-    });
-    const scriptStatus = useScript(enable_intercom ? intercom_script : null);
+    const { data } = useRemoteConfig(true);
+    const { cs_chat_intercom } = data;
+    const scriptStatus = useScript(cs_chat_intercom ? intercom_script : null);
 
     useEffect(() => {
-        if (!enable_intercom || scriptStatus !== 'ready' || !window?.DerivInterCom) return;
+        if (!cs_chat_intercom || scriptStatus !== 'ready' || !window?.DerivInterCom) return;
 
         let intervalId: NodeJS.Timeout;
 
@@ -32,7 +32,7 @@ export const useIntercom = (token: string | null) => {
         return () => {
             clearInterval(intervalId);
         };
-    }, [enable_intercom, scriptStatus, token]);
+    }, [cs_chat_intercom, scriptStatus, token]);
 };
 
 export const useIsIntercomAvailable = () => {
