@@ -1825,6 +1825,108 @@ const AutoTrades = observer(() => {
                                                 </div>
                                             )}
 
+                                            {/* Percentage visualization for Percentage Mode */}
+                                            {strategyMode === 'PERCENTAGE' && (
+                                                <div className='auto-trades-market__percentages'>
+                                                    {(() => {
+                                                        const percentages = m.digitPercentages;
+                                                        const confidence = m.confidenceScore;
+
+                                                        if (tradeType === 'DIGITOVER' || tradeType === 'DIGITUNDER') {
+                                                            const overPct = Object.entries(percentages)
+                                                                .filter(([d]) => Number(d) >= 5)
+                                                                .reduce((sum, [, p]) => sum + p, 0);
+                                                            const underPct = 100 - overPct;
+                                                            return (
+                                                                <>
+                                                                    <div className='auto-trades-market__percentage-row'>
+                                                                        <span>Over (5-9): {overPct.toFixed(1)}%</span>
+                                                                        <span>Under (0-4): {underPct.toFixed(1)}%</span>
+                                                                    </div>
+                                                                    <div className='auto-trades-market__confidence'>
+                                                                        Confidence: {confidence.toFixed(0)}%
+                                                                    </div>
+                                                                </>
+                                                            );
+                                                        }
+
+                                                        if (tradeType === 'DIGITEVEN' || tradeType === 'DIGITODD') {
+                                                            const evenPct = (percentages[0] || 0) + (percentages[2] || 0) + (percentages[4] || 0) + (percentages[6] || 0) + (percentages[8] || 0);
+                                                            const oddPct = 100 - evenPct;
+                                                            return (
+                                                                <>
+                                                                    <div className='auto-trades-market__percentage-row'>
+                                                                        <span>Even: {evenPct.toFixed(1)}%</span>
+                                                                        <span>Odd: {oddPct.toFixed(1)}%</span>
+                                                                    </div>
+                                                                    <div className='auto-trades-market__confidence'>
+                                                                        Confidence: {confidence.toFixed(0)}%
+                                                                    </div>
+                                                                </>
+                                                            );
+                                                        }
+
+                                                        if (tradeType === 'CALL' || tradeType === 'PUT') {
+                                                            return (
+                                                                <div className='auto-trades-market__confidence'>
+                                                                    Momentum: {m.momentumCount} | Confidence: {confidence.toFixed(0)}%
+                                                                </div>
+                                                            );
+                                                        }
+
+                                                        if (tradeType === 'RUNHIGH' || tradeType === 'RUNLOW') {
+                                                            return (
+                                                                <div className='auto-trades-market__confidence'>
+                                                                    Momentum: {m.momentumCount} | Confidence: {confidence.toFixed(0)}%
+                                                                </div>
+                                                            );
+                                                        }
+
+                                                        if (tradeType === 'DIGITMATCH' || tradeType === 'DIGITDIFF') {
+                                                            const matchPct = Object.values(percentages).reduce((min, p) => Math.min(min, p), 100);
+                                                            return (
+                                                                <div className='auto-trades-market__confidence'>
+                                                                    Min Digit %: {matchPct.toFixed(1)}% | Confidence: {confidence.toFixed(0)}%
+                                                                </div>
+                                                            );
+                                                        }
+
+                                                        return null;
+                                                    })()}
+
+                                                    {/* Individual digit percentages */}
+                                                    {Object.keys(percentages).length > 0 && (
+                                                        <div className='auto-trades-market__digit-bars'>
+                                                            {[...Array(10)].map((_, d) => {
+                                                                const pct = percentages[d] || 0;
+                                                                const isHot = pct > 15;
+                                                                const isCold = pct < 5;
+                                                                return (
+                                                                    <div key={d} className='auto-trades-market__digit-bar-wrapper'>
+                                                                        <span className={classNames('auto-trades-market__digit-num', {
+                                                                            'auto-trades-market__digit-num--hot': isHot,
+                                                                            'auto-trades-market__digit-num--cold': isCold,
+                                                                        })}>
+                                                                            {d}
+                                                                        </span>
+                                                                        <div className='auto-trades-market__digit-bar-bg'>
+                                                                            <div
+                                                                                className={classNames('auto-trades-market__digit-bar-fill', {
+                                                                                    'auto-trades-market__digit-bar-fill--hot': isHot,
+                                                                                    'auto-trades-market__digit-bar-fill--cold': isCold,
+                                                                                })}
+                                                                                style={{ width: `${pct}%` }}
+                                                                            />
+                                                                        </div>
+                                                                        <span className='auto-trades-market__digit-pct'>{pct.toFixed(0)}%</span>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
                                             {m.tradeCount > 0 && (
                                                 <div className='auto-trades-market__footer'>
                                                     <span>

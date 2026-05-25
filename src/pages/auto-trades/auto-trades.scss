@@ -865,6 +865,96 @@
         color: #ec4040;
         font-weight: 700;
     }
+
+    &__percentages {
+        margin-top: 0.8rem;
+        padding-top: 0.8rem;
+        border-top: 1px dashed var(--general-section-1);
+    }
+
+    &__percentage-row {
+        display: flex;
+        gap: 1rem;
+        font-size: 1.15rem;
+        color: var(--text-general);
+        margin-bottom: 0.4rem;
+        font-weight: 600;
+
+        span {
+            flex: 1;
+            text-align: center;
+        }
+    }
+
+    &__confidence {
+        font-size: 1.1rem;
+        color: var(--text-less-prominent);
+        text-align: center;
+        margin-bottom: 0.8rem;
+    }
+
+    &__digit-bars {
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        gap: 0.3rem;
+        margin-top: 0.4rem;
+    }
+
+    &__digit-bar-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.2rem;
+        font-size: 0.8rem;
+    }
+
+    &__digit-num {
+        width: 1.4rem;
+        text-align: center;
+        font-weight: 600;
+        color: var(--text-less-prominent);
+        flex-shrink: 0;
+
+        &--hot {
+            color: #00a855;
+            font-weight: 700;
+        }
+
+        &--cold {
+            color: #ec4040;
+            font-weight: 600;
+        }
+    }
+
+    &__digit-bar-bg {
+        flex: 1;
+        height: 0.4rem;
+        background: var(--general-section-1);
+        border-radius: 0.2rem;
+        overflow: hidden;
+    }
+
+    &__digit-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, rgb(33 150 243 / 30%), rgb(33 150 243 / 60%));
+        border-radius: 0.2rem;
+        transition: width 0.3s ease;
+
+        &--hot {
+            background: linear-gradient(90deg, rgb(0 168 85 / 30%), rgb(0 168 85 / 70%));
+        }
+
+        &--cold {
+            background: linear-gradient(90deg, rgb(236 64 64 / 30%), rgb(236 64 64 / 60%));
+        }
+    }
+
+    &__digit-pct {
+        width: 1.8rem;
+        text-align: right;
+        font-size: 0.75rem;
+        color: var(--text-less-prominent);
+        flex-shrink: 0;
+    }
 }
 
 // ── Legend ──────────────────────────────────────────────────────────────────
