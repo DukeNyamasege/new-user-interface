@@ -539,20 +539,18 @@ const AutoTrades = observer(() => {
     const executeTrade = useCallback(
         async (symbol: string, stakeAmount: number, lastResult: 'win' | 'loss' | null): Promise<number> => {
             const ct = tradeTypeRef.current;
-            const inv = inverseModeRef.current;
-            const executeType = inv ? INVERSE_TRADE_TYPE[ct] : ct;
             const bar = getActiveDigitBarrier(ct, lastResult);
 
             const params: Record<string, any> = {
                 amount: stakeAmount,
                 basis: 'stake',
-                contract_type: executeType,
+                contract_type: ct,
                 currency: currency || 'USD',
                 duration: analysisTicksRef.current,
                 duration_unit: 't',
                 symbol,
             };
-            if (BARRIER_NEEDED[executeType]) params.barrier = String(bar);
+            if (BARRIER_NEEDED[ct]) params.barrier = String(bar);
 
             try {
                 const buy = await buyContractForUi({ parameters: params, price: stakeAmount, source: 'AutoTrades' });
@@ -564,8 +562,8 @@ const AutoTrades = observer(() => {
                     date_start: Math.floor(Date.now() / 1000),
                     display_name: symbol,
                     underlying_symbol: symbol,
-                    shortcode: `AUTO_${executeType}_${symbol}`,
-                    contract_type: executeType,
+                    shortcode: `AUTO_${ct}_${symbol}`,
+                    contract_type: ct,
                     currency: currency || 'USD',
                 });
 
@@ -1356,39 +1354,30 @@ const AutoTrades = observer(() => {
                                     </div>
                                 </div>
 
-                                {/* Inverse Strategy Toggle */}
+                                {/* Inverse Strategy Toggle - Prominent Button */}
                                 <div className='auto-trades-config__group'>
-                                    <div className='auto-trades-inverse'>
-                                        <div className='auto-trades-inverse__info'>
-                                            <p className='auto-trades-config__group-label'>Strategy Mode</p>
-                                            <span className='auto-trades-inverse__badge'>
-                                                {inverseMode ? 'Inverse' : 'Direct'}
-                                            </span>
-                                        </div>
-                                        <button
-                                            type='button'
-                                            className={classNames('auto-trades-inverse__toggle', {
-                                                'auto-trades-inverse__toggle--active': inverseMode,
-                                            })}
-                                            onClick={() => setInverseMode(prev => !prev)}
-                                            disabled={isRunning}
-                                        >
-                                            <span className='auto-trades-inverse__toggle-label'>
-                                                {TRADE_TYPE_LABELS[tradeType]}
-                                            </span>
-                                            <span className='auto-trades-inverse__toggle-switch'>
-                                                <span className='auto-trades-inverse__toggle-knob' />
-                                            </span>
-                                            <span className='auto-trades-inverse__toggle-label'>
-                                                {INVERSE_LABELS[tradeType]}
-                                            </span>
-                                        </button>
-                                        <p className='auto-trades-inverse__hint'>
-                                            {inverseMode
-                                                ? `Detects opposite signals, executes ${INVERSE_TRADE_TYPE[tradeType]} contracts`
-                                                : `Detects standard signals, executes ${tradeType} contracts`}
-                                        </p>
-                                    </div>
+                                    <button
+                                        type='button'
+                                        className={classNames(
+                                            'auto-trades-strategy-btn',
+                                            inverseMode && 'auto-trades-strategy-btn--active'
+                                        )}
+                                        onClick={() => setInverseMode(prev => !prev)}
+                                        disabled={isRunning}
+                                    >
+                                        <span className='auto-trades-strategy-btn__badge'>
+                                            {inverseMode ? 'Inverse' : 'Direct'}
+                                        </span>
+                                        <span className='auto-trades-strategy-btn__label'>Strategy Mode</span>
+                                        <span className={classNames('auto-trades-inverse__toggle-switch', 'auto-trades-strategy-btn__switch')}>
+                                            <span className='auto-trades-inverse__toggle-knob' />
+                                        </span>
+                                    </button>
+                                    <p className='auto-trades-inverse__hint'>
+                                        {inverseMode
+                                            ? `Detects opposite signals, executes ${tradeType} contracts`
+                                            : `Detects standard signals, executes ${tradeType} contracts`}
+                                    </p>
                                 </div>
 
                                 {/* Money settings */}

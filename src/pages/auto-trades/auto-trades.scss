@@ -370,13 +370,101 @@
         flex-shrink: 0;
     }
 
-    &--compact {
+&--compact {
         font-size: 1.2rem;
-        padding: 0.6rem 1rem;
+        padding: 0.6rem 0.8rem;
         margin-bottom: 0;
         margin-top: 0.8rem;
         border-radius: 0.6rem;
     }
+}
+
+// ── Strategy Mode Button ───────────────────────────────────────────────────────
+
+.auto-trades-strategy-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 1rem 1.2rem;
+    background: var(--general-main-1);
+    border: 2px solid var(--general-section-1);
+    border-radius: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+
+    &:hover {
+        border-color: #2196f3;
+        background: rgb(33 150 243 / 5%);
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+
+    &--active {
+        border-color: #00a855;
+        background: rgb(0 168 85 / 8%);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    &__badge {
+        padding: 0.2rem 0.6rem;
+        background: var(--general-section-1);
+        border-radius: 1.5rem;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text-less-prominent);
+        white-space: nowrap;
+    }
+
+    &__label {
+        flex: 1;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-general);
+    }
+
+    &__switch {
+        width: 2.2rem;
+        height: 1.1rem;
+        background: var(--general-section-1);
+        border-radius: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        transition: background 0.2s;
+
+        .auto-trades-inverse__toggle-knob {
+            width: 0.9rem;
+            height: 0.9rem;
+            border-radius: 50%;
+            background: var(--text-less-prominent);
+            transition: transform 0.2s;
+        }
+    }
+
+    &--active &__switch {
+        justify-content: flex-start;
+        background: rgb(0 168 85 / 30%);
+
+        .auto-trades-inverse__toggle-knob {
+            background: #00a855;
+            transform: translateX(0.1rem);
+        }
+    }
+}
+
+.auto-trades-inverse__hint {
+    font-size: 1.05rem;
+    color: var(--text-less-prominent);
+    margin-top: 0.4rem;
+    margin-left: 0.2rem;
 }
 
 @keyframes at-pulse {
@@ -779,6 +867,13 @@
     @media (min-width: 1024px) {
         bottom: 2.4rem;
     }
+
+    @include mobile-or-tablet-screen {
+        bottom: calc(4rem + env(safe-area-inset-bottom));
+        right: 1rem;
+        padding: 0.6rem 1.2rem;
+        font-size: 1.1rem;
+    }
 }
 
 // ── Risk Disclaimer modal ────────────────────────────────────────────────────
@@ -1081,6 +1176,31 @@
         &::-webkit-slider-thumb {
             width: 2.2rem;
             height: 2.2rem;
+        }
+    }
+
+    /* Strategy Mode button mobile adjustments */
+    .auto-trades-strategy-btn {
+        padding: 0.8rem 1rem;
+        min-height: 48px;
+
+        &__badge {
+            padding: 0.15rem 0.4rem;
+            font-size: 0.8rem;
+        }
+
+        &__label {
+            font-size: 1rem;
+        }
+
+        &__switch {
+            width: 1.8rem;
+            height: 0.9rem;
+
+            .auto-trades-inverse__toggle-knob {
+                width: 0.7rem;
+                height: 0.7rem;
+            }
         }
     }
 }
