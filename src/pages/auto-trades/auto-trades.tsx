@@ -243,18 +243,14 @@ const calculateDigitPercentages = (digitHistory: number[]): Record<number, numbe
     digitHistory.forEach(d => {
         if (d >= 0 && d <= 9) counts[d]++;
     });
-    return Object.fromEntries(
-        counts.map((count, digit) => [digit, computePercentage(digitHistory.length, count)])
-    );
+    return Object.fromEntries(counts.map((count, digit) => [digit, computePercentage(digitHistory.length, count)]));
 };
 
 const calculateConfidence = (percentages: Record<number, number>): number => {
     const expectedPct = 10;
-    const totalDeviation = Object.values(percentages).reduce(
-        (sum, pct) => sum + Math.abs(pct - expectedPct), 0
-    );
+    const totalDeviation = Object.values(percentages).reduce((sum, pct) => sum + Math.abs(pct - expectedPct), 0);
     const avgDeviation = totalDeviation / 10;
-    return Math.max(0, 100 - (avgDeviation * 2));
+    return Math.max(0, 100 - avgDeviation * 2);
 };
 
 type PercentageSnapshot = {
@@ -267,9 +263,10 @@ type PercentageSnapshot = {
 };
 
 const sumDigitPercentages = (percentages: Record<number, number>, predicate: (digit: number) => boolean) =>
-    Object.entries(percentages).reduce((sum, [digit, percentage]) => (
-        predicate(Number(digit)) ? sum + percentage : sum
-    ), 0);
+    Object.entries(percentages).reduce(
+        (sum, [digit, percentage]) => (predicate(Number(digit)) ? sum + percentage : sum),
+        0
+    );
 
 const calculateDirectionPercentages = (directionHistory: Direction[]) => {
     const directionalTicks = directionHistory.filter(direction => direction !== 0);
@@ -457,9 +454,7 @@ const rebuildPercentageAnalytics = (symbol: string, state: MarketState, trade_ty
     const quoteHistory = state.percentageQuoteHistory.slice(-PERCENTAGE_ANALYSIS_HISTORY_SIZE);
 
     state.percentageQuoteHistory = quoteHistory;
-    state.percentageEpochHistory = quoteHistory.length
-        ? state.percentageEpochHistory.slice(-quoteHistory.length)
-        : [];
+    state.percentageEpochHistory = quoteHistory.length ? state.percentageEpochHistory.slice(-quoteHistory.length) : [];
     state.digitHistory = quoteHistory.map(quote => getLastDigitFromQuote(quote, symbol, pip));
     state.digitPercentages = calculateDigitPercentages(state.digitHistory);
     state.directionSampleHistory = getDirectionSamplesFromQuotes(quoteHistory);
@@ -795,6 +790,7 @@ const AutoTrades = observer(() => {
     }, []);
 
     const refreshDisplays = useCallback(() => {
+        if (unmountedRef.current) return;
         setMarketDisplays(
             selectedMarketsRef.current.map(m => ({
                 ...m,
@@ -851,20 +847,35 @@ const AutoTrades = observer(() => {
         return predictionBeforeLossRef.current;
     }, []);
 
+    const pollCancellationRef = useRef<AbortController | null>(null);
+
     const pollContractResult = (contractId: number): Promise<Record<string, any>> =>
         new Promise(resolve => {
+            const abortController = new AbortController();
+            pollCancellationRef.current = abortController;
+            const { signal } = abortController;
             const check = async () => {
+                if (signal.aborted) {
+                    resolve({ profit: 0, is_sold: true });
+                    return;
+                }
                 try {
                     const resp = await (api_base.api as any).send({
                         proposal_open_contract: 1,
                         contract_id: contractId,
                     });
+                    if (signal.aborted) {
+                        resolve({ profit: 0, is_sold: true });
+                        return;
+                    }
                     const c = resp?.proposal_open_contract;
                     if (!c) {
                         setTimeout(check, 800);
                         return;
                     }
-                    pushContract(getContractSnapshot(c));
+                    if (!unmountedRef.current) {
+                        pushContract(getContractSnapshot(c));
+                    }
                     if (c.is_sold) {
                         emitContractSoldStatus(c);
                         resolve(c);
@@ -926,6 +937,7 @@ const AutoTrades = observer(() => {
 
     const handleAfterTrade = useCallback(
         (symbol: string, profit: number) => {
+            if (!runningRef.current) return;
             const state = marketStatesRef.current[symbol];
             if (!state) return;
 
@@ -953,11 +965,15 @@ const AutoTrades = observer(() => {
             state.trading = false;
             globalTradingRef.current = false;
 
-            refreshDisplays();
+            if (!unmountedRef.current) {
+                refreshDisplays();
+            }
 
             if ((totalPnlRef.current >= tp || totalPnlRef.current <= -sl) && runningRef.current) {
                 runningRef.current = false;
-                setIsRunning(false);
+                if (!unmountedRef.current) {
+                    setIsRunning(false);
+                }
             }
         },
         [refreshDisplays]
@@ -1170,6 +1186,14 @@ const AutoTrades = observer(() => {
 
     const show_auto_ref = useRef(show_auto);
     show_auto_ref.current = show_auto;
+    const unmountedRef = useRef(false);
+
+    useEffect(() => {
+        unmountedRef.current = false;
+        return () => {
+            unmountedRef.current = true;
+        };
+    }, []);
 
     const backfillPercentageTicks = useCallback(
         async (market: AutoMarket) => {
@@ -1581,6 +1605,9 @@ const AutoTrades = observer(() => {
 
     useEffect(
         () => () => {
+            unmountedRef.current = true;
+            pollCancellationRef.current?.abort();
+            runningRef.current = false;
             stopTrading();
             try {
                 run_panel.setIsRunning(false);
@@ -1831,8 +1858,8 @@ const AutoTrades = observer(() => {
                                         {strategyMode === 'PERCENTAGE'
                                             ? 'Auto-loads the latest 1,000 ticks and keeps a live rolling percentage window'
                                             : strategyMode === 'INVERSE'
-                                            ? 'Detects opposite signals, executes contracts'
-                                            : 'Detects standard signals, executes contracts'}
+                                              ? 'Detects opposite signals, executes contracts'
+                                              : 'Detects standard signals, executes contracts'}
                                     </p>
                                 </div>
 
@@ -1852,7 +1879,12 @@ const AutoTrades = observer(() => {
                                                 {inverseMode ? 'Inverse' : 'Direct'}
                                             </span>
                                             <span className='auto-trades-strategy-btn__label'>Signal Mode</span>
-                                            <span className={classNames('auto-trades-inverse__toggle-switch', 'auto-trades-strategy-btn__switch')}>
+                                            <span
+                                                className={classNames(
+                                                    'auto-trades-inverse__toggle-switch',
+                                                    'auto-trades-strategy-btn__switch'
+                                                )}
+                                            >
                                                 <span className='auto-trades-inverse__toggle-knob' />
                                             </span>
                                         </button>
@@ -2181,23 +2213,40 @@ const AutoTrades = observer(() => {
                                                                 const isHot = pct > 15;
                                                                 const isCold = pct < 5;
                                                                 return (
-                                                                    <div key={d} className='auto-trades-market__digit-bar-wrapper'>
-                                                                        <span className={classNames('auto-trades-market__digit-num', {
-                                                                            'auto-trades-market__digit-num--hot': isHot,
-                                                                            'auto-trades-market__digit-num--cold': isCold,
-                                                                        })}>
+                                                                    <div
+                                                                        key={d}
+                                                                        className='auto-trades-market__digit-bar-wrapper'
+                                                                    >
+                                                                        <span
+                                                                            className={classNames(
+                                                                                'auto-trades-market__digit-num',
+                                                                                {
+                                                                                    'auto-trades-market__digit-num--hot':
+                                                                                        isHot,
+                                                                                    'auto-trades-market__digit-num--cold':
+                                                                                        isCold,
+                                                                                }
+                                                                            )}
+                                                                        >
                                                                             {d}
                                                                         </span>
                                                                         <div className='auto-trades-market__digit-bar-bg'>
                                                                             <div
-                                                                                className={classNames('auto-trades-market__digit-bar-fill', {
-                                                                                    'auto-trades-market__digit-bar-fill--hot': isHot,
-                                                                                    'auto-trades-market__digit-bar-fill--cold': isCold,
-                                                                                })}
+                                                                                className={classNames(
+                                                                                    'auto-trades-market__digit-bar-fill',
+                                                                                    {
+                                                                                        'auto-trades-market__digit-bar-fill--hot':
+                                                                                            isHot,
+                                                                                        'auto-trades-market__digit-bar-fill--cold':
+                                                                                            isCold,
+                                                                                    }
+                                                                                )}
                                                                                 style={{ width: `${pct}%` }}
                                                                             />
                                                                         </div>
-                                                                        <span className='auto-trades-market__digit-pct'>{pct.toFixed(0)}%</span>
+                                                                        <span className='auto-trades-market__digit-pct'>
+                                                                            {pct.toFixed(0)}%
+                                                                        </span>
                                                                     </div>
                                                                 );
                                                             })}

@@ -9,16 +9,18 @@ export const TABLET_BREAKPOINT = 1024;
 
 export const useResponsiveLayout = () => {
     const [isMobile, setIsMobile] = useState(window.innerWidth <= MOBILE_BREAKPOINT);
-    const [isTablet, setIsTablet] = useState(window.innerWidth > MOBILE_BREAKPOINT && window.innerWidth <= TABLET_BREAKPOINT);
+    const [isTablet, setIsTablet] = useState(
+        window.innerWidth > MOBILE_BREAKPOINT && window.innerWidth <= TABLET_BREAKPOINT
+    );
 
     useEffect(() => {
         const handleResize = () => {
             const mobile = window.innerWidth <= MOBILE_BREAKPOINT;
             const tablet = window.innerWidth > MOBILE_BREAKPOINT && window.innerWidth <= TABLET_BREAKPOINT;
-            
+
             setIsMobile(mobile);
             setIsTablet(tablet);
-            
+
             // Toggle classes on body for global CSS usage
             if (mobile) {
                 document.body.classList.add('is-mobile');

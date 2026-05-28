@@ -70,6 +70,8 @@ class APIBase {
     private readonly ENRICHMENT_TIMEOUT_MS = 10000; // 10 seconds
     private readonly MAX_RECONNECTION_ATTEMPTS = 5; // Maximum number of reconnection attempts before session reset
 
+    is_initializing = false;
+
     unsubscribeAllSubscriptions = () => {
         this.current_auth_subscriptions?.forEach(subscription_promise => {
             subscription_promise.then(({ subscription }) => {
@@ -168,11 +170,24 @@ class APIBase {
     }
 
     onsocketclose() {
+        if (this.is_stopping) return;
         setConnectionStatus(CONNECTION_STATUS.CLOSED);
         this.reconnectIfNotConnected();
     }
 
     async init(force_create_connection = false) {
+        if (this.is_initializing) return;
+        this.is_initializing = true;
+        this.is_stopping = false;
+
+        try {
+            await this._doInit(force_create_connection);
+        } finally {
+            this.is_initializing = false;
+        }
+    }
+
+    private async _doInit(force_create_connection = false) {
         this.toggleRunButton(true);
 
         if (this.api) {
@@ -232,7 +247,7 @@ class APIBase {
     }
 
     terminate() {
-        // eslint-disable-next-line no-console
+        this.is_stopping = true;
         if (this.api) this.api.disconnect();
     }
 
@@ -250,6 +265,7 @@ class APIBase {
     }
 
     reconnectIfNotConnected = () => {
+        if (this.is_initializing || this.is_stopping) return;
         if (this.api?.connection?.readyState && this.api?.connection?.readyState > 1) {
             this.reconnection_attempts += 1;
 

@@ -369,11 +369,9 @@ export default class ClientStore {
             const active_login_id = getAccountId();
 
             if (active_login_id) {
-                // Clear DerivAPI singleton instance to force new connection
                 const { clearDerivApiInstance } = await import('@/external/bot-skeleton/services/api/appId');
                 clearDerivApiInstance();
 
-                // Clear accounts cache but keep stored accounts for reuse
                 const { DerivWSAccountsService } = await import('@/services/derivws-accounts.service');
                 DerivWSAccountsService.clearCache();
 
@@ -387,9 +385,6 @@ export default class ClientStore {
 
                 this.all_accounts_balance = null;
 
-                // Do not clear legacy OAuth token maps during an account switch.
-                // The legacy dropdown relies on `accountsList` and `clientAccounts`
-                // to authorize the newly selected real/demo account after reconnect.
                 const accountsListRaw = localStorage.getItem('accountsList');
                 if (accountsListRaw) {
                     try {
@@ -403,7 +398,7 @@ export default class ClientStore {
                     localStorage.removeItem('authToken');
                     localStorage.removeItem('clientAccounts');
                 }
-                localStorage.removeItem('account_type'); // Recomputed after the new account authorizes
+                localStorage.removeItem('account_type');
                 removeCookies('client_information');
 
                 setIsAuthorized(false);
@@ -412,28 +407,22 @@ export default class ClientStore {
 
                 this.setIsLoggingOut(false);
 
-                // disable livechat
                 window.LC_API?.close_chat?.();
                 window.LiveChatWidget?.call('hide');
 
-                // Force create a new connection with the current active login ID
-                // Wrap the potentially failing init call in a try-catch
                 try {
-                    await api_base.init(true); // ✅ Await the async call
+                    await api_base.init(true);
                 } catch (initError) {
                     ErrorLogger.error('ClientStore', 'WebSocket initialization failed', initError);
                     this.setIsAccountRegenerating(false);
-                    throw initError; // Re-throw to be caught by outer catch if needed
+                    throw initError;
                 }
 
-                // Update the tracked WebSocket login ID
                 this.setWebSocketLoginId(active_login_id);
             }
         } catch (error) {
             ErrorLogger.error('ClientStore', 'WebSocket regeneration failed', error);
             this.setIsAccountRegenerating(false);
-            // Consider showing user-facing error notification here
-            // or dispatching an event that UI components can listen to
         } finally {
             this.is_regenerating = false;
         }

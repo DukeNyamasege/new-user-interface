@@ -1,6 +1,6 @@
 /**
  * Diagnostics and Root-Cause Analysis Utilities
- * 
+ *
  * Sets up global error handlers for uncaught exceptions and unhandled promise rejections.
  * Also includes a memory monitor for detecting potential memory leaks in the browser.
  */
@@ -33,7 +33,7 @@ export const setupDiagnostics = () => {
 
     // 2. Memory Monitor
     const MEMORY_THRESHOLD_MB = 500; // Flag if heap grows beyond 500MB
-    
+
     const checkMemory = () => {
         const perf = window.performance as any;
         if (perf && perf.memory) {

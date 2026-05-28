@@ -38,10 +38,18 @@ describe('percentage mode trade calculations', () => {
         }) as any;
 
     it('calculates Digit Over and Under against the selected barrier', () => {
-        const state = buildState(
-            Array(100).fill(0),
-            { 0: 4, 1: 4, 2: 5, 3: 5, 4: 6, 5: 20, 6: 20, 7: 16, 8: 12, 9: 8 }
-        );
+        const state = buildState(Array(100).fill(0), {
+            0: 4,
+            1: 4,
+            2: 5,
+            3: 5,
+            4: 6,
+            5: 20,
+            6: 20,
+            7: 16,
+            8: 12,
+            9: 8,
+        });
 
         expect(getPercentageSnapshot('DIGITOVER' as any, state, 4)).toMatchObject({
             primaryLabel: 'Over 4',

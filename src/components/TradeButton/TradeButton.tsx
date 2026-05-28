@@ -21,7 +21,7 @@ export const TradeButton: React.FC<TradeButtonProps> = ({
 }) => {
     return (
         <button
-            type="button"
+            type='button'
             className={classNames('trade-button', {
                 'trade-button--selected': selected,
                 'trade-button--disabled': disabled,
@@ -31,10 +31,8 @@ export const TradeButton: React.FC<TradeButtonProps> = ({
             aria-label={`${label} trade type`}
             aria-pressed={selected}
         >
-            <span className="trade-button__label">{label}</span>
-            {percentage !== undefined && (
-                <span className="percentage-badge">{percentage.toFixed(1)}%</span>
-            )}
+            <span className='trade-button__label'>{label}</span>
+            {percentage !== undefined && <span className='percentage-badge'>{percentage.toFixed(1)}%</span>}
         </button>
     );
 };
