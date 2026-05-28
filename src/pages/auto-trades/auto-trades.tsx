@@ -1749,40 +1749,55 @@ const AutoTrades = observer(() => {
                                             </select>
                                         </div>
 
-                                        {/* Barrier — only for digit Over/Under/Matches/Differs */}
+                                        {/* Prediction — adaptive digit selector (Win→Before / Loss→After) */}
                                         {usesLossPrediction(tradeType) && (
-                                            <>
-                                                <div className='auto-trades-config__field auto-trades-config__field--narrow'>
-                                                    <label>Before loss</label>
-                                                    <select
-                                                        className='auto-trades-config__select'
-                                                        value={predictionBeforeLoss}
-                                                        onChange={e => setPredictionBeforeLoss(e.target.value)}
-                                                        disabled={isRunning}
-                                                    >
-                                                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => (
-                                                            <option key={d} value={String(d)}>
-                                                                {d}
-                                                            </option>
-                                                        ))}
-                                                    </select>
+                                            <div className='auto-trades-config__prediction-pair'>
+                                                <div className='auto-trades-config__prediction-label'>
+                                                    Prediction
+                                                    <span className='auto-trades-config__prediction-hint'>
+                                                        W→digit / L→digit
+                                                    </span>
                                                 </div>
-                                                <div className='auto-trades-config__field auto-trades-config__field--narrow'>
-                                                    <label>After loss</label>
-                                                    <select
-                                                        className='auto-trades-config__select'
-                                                        value={predictionAfterLoss}
-                                                        onChange={e => setPredictionAfterLoss(e.target.value)}
-                                                        disabled={isRunning}
-                                                    >
-                                                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => (
-                                                            <option key={d} value={String(d)}>
-                                                                {d}
-                                                            </option>
-                                                        ))}
-                                                    </select>
+                                                <div className='auto-trades-config__prediction-controls'>
+                                                    <div className='auto-trades-config__prediction-item'>
+                                                        <span className='auto-trades-config__prediction-tag auto-trades-config__prediction-tag--win'>
+                                                            W
+                                                        </span>
+                                                        <select
+                                                            className='auto-trades-config__select auto-trades-config__select--compact'
+                                                            value={predictionBeforeLoss}
+                                                            onChange={e => setPredictionBeforeLoss(e.target.value)}
+                                                            disabled={isRunning}
+                                                            title='Prediction used after a Win'
+                                                        >
+                                                            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => (
+                                                                <option key={d} value={String(d)}>
+                                                                    {d}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <span className='auto-trades-config__prediction-divider'>|</span>
+                                                    <div className='auto-trades-config__prediction-item'>
+                                                        <span className='auto-trades-config__prediction-tag auto-trades-config__prediction-tag--loss'>
+                                                            L
+                                                        </span>
+                                                        <select
+                                                            className='auto-trades-config__select auto-trades-config__select--compact'
+                                                            value={predictionAfterLoss}
+                                                            onChange={e => setPredictionAfterLoss(e.target.value)}
+                                                            disabled={isRunning}
+                                                            title='Prediction used after a Loss'
+                                                        >
+                                                            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => (
+                                                                <option key={d} value={String(d)}>
+                                                                    {d}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
                                                 </div>
-                                            </>
+                                            </div>
                                         )}
 
                                         {BARRIER_NEEDED[tradeType] && !usesLossPrediction(tradeType) && (

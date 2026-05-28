@@ -11,6 +11,7 @@ import { StoreProvider } from '@/hooks/useStore';
 import { OAuthTokenExchangeService } from '@/services/oauth-token-exchange.service';
 import { initializeI18n, localize, TranslationProvider } from '@deriv-com/translations';
 import CoreStoreProvider from './CoreStoreProvider';
+import ErrorBoundary from './ErrorBoundary';
 import './app-root.scss';
 
 const Layout = lazy(() => import('../components/layout'));
@@ -160,7 +161,11 @@ function App() {
         }
     }, [isProcessing, isValid, params.code, error, cleanupURL]);
 
-    return <RouterProvider router={router} />;
+    return (
+        <ErrorBoundary>
+            <RouterProvider router={router} />
+        </ErrorBoundary>
+    );
 }
 
 export default App;

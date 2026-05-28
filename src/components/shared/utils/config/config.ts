@@ -83,7 +83,7 @@ const DEFAULT_DOMAIN_FEATURES: DomainFeatureFlags = {
     botIdeas: true,
     scanner: true,
     printPopups: true,
-    autoTrades: false,
+    autoTrades: true,
     comboTrades: false,
     chart: true,
     tutorials: true,

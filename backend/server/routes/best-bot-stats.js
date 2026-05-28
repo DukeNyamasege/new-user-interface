@@ -14,11 +14,11 @@ router.get('/', async (req, res, next) => {
         profit_amount,
         loss_amount,
         CASE 
-          WHEN total_runs > 0 THEN ROUND((profits::float / total_runs) * 100, 2)
+          WHEN total_runs > 0 THEN ROUND((profits::numeric / total_runs) * 100, 2)
           ELSE 0 
         END as win_rate,
         CASE 
-          WHEN total_runs > 0 THEN ROUND((losses::float / total_runs) * 100, 2)
+          WHEN total_runs > 0 THEN ROUND((losses::numeric / total_runs) * 100, 2)
           ELSE 0 
         END as loss_rate
       FROM bot_stats
@@ -44,7 +44,7 @@ router.get('/:botId', async (req, res, next) => {
         profit_amount,
         loss_amount,
         CASE 
-          WHEN total_runs > 0 THEN ROUND((profits::float / total_runs) * 100, 2)
+          WHEN total_runs > 0 THEN ROUND((profits::numeric / total_runs) * 100, 2)
           ELSE 0 
         END as win_rate
       FROM bot_stats
