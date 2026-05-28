@@ -18,6 +18,10 @@ author = "agent"
 task = "workflow.run"
 args = "Start application"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start backend"
+
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
@@ -30,9 +34,33 @@ task = "shell.exec"
 args = "npm start"
 waitForPort = 5000
 
+[[workflows.workflow]]
+name = "Start backend"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd backend && node server/index.js"
+waitForPort = 8000
+
+[[ports]]
+localPort = 3000
+externalPort = 3000
+
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 10000
+externalPort = 3002
+
+[[ports]]
+localPort = 8000
+externalPort = 8000
 
 [deployment]
 deploymentTarget = "static"
