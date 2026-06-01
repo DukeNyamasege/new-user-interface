@@ -7,6 +7,7 @@ describe('DOMAIN_CONFIG', () => {
             appId: '124217',
             redirectUri: 'https://termicafx.site/',
             botsFolder: 'optimumtraders.site',
+            includeLegacyAppIdInOAuth: true,
             features: {
                 botIdeas: false,
                 scanner: false,
@@ -25,6 +26,7 @@ describe('DOMAIN_CONFIG', () => {
             autoTrades: true,
             comboTrades: true,
         });
+        expect(getDomainConfigForHost('riskmanagers.site')?.ui.brandName).toBe('Risk Managers');
     });
 
     it.each([
@@ -38,6 +40,7 @@ describe('DOMAIN_CONFIG', () => {
             appId,
             redirectUri: `https://${domain}/`,
             botsFolder: domain,
+            includeLegacyAppIdInOAuth: false,
             ui: {
                 brandName,
             },
@@ -51,6 +54,7 @@ describe('DOMAIN_CONFIG', () => {
             appId,
             redirectUri: `https://${domain}/`,
             botsFolder: domain,
+            includeLegacyAppIdInOAuth: false,
             ui: {
                 brandName,
             },

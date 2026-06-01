@@ -14,6 +14,7 @@ interface DomainConfig {
     appId: string; // Legacy Deriv APP_ID for intelligent platform routing
     redirectUri: string; // MUST match the redirect URL registered in the OAuth app exactly
     botsFolder: string; // Public folder used by Best Bots XML loading for this domain
+    includeLegacyAppIdInOAuth: boolean; // Only enable when the legacy app redirects to this domain
     features: DomainFeatureFlags;
 }
 
@@ -63,6 +64,7 @@ interface DomainConfig {
     appId: string;
     redirectUri: string;
     botsFolder: string;
+    includeLegacyAppIdInOAuth: boolean;
     features: DomainFeatureFlags;
     ui: DomainUIConfig;
 }
@@ -73,6 +75,7 @@ interface HostedDomainDefinition {
     clientId: string;
     appId: string;
     botsFolder?: string;
+    includeLegacyAppIdInOAuth?: boolean;
     features?: Partial<DomainFeatureFlags>;
     redirectUri?: string;
     ui?: Partial<DomainUIConfig>;
@@ -126,6 +129,7 @@ const createHostedDomainEntries = ({
     clientId,
     appId,
     botsFolder = primaryDomain,
+    includeLegacyAppIdInOAuth = true,
     features = {},
     redirectUri = `https://${primaryDomain}/`,
     ui = {},
@@ -135,6 +139,7 @@ const createHostedDomainEntries = ({
         appId,
         redirectUri,
         botsFolder,
+        includeLegacyAppIdInOAuth,
         features: {
             ...DEFAULT_DOMAIN_FEATURES,
             ...features,
@@ -164,7 +169,7 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
             comboTrades: true,
         },
         ui: {
-            brandName: 'Mafia Hub',
+            brandName: 'Risk Managers',
         },
     }),
     // ── Additional production domain ─────────────────────────────────────────
@@ -202,6 +207,7 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
         clientId: '33gJ6p5dXzASAIobgv9az',
         appId: '80364',
         botsFolder: 'mrzetuzetu.site',
+        includeLegacyAppIdInOAuth: false,
         features: {
             autoTrades: true,
             comboTrades: true,
@@ -216,6 +222,7 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
         clientId: '33g5WCS5YOFHD3aWLZZjj',
         appId: '96223',
         botsFolder: 'masterhunter.site',
+        includeLegacyAppIdInOAuth: false,
         features: {
             autoTrades: true,
             comboTrades: true,
@@ -230,6 +237,7 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
         clientId: '33hi7ev9NiDjWY640JuSw',
         appId: '122208',
         botsFolder: 'tradinghubs.site',
+        includeLegacyAppIdInOAuth: false,
         features: {
             autoTrades: true,
             comboTrades: true,
@@ -244,6 +252,7 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
         clientId: '331bCUS8izRudblAnSACt',
         appId: '120589',
         botsFolder: 'mafiahub.site',
+        includeLegacyAppIdInOAuth: false,
         features: {
             autoTrades: true,
             comboTrades: true,
@@ -260,6 +269,7 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
         appId: '71937',
         redirectUri: 'https://riskmanagers.site/',
         botsFolder: 'optimumtraders.site',
+        includeLegacyAppIdInOAuth: true,
         features: {
             ...DEFAULT_DOMAIN_FEATURES,
             autoTrades: false,
@@ -288,6 +298,7 @@ export const getDomainConfig = (): DomainConfig => {
         appId: process.env.APP_ID || '71937',
         redirectUri: process.env.REDIRECT_URI || window.location.origin,
         botsFolder: process.env.BOTS_FOLDER || DEFAULT_BOTS_FOLDER,
+        includeLegacyAppIdInOAuth: true,
         features: DEFAULT_DOMAIN_FEATURES,
         ui: DEFAULT_DOMAIN_UI,
     };
@@ -609,10 +620,11 @@ export const generateOAuthURL = async (prompt?: string) => {
         // Resolve config for the current domain (auto-selects the right
         // CLIENT_ID, APP_ID, and redirect URI from DOMAIN_CONFIG)
         const domainCfg = getDomainConfig();
-        const { clientId, appId, redirectUri } = {
+        const { clientId, appId, redirectUri, includeLegacyAppIdInOAuth } = {
             clientId: domainCfg.clientId,
             appId: domainCfg.appId,
             redirectUri: domainCfg.redirectUri,
+            includeLegacyAppIdInOAuth: domainCfg.includeLegacyAppIdInOAuth,
         };
 
         // Use brand config for the OAuth2 base URL
@@ -631,13 +643,19 @@ export const generateOAuthURL = async (prompt?: string) => {
 
             // redirectUri is sourced from DOMAIN_CONFIG and must match the URL
             // registered in the Deriv OAuth app for clientId exactly.
-            const scopes = 'trade+account_manage';
-
-            let oauthUrl = `${hostname}auth?scope=${scopes}&response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${csrfToken}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+            const params = new URLSearchParams({
+                scope: 'trade account_manage',
+                response_type: 'code',
+                client_id: clientId,
+                redirect_uri: redirectUri,
+                state: csrfToken,
+                code_challenge: codeChallenge,
+                code_challenge_method: 'S256',
+            });
 
             // Optional: prompt parameter (e.g. 'registration' for signup flow)
             if (prompt) {
-                oauthUrl += `&prompt=${encodeURIComponent(prompt)}`;
+                params.set('prompt', prompt);
             }
 
             // Include legacy app_id for intelligent platform routing
@@ -647,11 +665,11 @@ export const generateOAuthURL = async (prompt?: string) => {
             // - New users who use PKCE OAuth (returns access_token)
             // - Legacy users who have old accounts (returns via legacy OAuth params)
             // Both token types are then handled appropriately by the app
-            if (appId) {
-                oauthUrl += `&app_id=${encodeURIComponent(appId)}`;
+            if (includeLegacyAppIdInOAuth && appId) {
+                params.set('app_id', appId);
             }
 
-            return oauthUrl;
+            return `${hostname}auth?${params.toString()}`;
         }
     } catch (error) {
         console.error('Error generating OAuth URL:', error);
