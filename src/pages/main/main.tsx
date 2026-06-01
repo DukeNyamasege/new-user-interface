@@ -412,7 +412,7 @@ const AppWrapper = observer(() => {
                                             <LabelPairedLightbulbCaptionRegularIcon
                                                 height='24px'
                                                 width='24px'
-                                                fill='#f97316'
+                                                fill='#c8a45d'
                                             />
                                             <Localize i18n_default_text='Bot Ideas' />
                                         </>
@@ -428,7 +428,7 @@ const AppWrapper = observer(() => {
                                         <LabelPairedCircleStarCaptionRegularIcon
                                             height='24px'
                                             width='24px'
-                                            fill='#f97316'
+                                            fill='#c8a45d'
                                         />
                                         <Localize i18n_default_text='Best Bots' />
                                     </>
@@ -443,7 +443,7 @@ const AppWrapper = observer(() => {
                                         <LabelPairedObjectsColumnCaptionRegularIcon
                                             height='24px'
                                             width='24px'
-                                            fill='#f97316'
+                                            fill='#c8a45d'
                                         />
                                         <Localize i18n_default_text='Dashboard' />
                                     </>
@@ -458,7 +458,7 @@ const AppWrapper = observer(() => {
                                         <LabelPairedPuzzlePieceTwoCaptionBoldIcon
                                             height='24px'
                                             width='24px'
-                                            fill='#f97316'
+                                            fill='#c8a45d'
                                         />
                                         <Localize i18n_default_text='Bot Builder' />
                                     </>
@@ -472,7 +472,7 @@ const AppWrapper = observer(() => {
                                             <LabelPairedChartTrendUpCaptionRegularIcon
                                                 height='24px'
                                                 width='24px'
-                                                fill='#f97316'
+                                                fill='#c8a45d'
                                             />
                                             <Localize i18n_default_text='Auto Trades' />
                                         </>
@@ -489,7 +489,7 @@ const AppWrapper = observer(() => {
                                             <LabelPairedChartMixedCaptionRegularIcon
                                                 height='24px'
                                                 width='24px'
-                                                fill='#f97316'
+                                                fill='#c8a45d'
                                             />
                                             <Localize i18n_default_text='Combo' />
                                         </>
@@ -506,7 +506,7 @@ const AppWrapper = observer(() => {
                                             <LabelPairedMagnifyingGlassPlusCaptionRegularIcon
                                                 height='24px'
                                                 width='24px'
-                                                fill='#f97316'
+                                                fill='#c8a45d'
                                             />
                                             <Localize i18n_default_text='Scanner' />
                                         </>
@@ -522,7 +522,7 @@ const AppWrapper = observer(() => {
                                         <LabelPairedChartLineCaptionRegularIcon
                                             height='24px'
                                             width='24px'
-                                            fill='#f97316'
+                                            fill='#c8a45d'
                                         />
                                         <Localize i18n_default_text='Charts' />
                                     </>
@@ -545,7 +545,7 @@ const AppWrapper = observer(() => {
                                         <LabelPairedChartLineCaptionRegularIcon
                                             height='24px'
                                             width='24px'
-                                            fill='#f97316'
+                                            fill='#c8a45d'
                                         />
                                         <Localize i18n_default_text='Analysis Tool' />
                                     </>
@@ -560,7 +560,7 @@ const AppWrapper = observer(() => {
                                         <LabelPairedChartTrendUpCaptionRegularIcon
                                             height='24px'
                                             width='24px'
-                                            fill='#f97316'
+                                            fill='#c8a45d'
                                         />
                                         <span>TradingView</span>
                                     </>
@@ -577,7 +577,7 @@ const AppWrapper = observer(() => {
                                         <LegacyGuide1pxIcon
                                             height='16px'
                                             width='16px'
-                                            fill='#f97316'
+                                            fill='#c8a45d'
                                             className='icon-orange-fill-g-path'
                                         />
                                         <Localize i18n_default_text='Tutorials' />

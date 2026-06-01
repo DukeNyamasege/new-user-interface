@@ -163,6 +163,9 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
             autoTrades: true,
             comboTrades: true,
         },
+        ui: {
+            brandName: 'Mafia Hub',
+        },
     }),
     // ── Additional production domain ─────────────────────────────────────────
     ...createHostedDomainEntries({
@@ -192,15 +195,19 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
             printPopups: false,
         },
     }),
+    // Dedicated branded domains with their own best-bots folders.
     ...createHostedDomainEntries({
         primaryDomain: 'mrzetuzetu.site',
         aliases: ['www.mrzetuzetu.site'],
         clientId: '33gJ6p5dXzASAIobgv9az',
         appId: '80364',
-        botsFolder: 'optimumtraders.site',
+        botsFolder: 'mrzetuzetu.site',
         features: {
             autoTrades: true,
             comboTrades: true,
+        },
+        ui: {
+            brandName: 'Mrzetuzetu',
         },
     }),
     ...createHostedDomainEntries({
@@ -208,10 +215,13 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
         aliases: ['www.masterhunter.site'],
         clientId: '33g5WCS5YOFHD3aWLZZjj',
         appId: '96223',
-        botsFolder: 'optimumtraders.site',
+        botsFolder: 'masterhunter.site',
         features: {
             autoTrades: true,
             comboTrades: true,
+        },
+        ui: {
+            brandName: 'Master Hunter',
         },
     }),
     ...createHostedDomainEntries({
@@ -219,10 +229,13 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
         aliases: ['www.tradinghubs.site'],
         clientId: '33hi7ev9NiDjWY640JuSw',
         appId: '122208',
-        botsFolder: 'optimumtraders.site',
+        botsFolder: 'tradinghubs.site',
         features: {
             autoTrades: true,
             comboTrades: true,
+        },
+        ui: {
+            brandName: 'Trading Hubs',
         },
     }),
     ...createHostedDomainEntries({
@@ -230,14 +243,18 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
         aliases: ['www.mafiahub.site'],
         clientId: '331bCUS8izRudblAnSACt',
         appId: '120589',
-        botsFolder: 'optimumtraders.site',
+        botsFolder: 'mafiahub.site',
         features: {
             autoTrades: true,
             comboTrades: true,
         },
+        ui: {
+            brandName: 'Mafia Hub',
+        },
     }),
     // ── Netlify preview domain (uses same OAuth app; Deriv will redirect back
     //    to riskmanagers.site after login) ────────────────────────────────────
+    // Netlify preview domain uses the Risk Managers OAuth app and bot folder.
     'newwapi.netlify.app': {
         clientId: '33cCr2bWsByPgLlormNFw',
         appId: '71937',

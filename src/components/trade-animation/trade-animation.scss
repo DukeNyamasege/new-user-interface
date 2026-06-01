@@ -80,10 +80,11 @@
         height: 100% !important;
         border-start-end-radius: 0 !important;
         border-end-end-radius: 0 !important;
-        background-color: var(--purchase-main-1);
+        background-color: #0f5c52;
+        border: 1px solid rgba(200, 164, 93, 0.2);
 
         &:hover {
-            background-color: var(--purchase-main-1) !important;
+            background-color: #14786b !important;
         }
     }
 
@@ -107,12 +108,13 @@
         justify-content: space-evenly;
         border-start-end-radius: $BORDER_RADIUS;
         border-end-end-radius: $BORDER_RADIUS;
-        border: solid 1px var(--border-normal);
+        background-color: #111111;
+        border: solid 1px #2b261c;
         position: relative;
     }
 
     &__text {
-        color: var(--text-general);
+        color: #8e8e8e;
         font-size: 12px;
         font-weight: bold;
         text-align: center;
@@ -135,7 +137,7 @@
             .static-circle {
                 width: $static-circle-diameter;
                 height: $static-circle-diameter;
-                background-color: $color-black-7;
+                background-color: #3a3428;
                 border-radius: 100%;
                 align-self: center;
                 z-index: 1;
@@ -161,7 +163,7 @@
         }
 
         &-line {
-            background-color: var(--border-normal);
+            background-color: #242424;
             height: 100%;
             width: 100%;
             border-radius: $BORDER_RADIUS;
@@ -169,7 +171,7 @@
         }
 
         &-bar {
-            background-color: var(--status-success);
+            background-color: #c8a45d;
             border-radius: $BORDER_RADIUS;
             width: 0;
             height: 100%;
@@ -206,6 +208,7 @@
                         animation: animate-circle 0.8s infinite;
                         animation-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
                         background-color: var(--status-success);
+                        background-color: #d4af37;
 
                         // transform: translate(-50%, -50%);
                         // z-index: 1;

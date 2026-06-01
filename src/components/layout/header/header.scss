@@ -4,8 +4,12 @@
 .app-header {
     height: 4rem;
     min-height: 4rem;
-    box-shadow: none !important;
+    background:
+        linear-gradient(180deg, #1f1a14 0%, #141414 100%),
+        #141414 !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32) !important;
     border: 0 !important;
+    border-bottom: 1px solid rgba(200, 164, 93, 0.35) !important;
 
     &--mobile {
         overflow: visible;
@@ -18,7 +22,7 @@
 
     &__account-settings {
         padding-inline-end: 1.2rem;
-        border-inline-end: 0.1rem solid rgba(255, 255, 255, 0.2);
+        border-inline-end: 0.1rem solid rgba(200, 164, 93, 0.24);
     }
 
     &__account-settings,
@@ -26,11 +30,11 @@
     &__menu {
         svg > path,
         svg > g > path {
-            fill: #ffffff;
+            fill: #d4af37;
         }
     }
 
-    color: #ffffff;
+    color: #eae6dc;
 }
 
 .account-switcher {
@@ -113,7 +117,7 @@
     overflow: hidden;
 
     @include mobile-or-tablet-screen {
-        background: #000;
+        background: #080808;
         box-shadow: none;
         padding: 0;
     }
@@ -308,6 +312,11 @@
         height: 3.2rem;
         min-height: 3.2rem;
         padding-block: 0;
+        color: #f5d58a !important;
+
+        &:hover {
+            color: #fff3c4 !important;
+        }
     }
 
     &--loading {

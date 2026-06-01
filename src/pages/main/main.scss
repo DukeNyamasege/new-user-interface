@@ -18,12 +18,12 @@
 
     &--left {
         left: 0;
-        background: linear-gradient(-88.07deg, transparent 1.63%, var(--general-section-1) 50.02%);
+        background: linear-gradient(-88.07deg, transparent 1.63%, #080808 50.02%);
     }
 
     &--right {
         right: 0;
-        background: linear-gradient(88.07deg, transparent 1.63%, var(--general-section-1) 50.02%);
+        background: linear-gradient(88.07deg, transparent 1.63%, #080808 50.02%);
     }
 
     @include mobile-or-tablet-screen {
@@ -89,13 +89,25 @@
             }
 
             &__active {
-                background: rgba(255, 255, 255, 0.15);
+                background:
+                    linear-gradient(180deg, rgba(48, 40, 27, 0.96) 0%, rgba(30, 26, 19, 0.96) 100%),
+                    #1e1a13;
                 color: #ffffff !important;
+                border: 1px solid rgba(212, 175, 55, 0.42);
                 border-radius: 6px;
+                box-shadow:
+                    inset 0 1px 0 rgba(255, 247, 230, 0.08),
+                    0 8px 18px rgba(0, 0, 0, 0.28);
+
+                svg,
+                svg path,
+                svg g path {
+                    fill: #d4af37 !important;
+                }
             }
 
             &__item {
-                color: rgba(255, 255, 255, 0.75);
+                color: #eae6dc;
                 display: flex;
                 align-items: center;
                 gap: 0.6rem;
@@ -106,26 +118,38 @@
                 margin: 0 2px;
 
                 &:not(.dc-tabs__active):hover {
-                    background: rgba(255, 255, 255, 0.07);
-                    color: #ffffff;
+                    background: #181818;
+                    color: #fff3c4;
+
+                    svg,
+                    svg path,
+                    svg g path {
+                        fill: #f5d58a !important;
+                    }
                 }
 
                 &:not(.dc-tabs__active) {
-                    color: rgba(255, 255, 255, 0.75);
+                    color: #eae6dc;
                 }
 
                 svg {
                     flex-shrink: 0;
+
+                    path,
+                    g path {
+                        fill: #c8a45d !important;
+                    }
                 }
             }
 
             &__list {
-                background: #000;
+                background: #080808;
                 justify-content: start;
                 padding: 4px 8px;
                 height: 48px;
                 align-items: center;
-                border-bottom: none;
+                border-bottom: 1px solid #2b261c;
+                box-shadow: inset 0 1px 0 rgba(255, 247, 230, 0.04);
 
                 @include mobile-or-tablet-screen {
                     overflow-x: auto;
@@ -141,7 +165,7 @@
                 &--header {
                     &--main {
                         &__tabs {
-                            background: #000;
+                            background: #080808;
 
                             @include mobile-or-tablet-screen {
                                 width: 100%;
@@ -239,16 +263,20 @@
         .animation {
             &__button#db-animation {
                 &__run-button {
-                    background-color: var(--purchase-main-1);
+                    background-color: #0f5c52;
+
+                    &:hover {
+                        background-color: #14786b !important;
+                    }
                 }
 
                 &__stop-button {
-                    background-color: var(--button-primary-hover);
+                    background-color: #6f241f;
                 }
             }
 
             &__container {
-                background-color: var(--general-main-1);
+                background-color: #111111;
             }
         }
     }
@@ -269,11 +297,15 @@
     .animation {
         &__button#db-animation {
             &__run-button {
-                background-color: var(--purchase-main-1);
+                background-color: #0f5c52;
+
+                &:hover {
+                    background-color: #14786b !important;
+                }
             }
 
             &__stop-button {
-                background-color: var(--button-primary-hover);
+                background-color: #6f241f;
             }
         }
     }
@@ -417,11 +449,11 @@
 
         .animation {
             &__button {
-                background-color: var(--purchase-main-1);
+                background-color: #0f5c52;
             }
 
             &__container {
-                background-color: var(--general-main-1);
+                background-color: #111111;
             }
         }
     }
