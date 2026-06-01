@@ -9,6 +9,7 @@ describe('DOMAIN_CONFIG', () => {
             redirectUri: 'https://termicafx.site/',
             botsFolder: 'optimumtraders.site',
             includeLegacyAppIdInOAuth: true,
+            useLegacyOAuthLogin: false,
             features: {
                 botIdeas: false,
                 scanner: false,
@@ -31,6 +32,7 @@ describe('DOMAIN_CONFIG', () => {
         expect(getDomainConfigForHost('riskmanagers.site')).toMatchObject({
             redirectUri: 'https://riskmanagers.site/',
             includeLegacyAppIdInOAuth: true,
+            useLegacyOAuthLogin: false,
         });
     });
 
@@ -46,6 +48,7 @@ describe('DOMAIN_CONFIG', () => {
             redirectUri: `https://${domain}/`,
             botsFolder: domain,
             includeLegacyAppIdInOAuth: true,
+            useLegacyOAuthLogin: true,
             ui: {
                 brandName,
             },
@@ -60,6 +63,7 @@ describe('DOMAIN_CONFIG', () => {
             redirectUri: `https://${domain}/`,
             botsFolder: domain,
             includeLegacyAppIdInOAuth: true,
+            useLegacyOAuthLogin: true,
             ui: {
                 brandName,
             },
@@ -79,7 +83,21 @@ describe('DOMAIN_CONFIG', () => {
         ['masterhunter.site', '96223', '33g5WCS5YOFHD3aWLZZjj'],
         ['tradinghubs.site', '122208', '33hi7ev9NiDjWY640JuSw'],
         ['mafiahub.site', '120589', '331bCUS8izRudblAnSACt'],
-    ])('generates OAuth with both client_id and legacy app_id for %s', async (host, appId, clientId) => {
+    ])('uses legacy OAuth app_id login for %s while OAuth2 client setup is unavailable', async (host, appId) => {
+        const domainConfig = getDomainConfigForHost(host);
+
+        expect(domainConfig).toBeDefined();
+
+        const oauthUrl = await generateOAuthURL(undefined, domainConfig!);
+        const url = new URL(oauthUrl);
+
+        expect(url.origin + url.pathname).toBe('https://oauth.deriv.com/oauth2/authorize');
+        expect(url.searchParams.get('app_id')).toBe(appId);
+        expect(url.searchParams.has('client_id')).toBe(false);
+        expect(url.searchParams.has('redirect_uri')).toBe(false);
+    });
+
+    it('keeps Risk Managers on OAuth2 with both client_id and legacy app_id routing', async () => {
         const originalAppEnv = process.env.APP_ENV;
         const cryptoMock = {
             getRandomValues: (array: Uint8Array) => array.fill(1),
@@ -87,7 +105,7 @@ describe('DOMAIN_CONFIG', () => {
                 digest: jest.fn().mockResolvedValue(new Uint8Array(32).fill(2).buffer),
             },
         };
-        const domainConfig = getDomainConfigForHost(host);
+        const domainConfig = getDomainConfigForHost('riskmanagers.site');
 
         Object.defineProperty(globalThis, 'crypto', {
             configurable: true,
@@ -104,9 +122,9 @@ describe('DOMAIN_CONFIG', () => {
         const url = new URL(oauthUrl);
 
         expect(url.origin + url.pathname).toBe('https://auth.deriv.com/oauth2/auth');
-        expect(url.searchParams.get('client_id')).toBe(clientId);
-        expect(url.searchParams.get('app_id')).toBe(appId);
-        expect(url.searchParams.get('redirect_uri')).toBe(`https://${host}/`);
+        expect(url.searchParams.get('client_id')).toBe('33cCr2bWsByPgLlormNFw');
+        expect(url.searchParams.get('app_id')).toBe('71937');
+        expect(url.searchParams.get('redirect_uri')).toBe('https://riskmanagers.site/');
         expect(url.searchParams.get('response_type')).toBe('code');
         expect(url.searchParams.get('code_challenge_method')).toBe('S256');
 

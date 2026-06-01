@@ -15,6 +15,7 @@ interface DomainConfig {
     redirectUri: string; // MUST match the redirect URL registered in the OAuth app exactly
     botsFolder: string; // Public folder used by Best Bots XML loading for this domain
     includeLegacyAppIdInOAuth: boolean; // Only enable when the legacy app redirects to this domain
+    useLegacyOAuthLogin: boolean; // Use old OAuth app_id login when OAuth2 client setup is not valid yet
     features: DomainFeatureFlags;
 }
 
@@ -65,6 +66,7 @@ interface DomainConfig {
     redirectUri: string;
     botsFolder: string;
     includeLegacyAppIdInOAuth: boolean;
+    useLegacyOAuthLogin: boolean;
     features: DomainFeatureFlags;
     ui: DomainUIConfig;
 }
@@ -76,6 +78,7 @@ interface HostedDomainDefinition {
     appId: string;
     botsFolder?: string;
     includeLegacyAppIdInOAuth?: boolean;
+    useLegacyOAuthLogin?: boolean;
     features?: Partial<DomainFeatureFlags>;
     redirectUri?: string;
     ui?: Partial<DomainUIConfig>;
@@ -130,6 +133,7 @@ const createHostedDomainEntries = ({
     appId,
     botsFolder = primaryDomain,
     includeLegacyAppIdInOAuth = true,
+    useLegacyOAuthLogin = false,
     features = {},
     redirectUri = `https://${primaryDomain}/`,
     ui = {},
@@ -140,6 +144,7 @@ const createHostedDomainEntries = ({
         redirectUri,
         botsFolder,
         includeLegacyAppIdInOAuth,
+        useLegacyOAuthLogin,
         features: {
             ...DEFAULT_DOMAIN_FEATURES,
             ...features,
@@ -215,6 +220,7 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
         redirectUri: 'https://mrzetuzetu.site/',
         botsFolder: 'mrzetuzetu.site',
         includeLegacyAppIdInOAuth: true,
+        useLegacyOAuthLogin: true,
         features: {
             autoTrades: true,
             comboTrades: true,
@@ -231,6 +237,7 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
         redirectUri: 'https://masterhunter.site/',
         botsFolder: 'masterhunter.site',
         includeLegacyAppIdInOAuth: true,
+        useLegacyOAuthLogin: true,
         features: {
             autoTrades: true,
             comboTrades: true,
@@ -247,6 +254,7 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
         redirectUri: 'https://tradinghubs.site/',
         botsFolder: 'tradinghubs.site',
         includeLegacyAppIdInOAuth: true,
+        useLegacyOAuthLogin: true,
         features: {
             autoTrades: true,
             comboTrades: true,
@@ -263,6 +271,7 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
         redirectUri: 'https://mafiahub.site/',
         botsFolder: 'mafiahub.site',
         includeLegacyAppIdInOAuth: true,
+        useLegacyOAuthLogin: true,
         features: {
             autoTrades: true,
             comboTrades: true,
@@ -280,6 +289,7 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
         redirectUri: 'https://riskmanagers.site/',
         botsFolder: 'optimumtraders.site',
         includeLegacyAppIdInOAuth: true,
+        useLegacyOAuthLogin: false,
         features: {
             ...DEFAULT_DOMAIN_FEATURES,
             autoTrades: false,
@@ -309,6 +319,7 @@ export const getDomainConfig = (): DomainConfig => {
         redirectUri: process.env.REDIRECT_URI || window.location.origin,
         botsFolder: process.env.BOTS_FOLDER || DEFAULT_BOTS_FOLDER,
         includeLegacyAppIdInOAuth: true,
+        useLegacyOAuthLogin: false,
         features: DEFAULT_DOMAIN_FEATURES,
         ui: DEFAULT_DOMAIN_UI,
     };
@@ -636,6 +647,14 @@ export const generateOAuthURL = async (prompt?: string, domainConfig = getDomain
             redirectUri: domainCfg.redirectUri,
             includeLegacyAppIdInOAuth: domainCfg.includeLegacyAppIdInOAuth,
         };
+
+        if (domainCfg.useLegacyOAuthLogin && appId) {
+            const params = new URLSearchParams({ app_id: appId });
+            if (prompt) {
+                params.set('prompt', prompt);
+            }
+            return `https://oauth.deriv.com/oauth2/authorize?${params.toString()}`;
+        }
 
         // Use brand config for the OAuth2 base URL
         const environment = isProduction() ? 'production' : 'staging';
