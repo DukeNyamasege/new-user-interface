@@ -625,11 +625,11 @@ export const clearCSRFToken = (): void => {
     sessionStorage.removeItem('oauth_csrf_token_timestamp');
 };
 
-export const generateOAuthURL = async (prompt?: string) => {
+export const generateOAuthURL = async (prompt?: string, domainConfig = getDomainConfig()) => {
     try {
         // Resolve config for the current domain (auto-selects the right
         // CLIENT_ID, APP_ID, and redirect URI from DOMAIN_CONFIG)
-        const domainCfg = getDomainConfig();
+        const domainCfg = domainConfig;
         const { clientId, appId, redirectUri, includeLegacyAppIdInOAuth } = {
             clientId: domainCfg.clientId,
             appId: domainCfg.appId,

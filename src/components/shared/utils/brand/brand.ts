@@ -15,12 +15,26 @@ type TPlatform = {
 };
 
 const isDomainAllowed = (domain_name: string) => {
+    const custom_domains = [
+        'riskmanagers.site',
+        'termicafx.site',
+        'optimumtraders.site',
+        'mrzetuzetu.site',
+        'masterhunter.site',
+        'tradinghubs.site',
+        'mafiahub.site',
+        'thenewui.netlify.app',
+        'newwapi.netlify.app',
+    ];
+
+    const hostname = domain_name.split(':')[0].toLowerCase();
+    if (custom_domains.some(domain => hostname === domain || hostname.endsWith(`.${domain}`))) {
+        return true;
+    }
+
     // This regex will match any official deriv production and testing domain names.
     // Allowed deriv domains: localhost, binary.sx, binary.com, deriv.com, deriv.be, deriv.me and their subdomains.
-    // Also includes branded production domains and thenewui.netlify.app for custom deployments.
-    return /^(((.*)\.)?(localhost:8444|localhost:5000|pages.dev|thenewui\.netlify\.app|riskmanagers\.site|termicafx\.site|mrzetuzetu\.site|masterhunter\.site|tradinghubs\.site|mafiahub\.site|binary\.(sx|com)|deriv.(com|me|be|dev)))$/.test(
-        domain_name
-    );
+    return /^(((.*)\.)?(localhost|pages.dev|binary\.(sx|com)|deriv.(com|me|be|dev)))$/.test(hostname);
 };
 
 export const getBrandWebsiteName = () => {

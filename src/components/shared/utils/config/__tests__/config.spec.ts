@@ -1,4 +1,5 @@
-import { buildBestBotsFileUrl, getDomainConfigForHost } from '../config';
+import { TextEncoder } from 'util';
+import { buildBestBotsFileUrl, generateOAuthURL, getDomainConfigForHost } from '../config';
 
 describe('DOMAIN_CONFIG', () => {
     it('returns the configured TermicaFX auth and bot folder settings', () => {
@@ -12,7 +13,7 @@ describe('DOMAIN_CONFIG', () => {
                 botIdeas: false,
                 scanner: false,
                 printPopups: false,
-                autoTrades: false,
+                autoTrades: true,
                 comboTrades: false,
             },
         });
@@ -71,5 +72,44 @@ describe('DOMAIN_CONFIG', () => {
 
     it('builds the Best Bots file URL from the configured bot folder', () => {
         expect(buildBestBotsFileUrl('termicafx.site', 'My Bot.xml')).toBe('/termicafx.site/My%20Bot.xml');
+    });
+
+    it.each([
+        ['mrzetuzetu.site', '80364', '33gJ6p5dXzASAIobgv9az'],
+        ['masterhunter.site', '96223', '33g5WCS5YOFHD3aWLZZjj'],
+        ['tradinghubs.site', '122208', '33hi7ev9NiDjWY640JuSw'],
+        ['mafiahub.site', '120589', '331bCUS8izRudblAnSACt'],
+    ])('generates OAuth with both client_id and legacy app_id for %s', async (host, appId, clientId) => {
+        const originalAppEnv = process.env.APP_ENV;
+        const cryptoMock = {
+            getRandomValues: (array: Uint8Array) => array.fill(1),
+            subtle: {
+                digest: jest.fn().mockResolvedValue(new Uint8Array(32).fill(2).buffer),
+            },
+        };
+        const domainConfig = getDomainConfigForHost(host);
+
+        Object.defineProperty(globalThis, 'crypto', {
+            configurable: true,
+            value: cryptoMock,
+        });
+        Object.defineProperty(globalThis, 'TextEncoder', {
+            configurable: true,
+            value: TextEncoder,
+        });
+        process.env.APP_ENV = 'production';
+        expect(domainConfig).toBeDefined();
+
+        const oauthUrl = await generateOAuthURL(undefined, domainConfig!);
+        const url = new URL(oauthUrl);
+
+        expect(url.origin + url.pathname).toBe('https://auth.deriv.com/oauth2/auth');
+        expect(url.searchParams.get('client_id')).toBe(clientId);
+        expect(url.searchParams.get('app_id')).toBe(appId);
+        expect(url.searchParams.get('redirect_uri')).toBe(`https://${host}/`);
+        expect(url.searchParams.get('response_type')).toBe('code');
+        expect(url.searchParams.get('code_challenge_method')).toBe('S256');
+
+        process.env.APP_ENV = originalAppEnv;
     });
 });

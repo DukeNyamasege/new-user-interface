@@ -7,11 +7,29 @@ const { initializeDatabase } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
+const corsOrigins = (process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
 
 // Middleware
 app.use(helmet());
 app.use(morgan('combined'));
-app.use(cors());
+app.use(
+    cors(
+        corsOrigins.length > 0
+            ? {
+                  origin(origin, callback) {
+                      if (!origin || corsOrigins.includes(origin)) {
+                          callback(null, true);
+                          return;
+                      }
+                      callback(new Error(`Origin ${origin} is not allowed by CORS`));
+                  },
+              }
+            : undefined
+    )
+);
 app.use(express.json());
 
 // Health check endpoint
