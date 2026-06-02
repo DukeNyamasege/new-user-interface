@@ -28,6 +28,7 @@ export default defineConfig({
                 GD_CLIENT_ID: JSON.stringify(process.env.GD_CLIENT_ID),
                 GD_APP_ID: JSON.stringify(process.env.GD_APP_ID),
                 GD_API_KEY: JSON.stringify(process.env.GD_API_KEY),
+                API_BASE_URL: JSON.stringify(process.env.API_BASE_URL || process.env.VITE_API_BASE_URL || '/api'),
             },
         },
     },
