@@ -502,9 +502,39 @@ $at-text-faint:    #2c4060;
         animation: at-pulse 0.6s infinite;
     }
 
+    &--loading {
+        background: $at-navy-bright;
+        animation: at-pulse 1s infinite;
+    }
+
     &__label {
         font-size: 1.2rem;
         color: $at-text-dim;
+    }
+}
+
+.auto-trades-data-loader {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    min-height: 4.2rem;
+    padding: 1rem 1.4rem;
+    margin-bottom: 1.6rem;
+    background: rgba(46, 127, 216, 0.08);
+    border: 1px solid rgba(46, 127, 216, 0.24);
+    border-radius: 0.8rem;
+    color: $at-text-dim;
+    font-size: 1.25rem;
+    font-weight: 700;
+
+    &__spinner {
+        width: 1.6rem;
+        height: 1.6rem;
+        border: 2px solid rgba(138, 168, 204, 0.3);
+        border-top-color: $at-navy-bright;
+        border-radius: 50%;
+        flex: 0 0 auto;
+        animation: at-spin 0.8s linear infinite;
     }
 }
 
@@ -1138,6 +1168,28 @@ $at-text-faint:    #2c4060;
         opacity: 0.6;
     }
 
+    &--loading {
+        border-color: rgba(46, 127, 216, 0.28);
+        background: rgba(46, 127, 216, 0.05);
+    }
+
+    &__loading {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.7rem;
+        min-height: 100%;
+        background: rgba(8, 14, 29, 0.72);
+        color: $at-text-dim;
+        font-size: 1.15rem;
+        font-weight: 700;
+        backdrop-filter: blur(1px);
+        pointer-events: none;
+    }
+
     &__top {
         display: flex;
         justify-content: space-between;
@@ -1648,6 +1700,10 @@ $at-text-faint:    #2c4060;
 @keyframes at-pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.3; }
+}
+
+@keyframes at-spin {
+    to { transform: rotate(360deg); }
 }
 
 @keyframes at-trade-pulse {

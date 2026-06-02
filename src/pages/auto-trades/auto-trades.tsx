@@ -899,6 +899,8 @@ const AutoTrades = observer(() => {
     const [aiStrategyLoading, setAiStrategyLoading] = useState(false);
     const [currentStakeDisplay, setCurrentStakeDisplay] = useState(1);
     const [cooldownDisplay, setCooldownDisplay] = useState(0);
+    const [dataStreamLoading, setDataStreamLoading] = useState(false);
+    const [dataStreamMessage, setDataStreamMessage] = useState('Loading selected market data...');
 
     const [marketDisplays, setMarketDisplays] = useState<MarketDisplay[]>(
         selectedMarkets.map(m => ({
@@ -965,6 +967,9 @@ const AutoTrades = observer(() => {
     const contractPollResolversRef = useRef<Set<(value: Record<string, any>) => void>>(new Set());
 
     const show_auto = active_tab === DBOT_TABS.AUTO_TRADES;
+    const show_auto_ref = useRef(show_auto);
+    show_auto_ref.current = show_auto;
+    const unmountedRef = useRef(false);
 
     useEffect(() => {
         configRef.current = {
@@ -1097,6 +1102,19 @@ const AutoTrades = observer(() => {
             setPredictionBeforeLoss(DEFAULT_BARRIER[t]);
             setPredictionAfterLoss(t === 'DIGITOVER' ? '5' : '4');
         }
+    }, []);
+
+    const setDataRecoveryLoading = useCallback((message: string) => {
+        if (unmountedRef.current || !show_auto_ref.current) return;
+        isRecoveringDataRef.current = true;
+        setDataStreamMessage(message);
+        setDataStreamLoading(true);
+    }, []);
+
+    const clearDataRecoveryLoading = useCallback(() => {
+        if (unmountedRef.current) return;
+        isRecoveringDataRef.current = false;
+        setDataStreamLoading(false);
     }, []);
 
     const flushDisplays = useCallback(() => {
@@ -1524,7 +1542,7 @@ const AutoTrades = observer(() => {
             state.lastQuote = quote;
             lastTickAtRef.current = Date.now();
             if (isRecoveringDataRef.current) {
-                isRecoveringDataRef.current = false;
+                clearDataRecoveryLoading();
             }
 
             if (strategyModeRef.current === 'PERCENTAGE' && !modeTransitionLockRef.current) {
@@ -1627,14 +1645,10 @@ const AutoTrades = observer(() => {
 
             refreshDisplays();
         },
-        [getActiveDigitBarrier, isPatternDigit, refreshDisplays, tryExecuteSignal]
+        [clearDataRecoveryLoading, getActiveDigitBarrier, isPatternDigit, refreshDisplays, tryExecuteSignal]
     );
 
     handleTickRef.current = handleTick;
-
-    const show_auto_ref = useRef(show_auto);
-    show_auto_ref.current = show_auto;
-    const unmountedRef = useRef(false);
 
     useEffect(() => {
         unmountedRef.current = false;
@@ -1733,10 +1747,12 @@ const AutoTrades = observer(() => {
 
         if (selectedMarketsRef.current.length === 0) {
             setIsConnected(false);
+            clearDataRecoveryLoading();
             return;
         }
 
         lastTickAtRef.current = Date.now();
+        setDataRecoveryLoading('Loading selected market data...');
 
         for (const market of selectedMarketsRef.current) {
             if (strategyModeRef.current === 'PERCENTAGE') {
@@ -1756,7 +1772,7 @@ const AutoTrades = observer(() => {
                                     console.warn(`[AutoTrades] Tick stream error for ${market.symbol}:`, data.error);
                                 }
                                 if (!isRecoveringDataRef.current) {
-                                    isRecoveringDataRef.current = true;
+                                    setDataRecoveryLoading(`Reconnecting ${market.label} tick stream...`);
                                 }
                                 return;
                             }
@@ -1769,7 +1785,7 @@ const AutoTrades = observer(() => {
                                 console.warn(`[AutoTrades] Tick stream error for ${market.symbol}:`, streamError);
                             }
                             if (!isRecoveringDataRef.current) {
-                                isRecoveringDataRef.current = true;
+                                setDataRecoveryLoading(`Reconnecting ${market.label} tick stream...`);
                             }
                         }
                     );
@@ -1801,7 +1817,7 @@ const AutoTrades = observer(() => {
                                     console.warn(`[AutoTrades] Candle stream error for ${market.symbol}:`, data.error);
                                 }
                                 if (!isRecoveringDataRef.current) {
-                                    isRecoveringDataRef.current = true;
+                                    setDataRecoveryLoading(`Reconnecting ${market.label} candle stream...`);
                                 }
                                 return;
                             }
@@ -1817,7 +1833,7 @@ const AutoTrades = observer(() => {
                                 console.warn(`[AutoTrades] Candle stream error for ${market.symbol}:`, streamError);
                             }
                             if (!isRecoveringDataRef.current) {
-                                isRecoveringDataRef.current = true;
+                                setDataRecoveryLoading(`Reconnecting ${market.label} candle stream...`);
                             }
                         }
                     );
@@ -1830,7 +1846,7 @@ const AutoTrades = observer(() => {
             }
         }
         setIsConnected(Object.keys(subscriptionsRef.current).length > 0);
-    }, [backfillPercentageTicks]);
+    }, [backfillPercentageTicks, clearDataRecoveryLoading, setDataRecoveryLoading]);
 
     const stopSubscriptions = useCallback(() => {
         subscriptionVersionRef.current++;
@@ -1851,14 +1867,14 @@ const AutoTrades = observer(() => {
         });
         candleSubscriptionsRef.current = {};
         setIsConnected(false);
-        isRecoveringDataRef.current = false;
-    }, []);
+        clearDataRecoveryLoading();
+    }, [clearDataRecoveryLoading]);
 
     const restartSubscriptions = useCallback(() => {
         if (restartInFlightRef.current) return;
         restartInFlightRef.current = true;
-        isRecoveringDataRef.current = true;
         stopSubscriptions();
+        setDataRecoveryLoading('Market data paused. Reconnecting streams...');
         restartTimerRef.current = window.setTimeout(() => {
             restartTimerRef.current = null;
             if (!show_auto_ref.current || unmountedRef.current) {
@@ -1874,7 +1890,7 @@ const AutoTrades = observer(() => {
                     lastTickAtRef.current = Date.now();
                 });
         }, 800);
-    }, [startSubscriptions, stopSubscriptions]);
+    }, [setDataRecoveryLoading, startSubscriptions, stopSubscriptions]);
 
     const resetSession = useCallback(() => {
         const baseStake = configRef.current.stake;
@@ -1930,10 +1946,10 @@ const AutoTrades = observer(() => {
             state.consecutive = 0;
         });
         setIsRunning(false);
-        isRecoveringDataRef.current = false;
+        clearDataRecoveryLoading();
         setCooldownDisplay(0);
         refreshDisplays();
-    }, [refreshDisplays]);
+    }, [clearDataRecoveryLoading, refreshDisplays]);
 
     const handleStop = useCallback(() => {
         stopTrading();
@@ -2073,6 +2089,7 @@ const AutoTrades = observer(() => {
     const baseStakeNum = Number(stake) || 1;
     const martingaleActive = currentStakeDisplay > baseStakeNum;
     const inCooldown = cooldownDisplay > 0;
+    const isDataLoading = selectedMarketSymbols.length > 0 && (dataStreamLoading || (!isConnected && show_auto));
     const streakNum = Math.min(10, Math.max(2, Number(streak) || 4));
     const isDirection = IS_DIRECTION_TYPE[tradeType];
     const previousContractResult = previousContractResultRef.current;
@@ -2117,11 +2134,14 @@ const AutoTrades = observer(() => {
                                     'auto-trades-status--connected': isConnected && !inCooldown,
                                     'auto-trades-status--running': isRunning && !inCooldown,
                                     'auto-trades-status--cooldown': inCooldown,
+                                    'auto-trades-status--loading': isDataLoading && !inCooldown,
                                 })}
                             />
                             <span className='auto-trades-status__label'>
                                 {inCooldown
                                     ? `Cooldown ${cooldownDisplay}t`
+                                    : isDataLoading
+                                      ? 'Loading data'
                                     : isRunning
                                       ? 'Trading'
                                       : isConnected
@@ -2132,6 +2152,13 @@ const AutoTrades = observer(() => {
                             </span>
                         </div>
                     </div>
+
+                    {isDataLoading && (
+                        <div className='auto-trades-data-loader'>
+                            <span className='auto-trades-data-loader__spinner' />
+                            <span>{dataStreamMessage}</span>
+                        </div>
+                    )}
 
                     {/* Cooldown banner */}
                     {inCooldown && isRunning && (
@@ -2516,8 +2543,15 @@ const AutoTrades = observer(() => {
                                                 'auto-trades-market--win': m.lastResult === 'win' && !m.trading,
                                                 'auto-trades-market--loss': m.lastResult === 'loss' && !m.trading,
                                                 'auto-trades-market--cooldown': inCooldown && isRunning,
+                                                'auto-trades-market--loading': isDataLoading,
                                             })}
                                         >
+                                            {isDataLoading && (
+                                                <div className='auto-trades-market__loading'>
+                                                    <span className='auto-trades-data-loader__spinner' />
+                                                    <span>Loading</span>
+                                                </div>
+                                            )}
                                             <div className='auto-trades-market__top'>
                                                 <div>
                                                     <p className='auto-trades-market__name'>{m.label}</p>
