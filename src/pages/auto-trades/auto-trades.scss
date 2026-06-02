@@ -2,36 +2,36 @@
 
 // ── Design tokens ────────────────────────────────────────────────────────────
 // Deep dark navy + muted crimson premium palette
-$at-bg-deep:       #060c18;
-$at-bg-base:       #080e1d;
-$at-bg-card:       #0c1627;
-$at-bg-card-2:     #101e35;
-$at-bg-card-3:     #132440;
-$at-border:        #1b2e4e;
+$at-bg-deep: #060c18;
+$at-bg-base: #080e1d;
+$at-bg-card: #0c1627;
+$at-bg-card-2: #101e35;
+$at-bg-card-3: #132440;
+$at-border: #1b2e4e;
 $at-border-subtle: #122038;
-$at-border-glow:   #2a4872;
+$at-border-glow: #2a4872;
 
-$at-crimson:       #c42038;
-$at-crimson-dark:  #8f1427;
+$at-crimson: #c42038;
+$at-crimson-dark: #8f1427;
 $at-crimson-light: #e0304e;
-$at-crimson-glow:  rgba(196, 32, 56, 0.15);
+$at-crimson-glow: rgba(196, 32, 56, 0.15);
 $at-crimson-faint: rgba(196, 32, 56, 0.07);
 
-$at-navy:          #1e5aa8;
-$at-navy-bright:   #2e7fd8;
-$at-navy-glow:     rgba(46, 127, 216, 0.15);
+$at-navy: #1e5aa8;
+$at-navy-bright: #2e7fd8;
+$at-navy-glow: rgba(46, 127, 216, 0.15);
 
-$at-win:           #00cc7a;
-$at-win-glow:      rgba(0, 204, 122, 0.12);
-$at-loss:          #c42038;
-$at-loss-glow:     rgba(196, 32, 56, 0.12);
-$at-amber:         #d9921a;
-$at-amber-glow:    rgba(217, 146, 26, 0.12);
+$at-win: #00cc7a;
+$at-win-glow: rgba(0, 204, 122, 0.12);
+$at-loss: #c42038;
+$at-loss-glow: rgba(196, 32, 56, 0.12);
+$at-amber: #d9921a;
+$at-amber-glow: rgba(217, 146, 26, 0.12);
 
-$at-text:          #d6e4f7;
-$at-text-dim:      #8aa8cc;
-$at-text-muted:    #4a6a90;
-$at-text-faint:    #2c4060;
+$at-text: #d6e4f7;
+$at-text-dim: #8aa8cc;
+$at-text-muted: #4a6a90;
+$at-text-faint: #2c4060;
 
 // ── Auto Trades Page ─────────────────────────────────────────────────────────
 
@@ -51,8 +51,12 @@ $at-text-faint:    #2c4060;
         min-height: 0;
         overflow-y: auto;
 
-        &::-webkit-scrollbar { width: 4px; }
-        &::-webkit-scrollbar-track { background: transparent; }
+        &::-webkit-scrollbar {
+            width: 4px;
+        }
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
         &::-webkit-scrollbar-thumb {
             background: $at-border;
             border-radius: 2px;
@@ -261,8 +265,12 @@ $at-text-faint:    #2c4060;
             letter-spacing: 0.01em;
         }
 
-        &--grow { flex: 1; }
-        &--narrow { flex: 0 0 7rem; }
+        &--grow {
+            flex: 1;
+        }
+        &--narrow {
+            flex: 0 0 7rem;
+        }
     }
 
     &__streak-row {
@@ -283,11 +291,7 @@ $at-text-faint:    #2c4060;
         &::-webkit-slider-runnable-track {
             height: 0.5rem;
             border-radius: 0.4rem;
-            background: linear-gradient(
-                to right,
-                $at-crimson var(--pct, 50%),
-                $at-border-subtle var(--pct, 50%)
-            );
+            background: linear-gradient(to right, $at-crimson var(--pct, 50%), $at-border-subtle var(--pct, 50%));
         }
         &::-moz-range-track {
             height: 0.5rem;
@@ -562,7 +566,9 @@ $at-text-faint:    #2c4060;
             box-shadow 0.2s;
         letter-spacing: 0.04em;
 
-        &:active { transform: scale(0.98); }
+        &:active {
+            transform: scale(0.98);
+        }
         &:disabled {
             opacity: 0.35;
             cursor: not-allowed;
@@ -615,6 +621,14 @@ $at-text-faint:    #2c4060;
             box-shadow:
                 0 0 0 0.8rem rgba(132, 91, 205, 0.12),
                 0 1rem 2.8rem rgba(132, 91, 205, 0.36),
+                inset 0 0.2rem 0.8rem rgba(255, 255, 255, 0.24);
+        }
+
+        &--dragging .auto-trades-controls__ai-orbit {
+            transform: scale(1.06);
+            box-shadow:
+                0 0 0 0.9rem rgba(132, 91, 205, 0.14),
+                0 1.2rem 3.2rem rgba(132, 91, 205, 0.42),
                 inset 0 0.2rem 0.8rem rgba(255, 255, 255, 0.24);
         }
     }
@@ -886,12 +900,16 @@ $at-text-faint:    #2c4060;
         background: $at-bg-card-2;
     }
 
-    &:active { transform: scale(0.98); }
+    &:active {
+        transform: scale(0.98);
+    }
 
     &--active {
         border-color: rgba(196, 32, 56, 0.4);
         background: $at-crimson-faint;
-        box-shadow: 0 0 0 1px rgba(196, 32, 56, 0.15), 0 0 12px $at-crimson-glow;
+        box-shadow:
+            0 0 0 1px rgba(196, 32, 56, 0.15),
+            0 0 12px $at-crimson-glow;
     }
 
     &:disabled {
@@ -924,7 +942,9 @@ $at-text-faint:    #2c4060;
         color: $at-text;
     }
 
-    &--active &__label { color: #f0d0d5; }
+    &--active &__label {
+        color: #f0d0d5;
+    }
 
     &__switch {
         width: 2.4rem;
@@ -956,6 +976,7 @@ $at-text-faint:    #2c4060;
         }
     }
 }
+
 .auto-trades-martingale-selector {
     label {
         display: block;
@@ -1030,9 +1051,16 @@ $at-text-faint:    #2c4060;
         cursor: pointer;
         transition: all 0.2s;
 
-        &:hover { border-color: $at-border-glow; }
-        &:focus { outline: none; border-color: $at-crimson; }
-        option { background: $at-bg-card; }
+        &:hover {
+            border-color: $at-border-glow;
+        }
+        &:focus {
+            outline: none;
+            border-color: $at-crimson;
+        }
+        option {
+            background: $at-bg-card;
+        }
     }
 }
 
@@ -1047,10 +1075,14 @@ $at-text-faint:    #2c4060;
 
     .auto-trades-config__field {
         margin-bottom: 0.8rem;
-        &:last-child { margin-bottom: 0; }
+        &:last-child {
+            margin-bottom: 0;
+        }
     }
 
-    .auto-trades-config__slider { background: $at-border-subtle; }
+    .auto-trades-config__slider {
+        background: $at-border-subtle;
+    }
 }
 
 // ── Markets grid ──────────────────────────────────────────────────────────────
@@ -1154,7 +1186,9 @@ $at-text-faint:    #2c4060;
         margin: 0 0 1rem;
     }
 
-    &__grid--available { margin-bottom: 0; }
+    &__grid--available {
+        margin-bottom: 0;
+    }
 }
 
 // ── Market card ───────────────────────────────────────────────────────────────
@@ -1183,12 +1217,16 @@ $at-text-faint:    #2c4060;
         transition: opacity 0.2s;
     }
 
-    &:hover::after { opacity: 1; }
+    &:hover::after {
+        opacity: 1;
+    }
 
     &--ready {
         border-color: rgba(0, 204, 122, 0.3);
         background: $at-win-glow;
-        box-shadow: 0 0 0 1px rgba(0, 204, 122, 0.1), 0 4px 20px rgba(0, 204, 122, 0.08);
+        box-shadow:
+            0 0 0 1px rgba(0, 204, 122, 0.1),
+            0 4px 20px rgba(0, 204, 122, 0.08);
     }
 
     &--trading {
@@ -1272,7 +1310,9 @@ $at-text-faint:    #2c4060;
                 border-color: rgba(196, 32, 56, 0.4);
             }
 
-            &:active { transform: scale(0.94); }
+            &:active {
+                transform: scale(0.94);
+            }
         }
     }
 
@@ -1412,7 +1452,9 @@ $at-text-faint:    #2c4060;
         height: 1.1rem;
         border-radius: 50%;
         background: $at-border-subtle;
-        transition: background 0.2s, transform 0.15s;
+        transition:
+            background 0.2s,
+            transform 0.15s;
 
         &--filled {
             background: $at-crimson;
@@ -1530,8 +1572,12 @@ $at-text-faint:    #2c4060;
     }
 
     &__pct {
-        &--high { color: $at-crimson; }
-        &--low { color: $at-text-muted; }
+        &--high {
+            color: $at-crimson;
+        }
+        &--low {
+            color: $at-text-muted;
+        }
     }
 }
 
@@ -1568,7 +1614,9 @@ $at-text-faint:    #2c4060;
         background: $at-crimson-faint;
     }
 
-    &:active { transform: scale(0.98); }
+    &:active {
+        transform: scale(0.98);
+    }
 
     &__plus {
         display: flex;
@@ -1591,7 +1639,9 @@ $at-text-faint:    #2c4060;
         border-color: rgba(196, 32, 56, 0.4);
     }
 
-    &__info { text-align: left; }
+    &__info {
+        text-align: left;
+    }
 
     &__name {
         font-size: 1.35rem;
@@ -1625,13 +1675,21 @@ $at-text-faint:    #2c4060;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(4px);
     white-space: nowrap;
-    transition: background 0.15s, transform 0.1s;
+    transition:
+        background 0.15s,
+        transform 0.1s;
     letter-spacing: 0.02em;
 
-    &:hover { background: rgba(183, 120, 0, 0.9); }
-    &:active { transform: scale(0.96); }
+    &:hover {
+        background: rgba(183, 120, 0, 0.9);
+    }
+    &:active {
+        transform: scale(0.96);
+    }
 
-    @media (min-width: 1024px) { bottom: 2.4rem; }
+    @media (min-width: 1024px) {
+        bottom: 2.4rem;
+    }
 
     @include mobile-or-tablet-screen {
         bottom: calc(4rem + env(safe-area-inset-bottom));
@@ -1673,7 +1731,10 @@ $at-text-faint:    #2c4060;
         background: $at-amber-glow;
     }
 
-    &__icon { font-size: 2rem; flex-shrink: 0; }
+    &__icon {
+        font-size: 2rem;
+        flex-shrink: 0;
+    }
 
     &__title {
         flex: 1;
@@ -1694,7 +1755,9 @@ $at-text-faint:    #2c4060;
         border-radius: 50%;
         transition: background 0.15s;
 
-        &:hover { background: $at-bg-card-2; }
+        &:hover {
+            background: $at-bg-card-2;
+        }
     }
 
     &__body {
@@ -1703,7 +1766,9 @@ $at-text-faint:    #2c4060;
         color: $at-text;
         line-height: 1.7;
 
-        p { margin: 0 0 1.2rem; }
+        p {
+            margin: 0 0 1.2rem;
+        }
 
         ul {
             margin: 0;
@@ -1712,7 +1777,9 @@ $at-text-faint:    #2c4060;
             li {
                 margin-bottom: 0.8rem;
                 color: $at-text-dim;
-                &:last-child { margin-bottom: 0; }
+                &:last-child {
+                    margin-bottom: 0;
+                }
             }
         }
     }
@@ -1735,41 +1802,65 @@ $at-text-faint:    #2c4060;
         cursor: pointer;
         transition: opacity 0.15s;
 
-        &:hover { opacity: 0.85; }
+        &:hover {
+            opacity: 0.85;
+        }
     }
 }
 
 // ── Animations ────────────────────────────────────────────────────────────────
 
 @keyframes at-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
 }
 
 @keyframes at-spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 @keyframes at-trade-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(46, 127, 216, 0.2); }
-    50% { box-shadow: 0 0 0 6px rgba(46, 127, 216, 0); }
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(46, 127, 216, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(46, 127, 216, 0);
+    }
 }
 
 @keyframes at-win-flash {
-    0% { box-shadow: 0 0 0 0 rgba(0, 204, 122, 0.4); }
-    100% { box-shadow: 0 0 0 8px rgba(0, 204, 122, 0); }
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 204, 122, 0.4);
+    }
+    100% {
+        box-shadow: 0 0 0 8px rgba(0, 204, 122, 0);
+    }
 }
 
 @keyframes at-loss-flash {
-    0% { box-shadow: 0 0 0 0 rgba(196, 32, 56, 0.4); }
-    100% { box-shadow: 0 0 0 8px rgba(196, 32, 56, 0); }
+    0% {
+        box-shadow: 0 0 0 0 rgba(196, 32, 56, 0.4);
+    }
+    100% {
+        box-shadow: 0 0 0 8px rgba(196, 32, 56, 0);
+    }
 }
 
 // ── Mobile overrides ──────────────────────────────────────────────────────────
 
 @include mobile-or-tablet-screen {
     .auto-trades-page {
-        &__inner { padding: 1rem 0.75rem 7.5rem; }
+        &__inner {
+            padding: 1rem 0.75rem 7.5rem;
+        }
 
         &__header {
             flex-direction: column;
@@ -1777,7 +1868,9 @@ $at-text-faint:    #2c4060;
             margin-bottom: 1rem;
         }
 
-        &__body { display: block; }
+        &__body {
+            display: block;
+        }
 
         &__sidebar {
             margin-bottom: 1.5rem;
@@ -1875,6 +1968,50 @@ $at-text-faint:    #2c4060;
             font-size: 1.05rem;
             border-radius: 999px;
         }
+
+        &__ai {
+            position: fixed;
+            left: var(--auto-trades-ai-fab-left, auto);
+            top: var(--auto-trades-ai-fab-top, auto);
+            z-index: 180;
+            width: 6.4rem;
+            height: 6.4rem;
+            min-height: 6.4rem;
+            flex: 0 0 auto;
+            padding: 0;
+            border-radius: 50%;
+            background: transparent;
+            touch-action: none;
+            cursor: grab;
+            filter: drop-shadow(0 0.8rem 1.8rem rgba(0, 0, 0, 0.42));
+
+            &:active,
+            &--dragging {
+                cursor: grabbing;
+            }
+        }
+
+        &__ai-orbit {
+            width: 5.6rem;
+            height: 5.6rem;
+            box-shadow:
+                0 0 0 0.7rem rgba(132, 91, 205, 0.08),
+                0 0.7rem 2rem rgba(132, 91, 205, 0.3),
+                inset 0 0.2rem 0.7rem rgba(255, 255, 255, 0.22);
+        }
+
+        &__ai-text {
+            font-size: 2.6rem;
+        }
+
+        &__ai-dot {
+            top: 0.8rem;
+            right: 0.8rem;
+        }
+
+        &__ai-label {
+            display: none;
+        }
     }
 
     .auto-trades-hint,
@@ -1906,7 +2043,9 @@ $at-text-faint:    #2c4060;
             font-size: 0.8rem;
         }
 
-        &__label { font-size: 1rem; }
+        &__label {
+            font-size: 1rem;
+        }
 
         &__switch {
             width: 1.8rem;
@@ -1953,7 +2092,9 @@ $at-text-faint:    #2c4060;
 // ── Mobile layout helpers ─────────────────────────────────────────────────────
 
 .is-mobile {
-    .auto-trades-layout { flex-direction: column; }
+    .auto-trades-layout {
+        flex-direction: column;
+    }
 
     .auto-trades-sidebar {
         width: 100%;
@@ -1961,5 +2102,7 @@ $at-text-faint:    #2c4060;
         border-bottom: 1px solid $at-border;
     }
 
-    .auto-trades-main { padding: 1rem; }
+    .auto-trades-main {
+        padding: 1rem;
+    }
 }
