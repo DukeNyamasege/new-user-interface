@@ -88,6 +88,7 @@ const UI_REFRESH_THROTTLE_MS = 80;
 const PERCENTAGE_ANALYSIS_HISTORY_SIZE = 1000;
 const PERCENTAGE_BACKFILL_COUNT = PERCENTAGE_ANALYSIS_HISTORY_SIZE;
 const PERCENTAGE_MIN_SAMPLE_SIZE = 100;
+const MARKET_LOSS_COOLDOWN_TICKS = 300;
 
 type StrategyMode = 'STANDARD' | 'INVERSE' | 'PERCENTAGE';
 
@@ -848,6 +849,7 @@ interface MarketState {
     percentageEpochHistory: number[];
     percentageBackfilled: boolean;
     percentageBackfillInFlight: boolean;
+    lossCooldownLeft: number;
 }
 
 interface MarketDisplay extends MarketState {
@@ -880,6 +882,7 @@ const createMarketState = (prev?: Partial<MarketState>): MarketState => ({
     percentageEpochHistory: prev?.percentageEpochHistory ?? [],
     percentageBackfilled: prev?.percentageBackfilled ?? false,
     percentageBackfillInFlight: prev?.percentageBackfillInFlight ?? false,
+    lossCooldownLeft: prev?.lossCooldownLeft ?? 0,
 });
 
 const getDirectionSamplesFromQuotes = (quotes: number[]): Direction[] =>
@@ -1134,7 +1137,6 @@ const AutoTrades = observer(() => {
     const globalTradingRef = useRef(false);
     const nextStakeRef = useRef(1);
     const consecutiveLossRef = useRef(0);
-    const cooldownTicksRef = useRef(0);
     const previousContractResultRef = useRef<'win' | 'loss' | null>(null);
     const lastTickAtRef = useRef(0);
     const restartInFlightRef = useRef(false);
@@ -1416,18 +1418,22 @@ const AutoTrades = observer(() => {
     const flushDisplays = useCallback(() => {
         if (unmountedRef.current || !show_auto_ref.current) return;
         lastUiRefreshAtRef.current = Date.now();
+        const highestCooldown = selectedMarketsRef.current.reduce(
+            (maxCooldown, market) => Math.max(maxCooldown, marketStatesRef.current[market.symbol]?.lossCooldownLeft ?? 0),
+            0
+        );
         setMarketDisplays(
             selectedMarketsRef.current.map(m => ({
                 ...m,
                 ...(marketStatesRef.current[m.symbol] || {}),
                 currentStake: nextStakeRef.current,
-                cooldownLeft: cooldownTicksRef.current,
+                cooldownLeft: marketStatesRef.current[m.symbol]?.lossCooldownLeft ?? 0,
             }))
         );
         setTotalPnl(totalPnlRef.current);
         setTotalTrades(totalTradesRef.current);
         setCurrentStakeDisplay(nextStakeRef.current);
-        setCooldownDisplay(cooldownTicksRef.current);
+        setCooldownDisplay(highestCooldown);
     }, []);
 
     const refreshDisplays = useCallback(() => {
@@ -1731,8 +1737,8 @@ const AutoTrades = observer(() => {
 
             nextStakeRef.current = nextMartingaleState.nextStake;
             consecutiveLossRef.current = nextMartingaleState.consecutiveLosses;
-            cooldownTicksRef.current = 0;
             state.lastResult = nextMartingaleState.lastResult;
+            state.lossCooldownLeft = profit < 0 ? MARKET_LOSS_COOLDOWN_TICKS : 0;
             previousContractResultRef.current = state.lastResult;
             state.tradeCount++;
             state.trading = false;
@@ -1786,7 +1792,7 @@ const AutoTrades = observer(() => {
                 signalReady &&
                 !state.trading &&
                 !globalTradingRef.current &&
-                cooldownTicksRef.current === 0
+                state.lossCooldownLeft === 0
             ) {
                 state.trading = true;
                 state.consecutive = 0;
@@ -1871,8 +1877,8 @@ const AutoTrades = observer(() => {
                 appendPercentageQuote(symbol, state, quote, Number.isFinite(epoch) ? epoch : null, ct);
             }
 
-            if (cooldownTicksRef.current > 0) {
-                cooldownTicksRef.current = Math.max(0, cooldownTicksRef.current - 1);
+            if (state.lossCooldownLeft > 0) {
+                state.lossCooldownLeft = Math.max(0, state.lossCooldownLeft - 1);
             }
 
             if (IS_DIRECTION_TYPE[ct]) {
@@ -2233,7 +2239,6 @@ const AutoTrades = observer(() => {
         globalTradingRef.current = false;
         previousContractResultRef.current = null;
         consecutiveLossRef.current = 0;
-        cooldownTicksRef.current = 0;
 
         selectedMarkets.forEach(m => {
             // Create fresh state — never carry old array references to prevent memory accumulation
@@ -2276,7 +2281,6 @@ const AutoTrades = observer(() => {
     const stopTrading = useCallback(() => {
         runningRef.current = false;
         globalTradingRef.current = false;
-        cooldownTicksRef.current = 0;
         consecutiveLossRef.current = 0;
         previousContractResultRef.current = null;
         clearDeferredWork();
@@ -2287,6 +2291,7 @@ const AutoTrades = observer(() => {
             state.consecutive = 0;
             state.tradeStartTime = null;
             state.verificationId = null;
+            state.lossCooldownLeft = 0;
         });
         setIsRunning(false);
         clearDataRecoveryLoading();
@@ -2950,6 +2955,7 @@ const AutoTrades = observer(() => {
                             )}
                             <div className='auto-trades-markets__grid'>
                                 {marketDisplays.map(m => {
+                                    const marketInCooldown = m.cooldownLeft > 0;
                                     const dots = Math.min(m.consecutive, streakNum);
                                     const candleReady =
                                         !isCandleConfirmedTradeType(tradeType) ||
@@ -2957,7 +2963,7 @@ const AutoTrades = observer(() => {
                                             ? isInverseCandleMatch(tradeType, m.candleDirection)
                                             : isCandleMatch(tradeType, m.candleDirection));
                                     const isReady =
-                                        ((m.consecutive >= streakNum && candleReady) || m.trading) && !inCooldown;
+                                        ((m.consecutive >= streakNum && candleReady) || m.trading) && !marketInCooldown;
                                     return (
                                         <div
                                             key={m.symbol}
@@ -2966,7 +2972,7 @@ const AutoTrades = observer(() => {
                                                 'auto-trades-market--trading': m.trading,
                                                 'auto-trades-market--win': m.lastResult === 'win' && !m.trading,
                                                 'auto-trades-market--loss': m.lastResult === 'loss' && !m.trading,
-                                                'auto-trades-market--cooldown': inCooldown && isRunning,
+                                                'auto-trades-market--cooldown': marketInCooldown && isRunning,
                                                 'auto-trades-market--loading': isDataLoading,
                                             })}
                                         >
@@ -2992,9 +2998,9 @@ const AutoTrades = observer(() => {
                                                             −
                                                         </button>
                                                     )}
-                                                    {inCooldown && isRunning ? (
+                                                    {marketInCooldown && isRunning ? (
                                                         <div className='auto-trades-market__badge auto-trades-market__badge--cooldown'>
-                                                            ⏳{cooldownDisplay}
+                                                            ⏳{m.cooldownLeft}
                                                         </div>
                                                     ) : (
                                                         <div
