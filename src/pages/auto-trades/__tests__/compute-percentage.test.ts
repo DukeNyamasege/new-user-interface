@@ -1,8 +1,10 @@
 import {
     computePercentage,
+    getEffectiveSignalStreak,
     getNextMartingaleState,
     getPercentageSnapshot,
     getPredictionForLastOutcome,
+    hasRequiredDigitStreak,
     isPercentageSignalReady,
     normalizeAiAutoTradePlan,
     parseAiAutoTradeStrategy,
@@ -248,6 +250,59 @@ describe('martingale progression', () => {
             lastResult: 'win',
             nextStake: 0.35,
         });
+    });
+});
+
+describe('risk-filtered streak gating', () => {
+    it('requires at least a 3-digit streak for Digit Under and Digit Over strategies', () => {
+        expect(getEffectiveSignalStreak({ trade_type: 'DIGITUNDER', configured_streak: 2 })).toBe(3);
+        expect(getEffectiveSignalStreak({ trade_type: 'DIGITOVER', configured_streak: 1 })).toBe(3);
+        expect(getEffectiveSignalStreak({ trade_type: 'DIGITUNDER', configured_streak: 5 })).toBe(5);
+        expect(getEffectiveSignalStreak({ trade_type: 'DIGITEVEN', configured_streak: 2 })).toBe(2);
+    });
+
+    it('accepts a Digit Under streak only when the trailing digits all satisfy the active barrier', () => {
+        expect(
+            hasRequiredDigitStreak({
+                trade_type: 'DIGITUNDER',
+                digits: [1, 8, 9, 8],
+                barrier: 8,
+                inverse: false,
+                streak: 3,
+            })
+        ).toBe(true);
+
+        expect(
+            hasRequiredDigitStreak({
+                trade_type: 'DIGITUNDER',
+                digits: [8, 7, 8],
+                barrier: 8,
+                inverse: false,
+                streak: 3,
+            })
+        ).toBe(false);
+    });
+
+    it('applies the inverse low-digit filter for Digit Over recovery streaks', () => {
+        expect(
+            hasRequiredDigitStreak({
+                trade_type: 'DIGITOVER',
+                digits: [4, 2, 1, 2],
+                barrier: 2,
+                inverse: false,
+                streak: 3,
+            })
+        ).toBe(true);
+
+        expect(
+            hasRequiredDigitStreak({
+                trade_type: 'DIGITOVER',
+                digits: [2, 3, 2],
+                barrier: 2,
+                inverse: false,
+                streak: 3,
+            })
+        ).toBe(false);
     });
 });
 

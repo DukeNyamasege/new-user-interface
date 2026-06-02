@@ -586,6 +586,57 @@ export const getNextMartingaleState = ({
     };
 };
 
+export const getEffectiveSignalStreak = ({
+    trade_type,
+    configured_streak,
+}: {
+    trade_type: TradeType;
+    configured_streak: number;
+}) => {
+    const normalizedStreak = Math.min(10, Math.max(2, Math.trunc(configured_streak) || 4));
+    return usesLossPrediction(trade_type) ? Math.max(3, normalizedStreak) : normalizedStreak;
+};
+
+export const isDigitSignalMatch = ({
+    trade_type,
+    digit,
+    barrier,
+    inverse,
+}: {
+    trade_type: TradeType;
+    digit: number;
+    barrier: number;
+    inverse: boolean;
+}) => {
+    if (trade_type === 'DIGITOVER') return inverse ? digit > barrier : digit <= barrier;
+    if (trade_type === 'DIGITUNDER') return inverse ? digit < barrier : digit >= barrier;
+    if (trade_type === 'DIGITEVEN') return inverse ? digit % 2 === 0 : digit % 2 !== 0;
+    if (trade_type === 'DIGITODD') return inverse ? digit % 2 !== 0 : digit % 2 === 0;
+    if (trade_type === 'DIGITMATCH') return inverse ? digit === barrier : digit !== barrier;
+    if (trade_type === 'DIGITDIFF') return inverse ? digit !== barrier : digit === barrier;
+    return false;
+};
+
+export const hasRequiredDigitStreak = ({
+    trade_type,
+    digits,
+    barrier,
+    inverse,
+    streak,
+}: {
+    trade_type: TradeType;
+    digits: number[];
+    barrier: number;
+    inverse: boolean;
+    streak: number;
+}) => {
+    if (digits.length < streak) return false;
+
+    return digits
+        .slice(-streak)
+        .every(digit => isDigitSignalMatch({ trade_type, digit, barrier, inverse }));
+};
+
 const isDirectionMatch = (trade_type: TradeType, direction: Direction) => {
     if (trade_type === 'CALL') return direction === -1;
     if (trade_type === 'PUT') return direction === 1;
@@ -1718,13 +1769,12 @@ const AutoTrades = observer(() => {
             const bar = getActiveDigitBarrier(ct, lastResult, consecutiveLosses);
             const inv = inverseModeRef.current;
 
-            if (ct === 'DIGITOVER') return inv ? digit > bar : digit <= bar;
-            if (ct === 'DIGITUNDER') return inv ? digit < bar : digit >= bar;
-            if (ct === 'DIGITEVEN') return inv ? digit % 2 === 0 : digit % 2 !== 0;
-            if (ct === 'DIGITODD') return inv ? digit % 2 !== 0 : digit % 2 === 0;
-            if (ct === 'DIGITMATCH') return inv ? digit === bar : digit !== bar;
-            if (ct === 'DIGITDIFF') return inv ? digit !== bar : digit === bar;
-            return false;
+            return isDigitSignalMatch({
+                trade_type: ct,
+                digit,
+                barrier: bar,
+                inverse: inv,
+            });
         },
         [getActiveDigitBarrier]
     );
@@ -1805,7 +1855,10 @@ const AutoTrades = observer(() => {
             const pip = getMarketPipSize(symbol, AUTO_MARKET_LOOKUP.get(symbol)?.pip ?? 2);
             const quote = tick.quote as number;
             const ct = tradeTypeRef.current;
-            const targetLen = streakRef.current;
+            const targetLen = getEffectiveSignalStreak({
+                trade_type: ct,
+                configured_streak: streakRef.current,
+            });
 
             state.lastQuote = quote;
             lastTickAtRef.current = Date.now();
@@ -1854,19 +1907,29 @@ const AutoTrades = observer(() => {
                 : isCandleMatch(ct, state.candleDirection);
             const requiresCandle = isCandleConfirmedTradeType(ct);
             const lastPredictionResult = previousContractResultRef.current;
+            const activeBarrier = getActiveDigitBarrier(ct, lastPredictionResult, consecutiveLossRef.current);
+            const riskFilteredDigitStreakReady =
+                !usesLossPrediction(ct) ||
+                hasRequiredDigitStreak({
+                    trade_type: ct,
+                    digits: state.lastDigits,
+                    barrier: activeBarrier,
+                    inverse: inverseModeRef.current,
+                    streak: targetLen,
+                });
             const signalReady =
                 strategyModeRef.current === 'PERCENTAGE' && !modeTransitionLockRef.current
                     ? isPercentageSignalReady(
                           ct,
                           state,
-                          getActiveDigitBarrier(ct, lastPredictionResult, consecutiveLossRef.current)
+                          activeBarrier
                       ) &&
                       (!requiresCandle || candleMatch)
-                    : state.consecutive >= targetLen && (!requiresCandle || candleMatch);
+                    : state.consecutive >= targetLen && riskFilteredDigitStreakReady && (!requiresCandle || candleMatch);
 
             if (runningRef.current) {
                 const ct = tradeTypeRef.current;
-                const bar = getActiveDigitBarrier(ct, lastPredictionResult, consecutiveLossRef.current);
+                const bar = activeBarrier;
                 const mkt = AUTO_MARKET_LOOKUP.get(symbol);
                 const inv = inverseModeRef.current;
                 let condStr = '';
@@ -2366,7 +2429,10 @@ const AutoTrades = observer(() => {
     const martingaleActive = currentStakeDisplay > baseStakeNum;
     const inCooldown = cooldownDisplay > 0;
     const isDataLoading = selectedMarketSymbols.length > 0 && (dataStreamLoading || (!isConnected && show_auto));
-    const streakNum = Math.min(10, Math.max(2, Number(streak) || 4));
+    const streakNum = getEffectiveSignalStreak({
+        trade_type: tradeType,
+        configured_streak: Number(streak) || 4,
+    });
     const isDirection = IS_DIRECTION_TYPE[tradeType];
     const previousContractResult = previousContractResultRef.current;
     const lossPredictionActive =
