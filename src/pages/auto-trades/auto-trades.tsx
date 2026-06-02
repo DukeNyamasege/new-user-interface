@@ -91,7 +91,7 @@ const PERCENTAGE_THRESHOLDS: PercentageThresholds = {
     lower: { minPercentage: 57, momentum: 3, confidence: 85 },
 };
 
-type TradeType =
+export type TradeType =
     | 'DIGITOVER'
     | 'DIGITUNDER'
     | 'DIGITEVEN'
@@ -197,6 +197,24 @@ const DEFAULT_BARRIER: Record<TradeType, string> = {
 
 const isRunTradeType = (trade_type: TradeType) => trade_type === 'RUNHIGH' || trade_type === 'RUNLOW';
 const usesLossPrediction = (trade_type: TradeType) => trade_type === 'DIGITOVER' || trade_type === 'DIGITUNDER';
+
+export const getPredictionForLastOutcome = ({
+    trade_type,
+    last_result,
+    prediction_before_loss,
+    prediction_after_loss,
+    fallback_barrier,
+}: {
+    trade_type: TradeType;
+    last_result: 'win' | 'loss' | null;
+    prediction_before_loss: number;
+    prediction_after_loss: number;
+    fallback_barrier: number;
+}) => {
+    if (!usesLossPrediction(trade_type)) return fallback_barrier;
+
+    return last_result === 'loss' ? prediction_after_loss : prediction_before_loss;
+};
 
 const isDirectionMatch = (trade_type: TradeType, direction: Direction) => {
     if (trade_type === 'CALL') return direction === -1;
@@ -841,10 +859,13 @@ const AutoTrades = observer(() => {
     );
 
     const getActiveDigitBarrier = useCallback((ct: TradeType, lastResult: 'win' | 'loss' | null) => {
-        if (!usesLossPrediction(ct)) return barrierRef.current;
-
-        if (lastResult === 'loss') return predictionAfterLossRef.current;
-        return predictionBeforeLossRef.current;
+        return getPredictionForLastOutcome({
+            trade_type: ct,
+            last_result: lastResult,
+            prediction_before_loss: predictionBeforeLossRef.current,
+            prediction_after_loss: predictionAfterLossRef.current,
+            fallback_barrier: barrierRef.current,
+        });
     }, []);
 
     const pollCancellationRef = useRef<AbortController | null>(null);

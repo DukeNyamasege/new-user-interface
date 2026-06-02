@@ -1,4 +1,9 @@
-import { computePercentage, getPercentageSnapshot, isPercentageSignalReady } from '../auto-trades';
+import {
+    computePercentage,
+    getPercentageSnapshot,
+    getPredictionForLastOutcome,
+    isPercentageSignalReady,
+} from '../auto-trades';
 
 describe('computePercentage', () => {
     it('should correctly calculate the percentage', () => {
@@ -83,5 +88,53 @@ describe('percentage mode trade calculations', () => {
         );
 
         expect(isPercentageSignalReady('DIGITOVER' as any, state, 4)).toBe(true);
+    });
+});
+
+describe('Over/Under prediction selection', () => {
+    const baseConfig = {
+        prediction_before_loss: 4,
+        prediction_after_loss: 7,
+        fallback_barrier: 2,
+    };
+
+    it('uses Prediction Before Loss after a previous win', () => {
+        expect(
+            getPredictionForLastOutcome({
+                trade_type: 'DIGITOVER',
+                last_result: 'win',
+                ...baseConfig,
+            })
+        ).toBe(4);
+    });
+
+    it('uses Prediction After Loss after a previous loss', () => {
+        expect(
+            getPredictionForLastOutcome({
+                trade_type: 'DIGITUNDER',
+                last_result: 'loss',
+                ...baseConfig,
+            })
+        ).toBe(7);
+    });
+
+    it('uses Prediction Before Loss for the first trade before any previous outcome exists', () => {
+        expect(
+            getPredictionForLastOutcome({
+                trade_type: 'DIGITOVER',
+                last_result: null,
+                ...baseConfig,
+            })
+        ).toBe(4);
+    });
+
+    it('keeps non Over/Under contracts on the normal barrier value', () => {
+        expect(
+            getPredictionForLastOutcome({
+                trade_type: 'DIGITMATCH',
+                last_result: 'loss',
+                ...baseConfig,
+            })
+        ).toBe(2);
     });
 });
