@@ -222,6 +222,37 @@ describe('<AutoTrades />', () => {
         expect(screen.getAllByTitle(/Remove from Auto Trades/i)).toHaveLength(12);
     });
 
+    it('allows editing the custom martingale loss threshold without forcing a mid-typing reset', async () => {
+        const user = userEvent.setup();
+
+        render(<AutoTrades />);
+
+        const martingaleModeSelect = screen
+            .getByText('Martingale Strategy')
+            .parentElement?.querySelector('select') as HTMLSelectElement;
+
+        expect(martingaleModeSelect).toBeTruthy();
+
+        await user.selectOptions(martingaleModeSelect, 'custom_consecutive_loss_trigger');
+
+        const thresholdInput = screen
+            .getByText('Consecutive losses before martingale')
+            .parentElement?.querySelector('input') as HTMLInputElement;
+
+        expect(thresholdInput).toBeTruthy();
+        expect(thresholdInput.value).toBe('2');
+
+        await user.clear(thresholdInput);
+        expect(thresholdInput.value).toBe('');
+
+        await user.type(thresholdInput, '10');
+        expect(thresholdInput.value).toBe('10');
+
+        await user.tab();
+
+        expect(screen.getByText(/Martingale engages after 10 consecutive losses/i)).toBeInTheDocument();
+    });
+
     it('requires bullish 5m candle and falling streak before Only Ups execution', async () => {
         const user = userEvent.setup();
         const store = createMockStore();

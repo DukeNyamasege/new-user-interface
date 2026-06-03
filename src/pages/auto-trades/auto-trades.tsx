@@ -285,6 +285,15 @@ const clampConsecutiveLossThreshold = (value: unknown) => {
     return Math.min(10, Math.max(1, Math.trunc(numeric)));
 };
 
+const getInitialConsecutiveLossThreshold = () => {
+    try {
+        const saved = localStorage.getItem('auto_trades_consecutiveLossCount');
+        return clampConsecutiveLossThreshold(saved || 2);
+    } catch {
+        return 2;
+    }
+};
+
 const getAiNumber = (text: string, patterns: RegExp[], min: number, max: number) => {
     for (const pattern of patterns) {
         const match = text.match(pattern);
@@ -1047,14 +1056,10 @@ const AutoTrades = observer(() => {
             return 'after_one_loss';
         }
     });
-    const [consecutiveLossCount, setConsecutiveLossCount] = useState(() => {
-        try {
-            const saved = localStorage.getItem('auto_trades_consecutiveLossCount');
-            return clampConsecutiveLossThreshold(saved || 2);
-        } catch {
-            return 2;
-        }
-    });
+    const [consecutiveLossCount, setConsecutiveLossCount] = useState(getInitialConsecutiveLossThreshold);
+    const [consecutiveLossCountInput, setConsecutiveLossCountInput] = useState(() =>
+        String(getInitialConsecutiveLossThreshold())
+    );
     const strategyModeRef = useRef(strategyMode);
     const martingaleModeRef = useRef(martingaleMode);
     const consecutiveLossCountRef = useRef(consecutiveLossCount);
@@ -1337,6 +1342,19 @@ const AutoTrades = observer(() => {
             // Ignore localStorage write failures.
         }
     }, [consecutiveLossCount]);
+
+    useEffect(() => {
+        setConsecutiveLossCountInput(String(clampConsecutiveLossThreshold(consecutiveLossCount)));
+    }, [consecutiveLossCount]);
+
+    const handleConsecutiveLossCountInputChange = useCallback((value: string) => {
+        const digits_only = value.replace(/[^\d]/g, '').slice(0, 2);
+        setConsecutiveLossCountInput(digits_only);
+    }, []);
+
+    const commitConsecutiveLossCountInput = useCallback(() => {
+        setConsecutiveLossCount(clampConsecutiveLossThreshold(consecutiveLossCountInput || 2));
+    }, [consecutiveLossCountInput]);
 
     useEffect(() => {
         selectedMarketsRef.current = selectedMarkets;
@@ -2633,7 +2651,7 @@ const AutoTrades = observer(() => {
 
                                     {/* Trade type row */}
                                     <div className='auto-trades-config__trade-row'>
-                                        <div className='auto-trades-config__field auto-trades-config__field--grow'>
+                                        <div className='auto-trades-config__field auto-trades-config__field--type'>
                                             <label>Type</label>
                                             <select
                                                 className='auto-trades-config__select'
@@ -2731,7 +2749,7 @@ const AutoTrades = observer(() => {
                                             </div>
                                         )}
 
-                                        <div className='auto-trades-config__field auto-trades-config__field--narrow'>
+                                        <div className='auto-trades-config__field auto-trades-config__field--analysis'>
                                             <label>Analysis ticks</label>
                                             <select
                                                 className='auto-trades-config__select'
@@ -2933,19 +2951,24 @@ const AutoTrades = observer(() => {
                                                   )} consecutive losses.`}
                                     </p>
                                     {martingaleMode === 'custom_consecutive_loss_trigger' && (
-                                        <div className='auto-trades-config__field' style={{ marginTop: '0.5rem' }}>
+                                        <div
+                                            className='auto-trades-config__field auto-trades-config__field--martingale-threshold'
+                                            style={{ marginTop: '0.5rem' }}
+                                        >
                                             <label>Consecutive losses before martingale</label>
                                             <Input
                                                 type='number'
                                                 min='1'
                                                 max='10'
                                                 step='1'
-                                                value={consecutiveLossCount}
+                                                value={consecutiveLossCountInput}
+                                                inputMode='numeric'
                                                 onChange={e =>
-                                                    setConsecutiveLossCount(
-                                                        clampConsecutiveLossThreshold(e.target.value)
+                                                    handleConsecutiveLossCountInputChange(
+                                                        (e.target as HTMLInputElement).value
                                                     )
                                                 }
+                                                onBlur={commitConsecutiveLossCountInput}
                                                 disabled={isRunning}
                                             />
                                         </div>
