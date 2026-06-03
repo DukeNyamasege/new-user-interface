@@ -7,6 +7,7 @@ import { getSymbolDisplayNameSync } from '@/utils/symbol-display-name';
 import { localize } from '@deriv-com/translations';
 import { MarketIcon } from '../market/market-icon';
 import { convertDateFormat } from '../shared';
+import Money from '../shared_ui/money';
 import Popover from '../shared_ui/popover';
 import { TradeTypeIcon } from '../trade-type/trade-type-icon';
 import { TTransaction } from './transaction-details.types';
@@ -113,7 +114,10 @@ export default function MobileTransactionCards({ transaction }: { transaction: T
                 />
             </div>
             <div className={`${PARENT_CLASS}__card__row`}>
-                <CardColumn title='Buy Price' label={Math.abs(transaction?.buy_price ?? 0).toFixed(2)} />
+                <CardColumn
+                    title='Buy Price'
+                    label={<Money amount={Math.abs(transaction?.buy_price ?? 0)} currency={transaction?.currency} show_currency />}
+                />
                 <CardColumn
                     title='Exit Spot'
                     label={transaction?.exit_spot}
@@ -132,7 +136,7 @@ export default function MobileTransactionCards({ transaction }: { transaction: T
                                 [`${PARENT_CLASS}__card__profit--loss`]: transaction?.profit < 0,
                             })}
                         >
-                            {Math.abs(transaction?.profit ?? 0).toFixed(2)}
+                            <Money amount={Math.abs(transaction?.profit ?? 0)} currency={transaction?.currency} show_currency />
                         </div>
                     }
                     right_aligned

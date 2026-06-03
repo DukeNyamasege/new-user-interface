@@ -7,6 +7,8 @@ import { isMultipliersOnly, isOptionsBlocked } from '@/components/shared/common/
 import { removeCookies } from '@/components/shared/utils/storage/storage';
 import { observer as globalObserver, observer } from '@/external/bot-skeleton';
 import { api_base } from '@/external/bot-skeleton/services/api/api-base';
+import { API_BASE } from '@/utils/api-base';
+import { resolveDisplayCurrency, sanitizeUsdKesRate, TDisplayCurrency } from '@/utils/display-currency';
 import { ErrorLogger } from '@/utils/error-logger';
 import { clearApiTokenSession } from '@/utils/api-token-permissions';
 import type { Balance } from '@deriv/api-types';
@@ -24,6 +26,9 @@ export default class ClientStore {
     account_list: TAuthData['account_list'] = [];
     balance = '0';
     currency = 'AUD';
+    display_currency: TDisplayCurrency = resolveDisplayCurrency(localStorage.getItem('display_currency'), 'USD');
+    usd_kes_rate = sanitizeUsdKesRate(null);
+    exchange_rate_updated_at = '';
     is_logged_in = false;
     is_account_regenerating = false;
 
@@ -37,6 +42,7 @@ export default class ClientStore {
     private ws_login_id: string | null = null;
     private is_regenerating = false;
     private instance_id: string = '';
+    private exchange_rate_refresh_timer: ReturnType<typeof window.setInterval> | null = null;
 
     // TODO: fix with self exclusion
 
@@ -93,6 +99,9 @@ export default class ClientStore {
             all_accounts_balance: observable,
             balance: observable,
             currency: observable,
+            display_currency: observable,
+            exchange_rate_updated_at: observable,
+            usd_kes_rate: observable,
 
             is_logged_in: observable,
             is_account_regenerating: observable,
@@ -117,6 +126,8 @@ export default class ClientStore {
             setIsAccountRegenerating: action,
             setBalance: action,
             setCurrency: action,
+            setDisplayCurrency: action,
+            setExchangeRateData: action,
             setIsLoggedIn: action,
             setIsLoggingOut: action,
             setLoginId: action,
@@ -125,6 +136,10 @@ export default class ClientStore {
             is_cr_account: computed,
             account_open_date: computed,
         });
+
+        if (this.display_currency === 'KES') {
+            this.startExchangeRateAutoRefresh();
+        }
     }
 
     get active_accounts() {
@@ -212,6 +227,22 @@ export default class ClientStore {
         this.currency = currency;
     };
 
+    setDisplayCurrency = (currency: TDisplayCurrency) => {
+        this.display_currency = resolveDisplayCurrency(currency, 'USD');
+        localStorage.setItem('display_currency', this.display_currency);
+
+        if (this.display_currency === 'KES') {
+            this.startExchangeRateAutoRefresh();
+        } else {
+            this.stopExchangeRateAutoRefresh();
+        }
+    };
+
+    setExchangeRateData = (rate: number, updated_at = '') => {
+        this.usd_kes_rate = sanitizeUsdKesRate(rate);
+        this.exchange_rate_updated_at = updated_at;
+    };
+
     setIsLoggedIn = (is_logged_in: boolean) => {
         this.is_logged_in = is_logged_in;
     };
@@ -235,6 +266,41 @@ export default class ClientStore {
 
     setIsLoggingOut = (is_logging_out: boolean) => {
         this.is_logging_out = is_logging_out;
+    };
+
+    fetchUsdKesRate = async () => {
+        try {
+            const response = await fetch(`${API_BASE}/exchange-rates/usd-kes`);
+            if (!response.ok) {
+                throw new Error(`Exchange rate request failed with ${response.status}`);
+            }
+
+            const data = await response.json();
+            this.setExchangeRateData(data?.rate, data?.updated_at || '');
+        } catch (error) {
+            ErrorLogger.log('Failed to fetch USD/KES rate', error, {
+                context: 'client-store.fetchUsdKesRate',
+            });
+        }
+    };
+
+    startExchangeRateAutoRefresh = () => {
+        this.fetchUsdKesRate();
+
+        if (this.exchange_rate_refresh_timer) {
+            window.clearInterval(this.exchange_rate_refresh_timer);
+        }
+
+        this.exchange_rate_refresh_timer = window.setInterval(() => {
+            this.fetchUsdKesRate();
+        }, 10 * 60 * 1000);
+    };
+
+    stopExchangeRateAutoRefresh = () => {
+        if (this.exchange_rate_refresh_timer) {
+            window.clearInterval(this.exchange_rate_refresh_timer);
+            this.exchange_rate_refresh_timer = null;
+        }
     };
 
     /**
@@ -444,6 +510,7 @@ export default class ClientStore {
         this.authDataSubscription?.unsubscribe();
         observer.unregister('api.authorize', this.onAuthorizeEvent);
         this.removeVisibilityListener();
+        this.stopExchangeRateAutoRefresh();
 
         // Properly clean up the global observer reference
         // Only clear if this instance is the one referenced by checking the instance ID

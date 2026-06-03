@@ -32,7 +32,11 @@ export const normalizeApiTokenInput = (input: string): string => {
 
 export const normalizeScopes = (scopes: unknown): ApiTokenScope[] => {
     if (Array.isArray(scopes)) return scopes.map(scope => String(scope).trim()).filter(Boolean);
-    if (typeof scopes === 'string') return scopes.split(/\s+/).map(scope => scope.trim()).filter(Boolean);
+    if (typeof scopes === 'string')
+        return scopes
+            .split(/\s+/)
+            .map(scope => scope.trim())
+            .filter(Boolean);
     return [];
 };
 

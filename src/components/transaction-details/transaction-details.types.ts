@@ -65,6 +65,7 @@ export type TDesktopTransactionTable = {
     result: TStatistics | undefined;
     account: string;
     balance: string | number;
+    currency: string;
 };
 
 export type TTableCell = {

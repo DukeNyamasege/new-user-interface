@@ -5,6 +5,7 @@ import { transaction_elements } from '@/constants/transactions';
 import { getContractTypeName } from '@/external/bot-skeleton';
 import { isDbotRTL } from '@/external/bot-skeleton/utils/workspace';
 import { getSymbolDisplayNameSync } from '@/utils/symbol-display-name';
+import Money from '../shared_ui/money';
 import { MarketIcon } from '../market/market-icon';
 import { convertDateFormat } from '../shared';
 import Popover from '../shared_ui/popover';
@@ -63,6 +64,7 @@ export default function DesktopTransactionTable({
     transaction_columns,
     account,
     balance,
+    currency,
 }: TDesktopTransactionTable) {
     return (
         <div data-testid='transaction_details_tables' className='transaction-details-tables'>
@@ -114,7 +116,9 @@ export default function DesktopTransactionTable({
                                 />
                                 <TableCell label={data?.entry_spot} loader={!data?.entry_spot} />
                                 <TableCell label={data?.exit_spot} loader={!data.exit_spot} />
-                                <TableCell label={Math.abs(data?.buy_price ?? 0).toFixed(2)} />
+                                <TableCell
+                                    label={<Money amount={Math.abs(data?.buy_price ?? 0)} currency={data?.currency} show_currency />}
+                                />
                                 <TableCell
                                     label={
                                         <div
@@ -123,7 +127,7 @@ export default function DesktopTransactionTable({
                                                 [`${PARENT_CLASS}__profit--loss`]: data?.profit < 0,
                                             })}
                                         >
-                                            {Math.abs(data?.profit ?? 0).toFixed(2)}
+                                            <Money amount={Math.abs(data?.profit ?? 0)} currency={data?.currency} show_currency />
                                         </div>
                                     }
                                     loader={!data.is_completed}
@@ -151,8 +155,8 @@ export default function DesktopTransactionTable({
                 <div className={`${PARENT_CLASS}__table-row`}>
                     <TableCell label={account} extra_classes={[`${PARENT_CLASS}__table-cell--grow-mid`]} />
                     <TableCell label={result?.number_of_runs} />
-                    <TableCell label={Math.abs(result?.total_stake ?? 0).toFixed(2)} />
-                    <TableCell label={Math.abs(result?.total_payout ?? 0).toFixed(2)} />
+                    <TableCell label={<Money amount={Math.abs(result?.total_stake ?? 0)} currency={currency} show_currency />} />
+                    <TableCell label={<Money amount={Math.abs(result?.total_payout ?? 0)} currency={currency} show_currency />} />
                     <TableCell label={result?.won_contracts} />
                     <TableCell label={result?.lost_contracts} extra_classes={[`${PARENT_CLASS}__loss`]} />
                     <TableCell
@@ -166,11 +170,11 @@ export default function DesktopTransactionTable({
                                 )}
                                 data-testid='transaction_details_table_profit'
                             >
-                                {Math.abs(result?.total_profit ?? 0).toFixed(2)}
+                                <Money amount={Math.abs(result?.total_profit ?? 0)} currency={currency} show_currency />
                             </div>
                         }
                     />
-                    <TableCell label={balance} />
+                    <TableCell label={<Money amount={balance} currency={currency} show_currency />} />
                 </div>
             </div>
         </div>

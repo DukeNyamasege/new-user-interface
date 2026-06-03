@@ -20,6 +20,8 @@ interface DomainConfig {
     features: DomainFeatureFlags;
 }
 
+type MartingaleMode = 'no_martingale' | 'fixed_loss_trigger' | 'consecutive_loss_trigger';
+
 type DomainFeatureFlags = {
     botIdeas: boolean;
     scanner: boolean;
@@ -28,6 +30,11 @@ type DomainFeatureFlags = {
     comboTrades: boolean;
     chart: boolean;
     tutorials: boolean;
+};
+
+type MartingaleConfig = {
+    mode: MartingaleMode;
+    consecutiveLossThreshold: number;
 };
 
 type DomainUIConfig = {
@@ -59,6 +66,7 @@ type DomainUIConfig = {
     showFooter: boolean;
     showDisclaimer: boolean;
     customCssVars: Record<string, string>;
+    martingale?: MartingaleConfig;
 };
 
 interface DomainConfig {
@@ -96,6 +104,11 @@ const DEFAULT_DOMAIN_FEATURES: DomainFeatureFlags = {
     tutorials: true,
 };
 
+const DEFAULT_MARTINGALE_CONFIG: MartingaleConfig = {
+    mode: 'fixed_loss_trigger',
+    consecutiveLossThreshold: 1,
+};
+
 const DEFAULT_DOMAIN_UI: DomainUIConfig = {
     brandName: 'Deriv Bot',
     primaryColor: '#f97316',
@@ -125,6 +138,7 @@ const DEFAULT_DOMAIN_UI: DomainUIConfig = {
     showFooter: true,
     showDisclaimer: true,
     customCssVars: {},
+    martingale: DEFAULT_MARTINGALE_CONFIG,
 };
 
 const createHostedDomainEntries = ({
@@ -302,6 +316,20 @@ export const getDomainFeatures = () => getDomainConfig().features;
 export const isDomainFeatureEnabled = (feature: keyof DomainFeatureFlags) => getDomainFeatures()[feature];
 
 export const getDomainUIConfig = (): DomainUIConfig => getDomainConfig().ui;
+
+export const getMartingaleConfig = (): MartingaleConfig => {
+    const ui = getDomainUIConfig();
+    return ui.martingale ?? DEFAULT_MARTINGALE_CONFIG;
+};
+
+export const getMartingaleMode = (): MartingaleMode => getMartingaleConfig().mode;
+
+export const getConsecutiveLossThreshold = (): number => getMartingaleConfig().consecutiveLossThreshold;
+
+export const isMartingaleEnabled = (): boolean => {
+    const mode = getMartingaleMode();
+    return mode !== 'no_martingale';
+};
 
 export const applyDomainUI = (): void => {
     const ui = getDomainUIConfig();

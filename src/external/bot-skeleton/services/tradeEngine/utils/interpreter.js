@@ -169,8 +169,6 @@ const Interpreter = () => {
 
                 if (!bot.tradeEngine.contractId && is_timeouts_cancellable) {
                     api_base.is_stopping = true;
-                    // When user is rate limited, allow them to stop the bot immediately
-                    // granted there is no active contract.
                     global_timeouts.forEach(timeout => clearTimeout(global_timeouts[timeout]));
                     terminateSession().then(() => {
                         api_base.is_stopping = false;
@@ -204,16 +202,23 @@ const Interpreter = () => {
             try {
                 $scope.stopped = true;
                 $scope.is_error_triggered = false;
+                $scope.is_terminating = true;
                 globalObserver.emit('bot.stop');
                 const { ticksService } = $scope;
-                // Unsubscribe previous ticks_history subscription
-                // Unsubscribe the subscriptions from Proposal, Balance and OpenContract
                 api_base.clearSubscriptions();
+                api_base.is_stopping = true;
 
-                ticksService.unsubscribeFromTicksService().then(() => {
+                if (ticksService) {
+                    ticksService.unsubscribeFromTicksService().then(() => {
+                        $scope.is_terminating = false;
+                        resolve();
+                    });
+                } else {
+                    $scope.is_terminating = false;
                     resolve();
-                });
+                }
             } catch (error) {
+                $scope.is_terminating = false;
                 reject(error);
             }
         });

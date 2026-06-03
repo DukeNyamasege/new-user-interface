@@ -89,9 +89,7 @@
             }
 
             &__active {
-                background:
-                    linear-gradient(180deg, rgba(48, 40, 27, 0.96) 0%, rgba(30, 26, 19, 0.96) 100%),
-                    #1e1a13;
+                background: linear-gradient(180deg, rgba(48, 40, 27, 0.96) 0%, rgba(30, 26, 19, 0.96) 100%), #1e1a13;
                 color: #ffffff !important;
                 border: 1px solid rgba(212, 175, 55, 0.42);
                 border-radius: 6px;

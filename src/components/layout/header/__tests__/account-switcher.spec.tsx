@@ -34,6 +34,10 @@ jest.mock('@deriv-com/translations', () => ({
     Localize: ({ i18n_default_text }: { i18n_default_text: string }) => <span>{i18n_default_text}</span>,
 }));
 
+jest.mock('@deriv-com/ui', () => ({
+    useDevice: jest.fn(() => ({ isDesktop: false })),
+}));
+
 jest.mock('@/components/shared', () => ({
     addComma: (val: string) => val,
     getCurrencyDisplayCode: (c: string) => c,
@@ -87,7 +91,7 @@ describe('AccountSwitcher', () => {
 
     it('renders active account type and balance', () => {
         render(<AccountSwitcher activeAccount={mockActiveAccount} />);
-        expect(screen.getByText('Real account')).toBeInTheDocument();
+        expect(screen.getByText('USD', { selector: 'button.acc-info__currency-button' })).toBeInTheDocument();
         expect(screen.getByTestId('dt_balance')).toHaveTextContent('100.00 USD');
     });
 

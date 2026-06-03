@@ -374,25 +374,36 @@ class DBot {
         if (api_base.is_stopping) return;
 
         api_base.setIsRunning(false);
+        api_base.is_stopping = true;
 
         await this.interpreter.stop();
         this.is_bot_running = false;
         this.interpreter = null;
         this.interpreter = Interpreter();
-        await this.interpreter.bot.tradeEngine.watchTicks(this.symbol);
+        if (this.symbol) {
+            await this.interpreter.bot.tradeEngine.watchTicks(this.symbol);
+        }
         forgetAccumulatorsProposalRequest(this);
+
+        api_base.is_stopping = false;
     }
 
-    /**
-     * Immediately instructs the interpreter to terminate the WS connection and bot.
-     */
     async terminateBot() {
+        api_base.is_stopping = true;
+        api_base.setIsRunning(false);
+
         if (this.interpreter) {
             await this.interpreter.terminateSession();
             this.interpreter = null;
             this.interpreter = Interpreter();
-            await this.interpreter.bot.tradeEngine.watchTicks(this.symbol);
+            if (this.symbol) {
+                await this.interpreter.bot.tradeEngine.watchTicks(this.symbol);
+            }
         }
+
+        this.is_bot_running = false;
+        forgetAccumulatorsProposalRequest(this);
+        api_base.is_stopping = false;
     }
 
     terminateConnection = () => {

@@ -252,33 +252,24 @@ export default class RunPanelStore {
 
         ui.setPromptHandler(false);
 
-        if (this.error_type) {
-            // when user click stop button when there is a error but bot is retrying
-            this.setContractStage(contract_stages.NOT_RUNNING);
-            ui.setAccountSwitcherDisabledMessage();
-            this.setIsRunning(false);
-        } else if (this.has_open_contract) {
-            // when user click stop button when bot is running
-            this.setContractStage(contract_stages.IS_STOPPING);
-        } else {
-            // when user click stop button before bot start running
-            this.setContractStage(contract_stages.NOT_RUNNING);
-            this.unregisterBotListeners();
-            ui.setAccountSwitcherDisabledMessage();
-            this.setIsRunning(false);
-        }
+        this.setIsRunning(false);
+        this.setHasOpenContract(false);
+        this.setContractStage(contract_stages.NOT_RUNNING);
 
         if (this.error_type) {
             this.error_type = undefined;
         }
 
         if (this.timer) {
-            clearInterval(this.timer);
+            clearInterval(this.timer as NodeJS.Timeout);
+            this.timer = null;
         }
         if (window.sendRequestsStatistic) {
             window.sendRequestsStatistic(true);
             performance.clearMeasures();
         }
+        this.unregisterBotListeners();
+        ui.setAccountSwitcherDisabledMessage();
     };
 
     onClearStatClick = () => {
@@ -351,6 +342,7 @@ export default class RunPanelStore {
             this.dbot.terminateBot();
             if (this.timer) {
                 clearInterval(this.timer);
+                this.timer = null;
             }
             if (window.sendRequestsStatistic) {
                 window.sendRequestsStatistic(true);
@@ -358,6 +350,11 @@ export default class RunPanelStore {
             }
             this.onCloseDialog();
             summary_card.clear();
+            this.setIsRunning(false);
+            this.setHasOpenContract(false);
+            this.setContractStage(contract_stages.NOT_RUNNING);
+            this.unregisterBotListeners();
+            ui.setAccountSwitcherDisabledMessage();
         };
         this.onCancelButtonClick = () => {
             this.onClickSell();

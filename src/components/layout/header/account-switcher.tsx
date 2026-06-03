@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MouseEvent as ReactMouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import { CurrencyIcon } from '@/components/currency/currency-icon';
-import { addComma, getCurrencyDisplayCode, getDecimalPlaces } from '@/components/shared';
+import { addComma, getDecimalPlaces } from '@/components/shared';
 import Text from '@/components/shared_ui/text';
 import { api_base } from '@/external/bot-skeleton/services/api/api-base';
 import { useApiBase } from '@/hooks/useApiBase';
 import { useStore } from '@/hooks/useStore';
 import { isDemoAccount } from '@/utils/account-helpers';
+import { DISPLAY_CURRENCIES, formatDisplayBalanceValue, resolveDisplayCurrency, TDisplayCurrency } from '@/utils/display-currency';
 import { Localize } from '@deriv-com/translations';
+import { useDevice } from '@deriv-com/ui';
 import { TAccountSwitcher } from './common/types';
 import AccountInfoWrapper from './account-info-wrapper';
 import './account-switcher.scss';
@@ -31,9 +33,11 @@ const getCurrencyName = (currency?: string) => CURRENCY_NAMES[currency?.toUpperC
 
 const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [isCurrencyMenuOpen, setIsCurrencyMenuOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const { accountList, activeLoginid } = useApiBase();
     const { client, run_panel } = useStore() ?? {};
+    const { isDesktop } = useDevice();
 
     const is_bot_running = run_panel?.is_running || api_base.is_running;
     const isSingleAccount = !accountList || accountList.length <= 1;
@@ -42,10 +46,14 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
         const handleClickOutside = (e: MouseEvent) => {
             if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
                 setIsOpen(false);
+                setIsCurrencyMenuOpen(false);
             }
         };
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setIsOpen(false);
+            if (e.key === 'Escape') {
+                setIsOpen(false);
+                setIsCurrencyMenuOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         document.addEventListener('keydown', handleKeyDown);
@@ -57,8 +65,26 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
 
     const toggleDropdown = useCallback(() => {
         if (is_bot_running || isSingleAccount) return;
+        setIsCurrencyMenuOpen(false);
         setIsOpen(prev => !prev);
     }, [is_bot_running, isSingleAccount]);
+
+    const toggleCurrencyMenu = useCallback(
+        (event: ReactMouseEvent<HTMLButtonElement>) => {
+            event.stopPropagation();
+            setIsOpen(false);
+            setIsCurrencyMenuOpen(prev => !prev);
+        },
+        []
+    );
+
+    const handleDisplayCurrencySelect = useCallback(
+        (currency_code: TDisplayCurrency) => {
+            client?.setDisplayCurrency(resolveDisplayCurrency(currency_code));
+            setIsCurrencyMenuOpen(false);
+        },
+        [client]
+    );
 
     const handleAccountSelect = useCallback(
         (loginid: string) => {
@@ -100,16 +126,49 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
     const showChevron = !isSingleAccount && !is_bot_running;
     const realAccounts = formattedAccounts.filter(account => !account.isVirtual);
     const demoAccounts = formattedAccounts.filter(account => account.isVirtual);
+    const selectedDisplayCurrency = resolveDisplayCurrency(client?.display_currency, 'USD');
+    const headerBalance = formatDisplayBalanceValue(
+        balance ?? 0,
+        currency || 'USD',
+        selectedDisplayCurrency,
+        client?.usd_kes_rate
+    );
 
     return (
         <div className='acc-info__wrapper' ref={wrapperRef}>
             <AccountInfoWrapper>
-                <button className='acc-info__currency-button' type='button' disabled>
-                    {getCurrencyDisplayCode(currency || 'USD')}
-                    <svg width='10' height='10' viewBox='0 0 10 10' fill='none' aria-hidden='true'>
-                        <path d='M2 3.5L5 6.5L8 3.5' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
-                    </svg>
-                </button>
+                {!isDesktop && (
+                    <div className='acc-info__currency-switcher'>
+                        <button
+                            className='acc-info__currency-button'
+                            type='button'
+                            onClick={toggleCurrencyMenu}
+                            aria-expanded={isCurrencyMenuOpen}
+                            aria-haspopup='listbox'
+                        >
+                            {selectedDisplayCurrency}
+                            <svg width='10' height='10' viewBox='0 0 10 10' fill='none' aria-hidden='true'>
+                                <path d='M2 3.5L5 6.5L8 3.5' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+                            </svg>
+                        </button>
+                        {isCurrencyMenuOpen && (
+                            <div className='acc-info__currency-menu' role='listbox'>
+                                {DISPLAY_CURRENCIES.map(option => (
+                                    <button
+                                        key={option}
+                                        type='button'
+                                        className={classNames('acc-info__currency-option', {
+                                            'acc-info__currency-option--active': option === selectedDisplayCurrency,
+                                        })}
+                                        onClick={() => handleDisplayCurrencySelect(option)}
+                                    >
+                                        {option}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
                 <div
                     data-testid='dt_acc_info'
                     id='dt_core_account-info_acc-info'
@@ -144,7 +203,7 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                                     {!currency ? (
                                         <Localize i18n_default_text='No currency assigned' />
                                     ) : (
-                                        `${balance} ${getCurrencyDisplayCode(currency)}`
+                                        headerBalance
                                     )}
                                 </p>
                             </div>
@@ -213,7 +272,12 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                                     </span>
                                     <Text as='span' size='xs' weight='bold' className='acc-dropdown__balance'>
                                         {account.currency ? (
-                                            `${account.balance} ${getCurrencyDisplayCode(account.currency)}`
+                                            formatDisplayBalanceValue(
+                                                account.balance,
+                                                account.currency,
+                                                selectedDisplayCurrency,
+                                                client?.usd_kes_rate
+                                            )
                                         ) : (
                                             <Localize i18n_default_text='No currency assigned' />
                                         )}
@@ -247,7 +311,12 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                                         </Text>
                                     </span>
                                     <Text as='span' size='xs' weight='bold' className='acc-dropdown__balance'>
-                                        {account.balance} {getCurrencyDisplayCode(account.currency)}
+                                        {formatDisplayBalanceValue(
+                                            account.balance,
+                                            account.currency,
+                                            selectedDisplayCurrency,
+                                            client?.usd_kes_rate
+                                        )}
                                     </Text>
                                 </div>
                             ))}

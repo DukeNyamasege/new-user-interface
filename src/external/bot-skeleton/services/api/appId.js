@@ -1,9 +1,5 @@
 import { getSocketURL } from '@/components/shared';
-import {
-    assertApiTokenScope,
-    getPendingApiToken,
-    isApiTokenSession,
-} from '@/utils/api-token-permissions';
+import { assertApiTokenScope, getPendingApiToken, isApiTokenSession } from '@/utils/api-token-permissions';
 import DerivAPIBasic from '@deriv/deriv-api/dist/DerivAPIBasic';
 import APIMiddleware from './api-middleware';
 

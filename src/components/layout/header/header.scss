@@ -4,15 +4,16 @@
 .app-header {
     height: 4rem;
     min-height: 4rem;
-    background:
-        linear-gradient(180deg, #1f1a14 0%, #141414 100%),
-        #141414 !important;
+    background: linear-gradient(180deg, #1f1a14 0%, #141414 100%), #141414 !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32) !important;
     border: 0 !important;
     border-bottom: 1px solid rgba(200, 164, 93, 0.35) !important;
 
     &--mobile {
         overflow: visible;
+        position: sticky;
+        top: 0;
+        z-index: 1200;
 
         &:before,
         &:after {

@@ -32,7 +32,7 @@ const result_columns = (): TColumn[] => [
 
 const TransactionDetailsDesktop = observer(() => {
     const { client } = useStore();
-    const { loginid, balance } = client;
+    const { loginid, balance, currency } = client;
     const { transactions } = useStore();
     const {
         toggleTransactionDetailsModal,
@@ -61,6 +61,7 @@ const TransactionDetailsDesktop = observer(() => {
                         result={statistics}
                         account={loginid ?? ''}
                         balance={balance ?? 0}
+                        currency={currency ?? 'USD'}
                     />
                 </DraggableResizeWrapper>
             )}

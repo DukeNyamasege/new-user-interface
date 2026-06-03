@@ -596,13 +596,15 @@ class APIBase {
                 this.active_symbols_promise = this.getActiveSymbols();
             }
             this.subscribe();
-            return apiTokenAccountDetails || {
-                account_id: balance?.loginid,
-                balance: balance?.balance,
-                currency: balance?.currency,
-                account_type: account_type === 'real' ? 'real' : 'demo',
-                status: 'active',
-            };
+            return (
+                apiTokenAccountDetails || {
+                    account_id: balance?.loginid,
+                    balance: balance?.balance,
+                    currency: balance?.currency,
+                    account_type: account_type === 'real' ? 'real' : 'demo',
+                    status: 'active',
+                }
+            );
         } catch (e) {
             console.error('❌ [authorizeAndSubscribe] Exception:', e);
             this.is_authorized = false;
