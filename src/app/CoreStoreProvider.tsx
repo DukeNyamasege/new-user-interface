@@ -137,17 +137,18 @@ const CoreStoreProvider: React.FC<{ children: React.ReactNode }> = observer(({ c
             if (msg_type === 'balance' && data && !error) {
                 const balance = data.balance;
                 if (balance && typeof balance.balance === 'number') {
-                    client.setBalance(balance.balance.toString());
-
-                    if (balance.currency) {
-                        client.setCurrency(balance.currency);
-                    }
+                    const balanceLoginid = balance.loginid || activeLoginid || client.loginid;
+                    client.applyBalanceUpdate(
+                        balanceLoginid,
+                        balance.currency || client.currency || 'USD',
+                        balance.balance
+                    );
                 }
             }
         },
         // Fixed memory leak: removed handleLogout from deps as it's not used in function body
         // Only client is actually referenced (line 129), preventing unnecessary re-subscriptions
-        [client]
+        [activeLoginid, client]
     );
 
     useEffect(() => {

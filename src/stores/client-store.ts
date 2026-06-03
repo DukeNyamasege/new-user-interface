@@ -1,6 +1,6 @@
 import { action, computed, makeObservable, observable } from 'mobx';
 /* [AI] - Analytics removed - utility functions moved to @/utils/account-helpers */
-import { getAccountId } from '@/utils/account-helpers';
+import { getAccountId, isDemoAccount } from '@/utils/account-helpers';
 /* [/AI] */
 import { isEmptyObject } from '@/components/shared';
 import { isMultipliersOnly, isOptionsBlocked } from '@/components/shared/common/utility';
@@ -21,6 +21,21 @@ import {
 import type { TAuthData } from '../types/api-types';
 import type RootStore from './root-store';
 
+type TDemoBalanceOverride = {
+    baseline_server_balance: number;
+    currency: string;
+    custom_balance: number;
+    last_known_server_balance: number;
+};
+
+const DEMO_BALANCE_OVERRIDES_KEY = 'demo_balance_overrides';
+const getBalanceDecimalPlaces = (currency?: string) => {
+    const normalizedCurrency = (currency || '').toUpperCase();
+    return normalizedCurrency === 'BTC' || normalizedCurrency === 'ETH' || normalizedCurrency.includes('USDT')
+        ? 8
+        : 2;
+};
+
 export default class ClientStore {
     loginid = '';
     account_list: TAuthData['account_list'] = [];
@@ -35,6 +50,8 @@ export default class ClientStore {
     accounts: Record<string, TAuthData['account_list'][number]> = {};
     all_accounts_balance: Balance | null = null;
     is_logging_out = false;
+    demo_balance_overrides: Record<string, TDemoBalanceOverride> = {};
+    server_balances: Record<string, number> = {};
 
     private authDataSubscription: { unsubscribe: () => void } | null = null;
     private root_store: RootStore;
@@ -65,7 +82,11 @@ export default class ClientStore {
             this.setWebSocketLoginId(data.current_account.loginid);
 
             if (typeof data.current_account.balance === 'number') {
-                this.setBalance(data.current_account.balance.toString());
+                this.applyBalanceUpdate(
+                    data.current_account.loginid,
+                    data.current_account.currency,
+                    data.current_account.balance
+                );
             }
         }
     };
@@ -76,6 +97,8 @@ export default class ClientStore {
         this.authDataSubscription = authData$.subscribe(() => {});
 
         observer.register('api.authorize', this.onAuthorizeEvent);
+
+        this.demo_balance_overrides = this.hydrateDemoBalanceOverrides();
 
         // Clean up any existing instance before registering new one to prevent memory leaks
         const existingId = globalObserver.getState('client.store.id');
@@ -99,6 +122,7 @@ export default class ClientStore {
             all_accounts_balance: observable,
             balance: observable,
             currency: observable,
+            demo_balance_overrides: observable,
             display_currency: observable,
             exchange_rate_updated_at: observable,
             usd_kes_rate: observable,
@@ -127,6 +151,7 @@ export default class ClientStore {
             setBalance: action,
             setCurrency: action,
             setDisplayCurrency: action,
+            resetDemoBalance: action,
             setExchangeRateData: action,
             setIsLoggedIn: action,
             setIsLoggingOut: action,
@@ -213,10 +238,32 @@ export default class ClientStore {
 
     setAccountList = (account_list?: TAuthData['account_list']) => {
         this.accounts = {};
-        account_list?.forEach(account => {
+        const adjustedAccountList =
+            account_list?.map(account => {
+                const incomingBalance = Number(account.balance ?? 0);
+                const existingServerBalance = this.server_balances[account.loginid];
+                const shouldReuseKnownServerBalance =
+                    !!this.demo_balance_overrides[account.loginid] &&
+                    typeof existingServerBalance === 'number' &&
+                    Number.isFinite(existingServerBalance) &&
+                    Math.abs(
+                        incomingBalance -
+                            this.getDisplayedBalanceAmount(account.loginid, existingServerBalance, account.currency)
+                    ) < 1 / 10 ** getBalanceDecimalPlaces(account.currency);
+                const serverBalance = shouldReuseKnownServerBalance ? existingServerBalance : incomingBalance;
+                this.server_balances[account.loginid] = serverBalance;
+
+                return {
+                    ...account,
+                    balance: this.getDisplayedBalanceAmount(account.loginid, serverBalance, account.currency),
+                };
+            }) ?? [];
+
+        adjustedAccountList.forEach(account => {
             this.accounts[account.loginid] = account;
         });
-        if (account_list) this.account_list = account_list;
+        this.account_list = adjustedAccountList;
+        setAccountList(adjustedAccountList);
     };
 
     setBalance = (balance: string) => {
@@ -266,6 +313,138 @@ export default class ClientStore {
 
     setIsLoggingOut = (is_logging_out: boolean) => {
         this.is_logging_out = is_logging_out;
+    };
+
+    getDemoBalanceOverride = (loginid?: string) => {
+        if (!loginid) return undefined;
+        return this.demo_balance_overrides[loginid];
+    };
+
+    resetDemoBalance = (loginid: string, custom_balance: number, currency?: string) => {
+        if (!loginid || !isDemoAccount(loginid) || !Number.isFinite(custom_balance) || custom_balance < 0) return false;
+
+        const currentServerBalance =
+            this.server_balances[loginid] ??
+            Number(this.accounts[loginid]?.balance ?? (loginid === this.loginid ? this.balance : 0) ?? 0);
+
+        const normalizedCurrency = currency || this.accounts[loginid]?.currency || this.currency || 'USD';
+        const override: TDemoBalanceOverride = {
+            baseline_server_balance: currentServerBalance,
+            currency: normalizedCurrency,
+            custom_balance,
+            last_known_server_balance: currentServerBalance,
+        };
+
+        this.demo_balance_overrides = {
+            ...this.demo_balance_overrides,
+            [loginid]: override,
+        };
+        this.persistDemoBalanceOverrides();
+        this.applyBalanceUpdate(loginid, normalizedCurrency, currentServerBalance);
+        return true;
+    };
+
+    applyBalanceUpdate = (loginid: string, currency: string, server_balance: number) => {
+        this.server_balances[loginid] = server_balance;
+
+        const existingOverride = this.demo_balance_overrides[loginid];
+        if (existingOverride) {
+            this.demo_balance_overrides = {
+                ...this.demo_balance_overrides,
+                [loginid]: {
+                    ...existingOverride,
+                    currency: currency || existingOverride.currency,
+                    last_known_server_balance: server_balance,
+                },
+            };
+            this.persistDemoBalanceOverrides();
+        }
+
+        const displayBalance = this.getDisplayedBalanceAmount(loginid, server_balance, currency);
+
+        if (loginid === this.loginid || loginid === getAccountId()) {
+            this.balance = displayBalance.toString();
+            if (currency) this.currency = currency;
+        }
+
+        if (this.accounts[loginid]) {
+            this.accounts[loginid] = {
+                ...this.accounts[loginid],
+                balance: displayBalance,
+                currency: currency || this.accounts[loginid].currency,
+            };
+        }
+
+        if (this.account_list.length) {
+            this.account_list = this.account_list.map(account =>
+                account.loginid === loginid
+                    ? {
+                          ...account,
+                          balance: displayBalance,
+                          currency: currency || account.currency,
+                      }
+                    : account
+            );
+            setAccountList(this.account_list);
+        }
+    };
+
+    private hydrateDemoBalanceOverrides = (): Record<string, TDemoBalanceOverride> => {
+        try {
+            const rawOverrides = localStorage.getItem(DEMO_BALANCE_OVERRIDES_KEY);
+            if (!rawOverrides) return {};
+
+            const parsed = JSON.parse(rawOverrides) as Record<string, Partial<TDemoBalanceOverride>>;
+
+            return Object.entries(parsed).reduce<Record<string, TDemoBalanceOverride>>((acc, [loginid, override]) => {
+                const baseline_server_balance = Number(override.baseline_server_balance ?? 0);
+                const custom_balance = Number(override.custom_balance ?? 0);
+                const last_known_server_balance = Number(
+                    override.last_known_server_balance ?? baseline_server_balance
+                );
+
+                if (
+                    !loginid ||
+                    !isDemoAccount(loginid) ||
+                    !Number.isFinite(baseline_server_balance) ||
+                    !Number.isFinite(custom_balance) ||
+                    !Number.isFinite(last_known_server_balance)
+                ) {
+                    return acc;
+                }
+
+                acc[loginid] = {
+                    baseline_server_balance,
+                    currency: override.currency || 'USD',
+                    custom_balance,
+                    last_known_server_balance,
+                };
+
+                return acc;
+            }, {});
+        } catch (error) {
+            ErrorLogger.error('ClientStore', 'Failed to hydrate demo balance overrides', error);
+            return {};
+        }
+    };
+
+    private persistDemoBalanceOverrides = () => {
+        try {
+            localStorage.setItem(DEMO_BALANCE_OVERRIDES_KEY, JSON.stringify(this.demo_balance_overrides));
+        } catch (error) {
+            ErrorLogger.error('ClientStore', 'Failed to persist demo balance overrides', error);
+        }
+    };
+
+    private getDisplayedBalanceAmount = (loginid: string, server_balance: number, currency?: string) => {
+        if (!isDemoAccount(loginid)) return server_balance;
+
+        const override = this.demo_balance_overrides[loginid];
+        if (!override) return server_balance;
+
+        const computedBalance = override.custom_balance + (server_balance - override.baseline_server_balance);
+        const decimalPlaces = getBalanceDecimalPlaces(currency || override.currency);
+        return Number(Math.max(0, computedBalance).toFixed(decimalPlaces));
     };
 
     fetchUsdKesRate = async () => {
@@ -332,6 +511,7 @@ export default class ClientStore {
             this.balance = '0';
             this.currency = 'USD';
             this.all_accounts_balance = null;
+            this.server_balances = {};
 
             // Clear localStorage
             localStorage.removeItem('active_loginid');
@@ -452,6 +632,7 @@ export default class ClientStore {
                 this.currency = 'USD';
 
                 this.all_accounts_balance = null;
+                this.server_balances = {};
 
                 const accountsListRaw = localStorage.getItem('accountsList');
                 if (accountsListRaw) {

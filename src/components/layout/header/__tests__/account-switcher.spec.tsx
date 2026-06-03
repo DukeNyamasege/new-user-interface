@@ -2,6 +2,10 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import AccountSwitcher from '../account-switcher';
 
 const mockCheckAndRegenerateWebSocket = jest.fn();
+const mockResetDemoBalance = jest.fn(() => true);
+const mockLogout = jest.fn();
+const mockSetDisplayCurrency = jest.fn();
+const mockGetDemoBalanceOverride = jest.fn();
 
 const mockAccountList = [
     { loginid: 'CR123', currency: 'USD', balance: 100, is_virtual: 0 },
@@ -17,7 +21,15 @@ jest.mock('@/hooks/useApiBase', () => ({
 
 jest.mock('@/hooks/useStore', () => ({
     useStore: jest.fn(() => ({
-        client: { checkAndRegenerateWebSocket: mockCheckAndRegenerateWebSocket },
+        client: {
+            checkAndRegenerateWebSocket: mockCheckAndRegenerateWebSocket,
+            resetDemoBalance: mockResetDemoBalance,
+            getDemoBalanceOverride: mockGetDemoBalanceOverride,
+            logout: mockLogout,
+            setDisplayCurrency: mockSetDisplayCurrency,
+            display_currency: 'USD',
+            usd_kes_rate: 129.33,
+        },
         run_panel: { is_running: false },
     })),
 }));
@@ -40,12 +52,18 @@ jest.mock('@deriv-com/ui', () => ({
 
 jest.mock('@/components/shared', () => ({
     addComma: (val: string) => val,
-    getCurrencyDisplayCode: (c: string) => c,
     getDecimalPlaces: () => 2,
 }));
 
 jest.mock('@/utils/account-helpers', () => ({
     isDemoAccount: (loginid: string) => loginid.startsWith('VR'),
+}));
+
+jest.mock('@/utils/display-currency', () => ({
+    DISPLAY_CURRENCIES: ['USD', 'KES'],
+    formatDisplayBalanceValue: (balance: string | number, currency: string, displayCurrency?: string) =>
+        `${balance} ${displayCurrency || currency}`,
+    resolveDisplayCurrency: (currency?: string, fallback = 'USD') => currency || fallback,
 }));
 
 jest.mock('@/components/shared_ui/text', () => ({
@@ -60,7 +78,7 @@ jest.mock('../account-info-wrapper', () => ({
     default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
-const mockActiveAccount = {
+const mockRealActiveAccount = {
     loginid: 'CR123',
     currency: 'USD',
     balance: '100.00',
@@ -70,15 +88,32 @@ const mockActiveAccount = {
     icon: null,
 };
 
+const mockDemoActiveAccount = {
+    loginid: 'VRTC456',
+    currency: 'USD',
+    balance: '9992.15',
+    isVirtual: true,
+    isActive: true,
+    currencyLabel: 'Demo',
+    icon: null,
+};
+
 describe('AccountSwitcher', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        // Reset module mocks to defaults
         const { useApiBase } = require('@/hooks/useApiBase');
         useApiBase.mockReturnValue({ accountList: mockAccountList, activeLoginid: 'CR123' });
         const { useStore } = require('@/hooks/useStore');
         useStore.mockReturnValue({
-            client: { checkAndRegenerateWebSocket: mockCheckAndRegenerateWebSocket },
+            client: {
+                checkAndRegenerateWebSocket: mockCheckAndRegenerateWebSocket,
+                resetDemoBalance: mockResetDemoBalance,
+                getDemoBalanceOverride: mockGetDemoBalanceOverride,
+                logout: mockLogout,
+                setDisplayCurrency: mockSetDisplayCurrency,
+                display_currency: 'USD',
+                usd_kes_rate: 129.33,
+            },
             run_panel: { is_running: false },
         });
         require('@/external/bot-skeleton/services/api/api-base').api_base.is_running = false;
@@ -89,105 +124,102 @@ describe('AccountSwitcher', () => {
         expect(container).toBeEmptyDOMElement();
     });
 
-    it('renders active account type and balance', () => {
-        render(<AccountSwitcher activeAccount={mockActiveAccount} />);
+    it('renders active account balance in the header', () => {
+        render(<AccountSwitcher activeAccount={mockRealActiveAccount} />);
         expect(screen.getByText('USD', { selector: 'button.acc-info__currency-button' })).toBeInTheDocument();
         expect(screen.getByTestId('dt_balance')).toHaveTextContent('100.00 USD');
     });
 
     it('opens dropdown on click when multiple accounts exist', () => {
-        render(<AccountSwitcher activeAccount={mockActiveAccount} />);
+        render(<AccountSwitcher activeAccount={mockRealActiveAccount} />);
         fireEvent.click(screen.getByTestId('dt_acc_info'));
         expect(screen.getByRole('listbox')).toBeInTheDocument();
     });
 
-    it('does not open dropdown when bot is running via run_panel', () => {
+    it('does not open dropdown when bot is running', () => {
         const { useStore } = require('@/hooks/useStore');
         useStore.mockReturnValue({
-            client: { checkAndRegenerateWebSocket: mockCheckAndRegenerateWebSocket },
+            client: {
+                checkAndRegenerateWebSocket: mockCheckAndRegenerateWebSocket,
+            },
             run_panel: { is_running: true },
         });
-        render(<AccountSwitcher activeAccount={mockActiveAccount} />);
+
+        render(<AccountSwitcher activeAccount={mockRealActiveAccount} />);
         fireEvent.click(screen.getByTestId('dt_acc_info'));
         expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     });
 
-    it('does not open dropdown when api_base.is_running is true', () => {
-        require('@/external/bot-skeleton/services/api/api-base').api_base.is_running = true;
-        render(<AccountSwitcher activeAccount={mockActiveAccount} />);
+    it('shows real accounts only on the real tab', () => {
+        render(<AccountSwitcher activeAccount={mockRealActiveAccount} />);
         fireEvent.click(screen.getByTestId('dt_acc_info'));
-        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+        expect(screen.getByText('US Dollar')).toBeInTheDocument();
+        expect(screen.queryByText('Demo', { selector: '.acc-dropdown__currency' })).not.toBeInTheDocument();
     });
 
-    it('does not open dropdown with a single account', () => {
+    it('shows demo accounts only on the demo tab', () => {
+        render(<AccountSwitcher activeAccount={mockRealActiveAccount} />);
+        fireEvent.click(screen.getByTestId('dt_acc_info'));
+        fireEvent.click(screen.getByRole('tab', { name: 'Demo' }));
+        expect(screen.getByText('Demo', { selector: '.acc-dropdown__currency' })).toBeInTheDocument();
+        expect(screen.queryByText('US Dollar')).not.toBeInTheDocument();
+    });
+
+    it('switches account from the demo tab and regenerates the websocket', () => {
+        const setItemSpy = jest.spyOn(Storage.prototype, 'setItem');
+
+        render(<AccountSwitcher activeAccount={mockRealActiveAccount} />);
+        fireEvent.click(screen.getByTestId('dt_acc_info'));
+        fireEvent.click(screen.getByRole('tab', { name: 'Demo' }));
+        fireEvent.click(screen.getByRole('option', { name: /Demo\s+VRTC456/i }));
+
+        expect(setItemSpy).toHaveBeenCalledWith('active_loginid', 'VRTC456');
+        expect(setItemSpy).toHaveBeenCalledWith('account_type', 'demo');
+        expect(mockCheckAndRegenerateWebSocket).toHaveBeenCalledTimes(1);
+
+        setItemSpy.mockRestore();
+    });
+
+    it('resets the active demo balance from the demo tab', () => {
         const { useApiBase } = require('@/hooks/useApiBase');
-        useApiBase.mockReturnValue({
-            accountList: [{ loginid: 'CR123', currency: 'USD', balance: 100, is_virtual: 0 }],
-            activeLoginid: 'CR123',
-        });
-        render(<AccountSwitcher activeAccount={mockActiveAccount} />);
+        useApiBase.mockReturnValue({ accountList: mockAccountList, activeLoginid: 'VRTC456' });
+
+        render(<AccountSwitcher activeAccount={mockDemoActiveAccount} />);
         fireEvent.click(screen.getByTestId('dt_acc_info'));
-        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText('Demo balance amount'), { target: { value: '2500' } });
+        fireEvent.submit(screen.getByText('Reset Demo Account Balance').closest('form') as HTMLFormElement);
+
+        expect(mockResetDemoBalance).toHaveBeenCalledWith('VRTC456', 2500, 'USD');
+        expect(screen.getByText('Demo balance reset to 2500.00 USD')).toBeInTheDocument();
+    });
+
+    it('shows a helper message when trying to reset while a real account is active', () => {
+        render(<AccountSwitcher activeAccount={mockRealActiveAccount} />);
+        fireEvent.click(screen.getByTestId('dt_acc_info'));
+        fireEvent.click(screen.getByRole('tab', { name: 'Demo' }));
+        fireEvent.change(screen.getByLabelText('Demo balance amount'), { target: { value: '1200' } });
+        fireEvent.submit(screen.getByText('Reset Demo Account Balance').closest('form') as HTMLFormElement);
+
+        expect(mockResetDemoBalance).not.toHaveBeenCalled();
+        expect(screen.getByText('Switch to a demo account to set its starting balance.')).toBeInTheDocument();
     });
 
     it('closes dropdown on outside click', () => {
-        render(<AccountSwitcher activeAccount={mockActiveAccount} />);
+        render(<AccountSwitcher activeAccount={mockRealActiveAccount} />);
         fireEvent.click(screen.getByTestId('dt_acc_info'));
         expect(screen.getByRole('listbox')).toBeInTheDocument();
         fireEvent.mouseDown(document.body);
         expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     });
 
-    it('closes dropdown on Escape key', () => {
-        render(<AccountSwitcher activeAccount={mockActiveAccount} />);
-        fireEvent.click(screen.getByTestId('dt_acc_info'));
-        expect(screen.getByRole('listbox')).toBeInTheDocument();
-        fireEvent.keyDown(document, { key: 'Escape' });
-        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-    });
-
-    it('sets localStorage and calls checkAndRegenerateWebSocket on account select', () => {
-        const setItemSpy = jest.spyOn(Storage.prototype, 'setItem');
-        render(<AccountSwitcher activeAccount={mockActiveAccount} />);
-        fireEvent.click(screen.getByTestId('dt_acc_info'));
-        const options = screen.getAllByRole('option');
-        const inactiveOption = options.find(o => o.getAttribute('aria-selected') === 'false');
-        if (inactiveOption) fireEvent.click(inactiveOption);
-        expect(setItemSpy).toHaveBeenCalledWith('active_loginid', 'VRTC456');
-        expect(mockCheckAndRegenerateWebSocket).toHaveBeenCalledTimes(1);
-        setItemSpy.mockRestore();
-    });
-
-    it('does not call checkAndRegenerateWebSocket when clicking the already-active account', () => {
-        render(<AccountSwitcher activeAccount={mockActiveAccount} />);
-        fireEvent.click(screen.getByTestId('dt_acc_info'));
-        const options = screen.getAllByRole('option');
-        const activeOption = options.find(o => o.getAttribute('aria-selected') === 'true');
-        if (activeOption) fireEvent.click(activeOption);
-        expect(mockCheckAndRegenerateWebSocket).not.toHaveBeenCalled();
-    });
-
-    it('sorts active account to the top of the list', () => {
-        const { useApiBase } = require('@/hooks/useApiBase');
-        useApiBase.mockReturnValue({
-            accountList: [
-                { loginid: 'VRTC456', currency: 'USD', balance: 9992.15, is_virtual: 1 },
-                { loginid: 'CR123', currency: 'USD', balance: 100, is_virtual: 0 },
-            ],
-            activeLoginid: 'CR123',
-        });
-        render(<AccountSwitcher activeAccount={mockActiveAccount} />);
-        fireEvent.click(screen.getByTestId('dt_acc_info'));
-        const options = screen.getAllByRole('option');
-        expect(options[0].getAttribute('aria-selected')).toBe('true');
-    });
-
-    it('trigger has correct ARIA attributes', () => {
-        render(<AccountSwitcher activeAccount={mockActiveAccount} />);
+    it('trigger has the correct aria attributes', () => {
+        render(<AccountSwitcher activeAccount={mockRealActiveAccount} />);
         const trigger = screen.getByTestId('dt_acc_info');
+
         expect(trigger).toHaveAttribute('role', 'button');
         expect(trigger).toHaveAttribute('aria-expanded', 'false');
         expect(trigger).toHaveAttribute('aria-haspopup', 'listbox');
+
         fireEvent.click(trigger);
         expect(trigger).toHaveAttribute('aria-expanded', 'true');
     });

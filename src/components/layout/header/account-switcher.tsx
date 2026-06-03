@@ -1,4 +1,4 @@
-import { MouseEvent as ReactMouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent as ReactFormEvent, MouseEvent as ReactMouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import { CurrencyIcon } from '@/components/currency/currency-icon';
@@ -34,6 +34,10 @@ const getCurrencyName = (currency?: string) => CURRENCY_NAMES[currency?.toUpperC
 const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isCurrencyMenuOpen, setIsCurrencyMenuOpen] = useState(false);
+    const [activeDropdownTab, setActiveDropdownTab] = useState<'real' | 'demo'>('real');
+    const [demoResetAmount, setDemoResetAmount] = useState('');
+    const [demoResetError, setDemoResetError] = useState('');
+    const [demoResetSuccess, setDemoResetSuccess] = useState('');
     const wrapperRef = useRef<HTMLDivElement>(null);
     const { accountList, activeLoginid } = useApiBase();
     const { client, run_panel } = useStore() ?? {};
@@ -62,6 +66,14 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
             document.removeEventListener('keydown', handleKeyDown);
         };
     }, []);
+
+    useEffect(() => {
+        if (!activeAccount) return;
+
+        setActiveDropdownTab(activeAccount.isVirtual ? 'demo' : 'real');
+        setDemoResetError('');
+        setDemoResetSuccess('');
+    }, [activeAccount?.isVirtual, activeAccount?.loginid]);
 
     const toggleDropdown = useCallback(() => {
         if (is_bot_running || isSingleAccount) return;
@@ -120,19 +132,78 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
             .sort((a, b) => (a.isActive ? -1 : b.isActive ? 1 : 0));
     }, [accountList, activeLoginid]);
 
-    if (!activeAccount) return null;
-
-    const { currency, isVirtual, balance } = activeAccount;
+    const currency = activeAccount?.currency;
+    const isVirtual = activeAccount?.isVirtual ?? false;
+    const balance = activeAccount?.balance;
+    const loginid = activeAccount?.loginid;
     const showChevron = !isSingleAccount && !is_bot_running;
     const realAccounts = formattedAccounts.filter(account => !account.isVirtual);
     const demoAccounts = formattedAccounts.filter(account => account.isVirtual);
     const selectedDisplayCurrency = resolveDisplayCurrency(client?.display_currency, 'USD');
+    const activeDemoOverride = client?.getDemoBalanceOverride?.(loginid);
+    const activeDemoResetCurrency = currency || 'USD';
+    const isActiveDemoAccount = Boolean(loginid && isVirtual);
     const headerBalance = formatDisplayBalanceValue(
         balance ?? 0,
         currency || 'USD',
         selectedDisplayCurrency,
         client?.usd_kes_rate
     );
+
+    useEffect(() => {
+        if (!isActiveDemoAccount) {
+            setDemoResetAmount('');
+            return;
+        }
+
+        if (activeDemoOverride) {
+            setDemoResetAmount(activeDemoOverride.custom_balance.toFixed(getDecimalPlaces(activeDemoResetCurrency)));
+            return;
+        }
+
+        const numericActiveBalance = Number(String(balance ?? 0).replace(/,/g, ''));
+        setDemoResetAmount(addComma(numericActiveBalance.toFixed(getDecimalPlaces(activeDemoResetCurrency))));
+    }, [activeDemoOverride, activeDemoResetCurrency, balance, isActiveDemoAccount]);
+
+    const handleTabSelect = useCallback((tab: 'real' | 'demo') => {
+        setActiveDropdownTab(tab);
+        setDemoResetError('');
+        setDemoResetSuccess('');
+    }, []);
+
+    const handleDemoResetSubmit = useCallback(
+        (event: ReactFormEvent<HTMLFormElement>) => {
+            event.preventDefault();
+            setDemoResetError('');
+            setDemoResetSuccess('');
+
+            if (!isActiveDemoAccount || !loginid) {
+                setDemoResetError('Switch to a demo account to set its starting balance.');
+                return;
+            }
+
+            const normalizedAmount = Number(demoResetAmount.replace(/,/g, '').trim());
+            if (!demoResetAmount.trim() || !Number.isFinite(normalizedAmount) || normalizedAmount < 0) {
+                setDemoResetError('Enter a valid demo balance amount.');
+                return;
+            }
+
+            const wasReset = client?.resetDemoBalance?.(loginid, normalizedAmount, activeDemoResetCurrency);
+            if (!wasReset) {
+                setDemoResetError('We could not reset the demo balance right now. Try again.');
+                return;
+            }
+
+            setDemoResetSuccess(
+                `Demo balance reset to ${addComma(
+                    normalizedAmount.toFixed(getDecimalPlaces(activeDemoResetCurrency))
+                )} ${activeDemoResetCurrency}`
+            );
+        },
+        [activeDemoResetCurrency, client, demoResetAmount, isActiveDemoAccount, loginid]
+    );
+
+    if (!activeAccount) return null;
 
     return (
         <div className='acc-info__wrapper' ref={wrapperRef}>
@@ -231,10 +302,30 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
             {isOpen && (
                 <div className='acc-dropdown' role='listbox'>
                     <div className='acc-dropdown__tabs' role='tablist'>
-                        <span className='acc-dropdown__tab acc-dropdown__tab--active'>Real</span>
-                        <span className='acc-dropdown__tab'>Demo</span>
+                        <button
+                            type='button'
+                            role='tab'
+                            aria-selected={activeDropdownTab === 'real'}
+                            className={classNames('acc-dropdown__tab', {
+                                'acc-dropdown__tab--active': activeDropdownTab === 'real',
+                            })}
+                            onClick={() => handleTabSelect('real')}
+                        >
+                            Real
+                        </button>
+                        <button
+                            type='button'
+                            role='tab'
+                            aria-selected={activeDropdownTab === 'demo'}
+                            className={classNames('acc-dropdown__tab', {
+                                'acc-dropdown__tab--active': activeDropdownTab === 'demo',
+                            })}
+                            onClick={() => handleTabSelect('demo')}
+                        >
+                            Demo
+                        </button>
                     </div>
-                    {realAccounts.length > 0 && (
+                    {activeDropdownTab === 'real' && realAccounts.length > 0 && (
                         <div className='acc-dropdown__group'>
                             <div className='acc-dropdown__group-title'>
                                 <span>Deriv accounts</span>
@@ -286,8 +377,14 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                             ))}
                         </div>
                     )}
-                    {demoAccounts.length > 0 && (
+                    {activeDropdownTab === 'demo' && demoAccounts.length > 0 && (
                         <div className='acc-dropdown__group'>
+                            <div className='acc-dropdown__group-title'>
+                                <span>Demo accounts</span>
+                                <span className='acc-dropdown__group-chevron' aria-hidden='true'>
+                                    ^
+                                </span>
+                            </div>
                             {demoAccounts.map(account => (
                                 <div
                                     key={account.loginid}
@@ -298,6 +395,12 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                                         'acc-dropdown__account--selected': account.isActive,
                                     })}
                                     onClick={() => !account.isActive && handleAccountSelect(account.loginid)}
+                                    onKeyDown={e => {
+                                        if (!account.isActive && (e.key === 'Enter' || e.key === ' ')) {
+                                            e.preventDefault();
+                                            handleAccountSelect(account.loginid);
+                                        }
+                                    }}
                                 >
                                     <span className='acc-dropdown__account-icon'>
                                         <CurrencyIcon currency={account.currency?.toLowerCase()} isVirtual />
@@ -320,7 +423,40 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                                     </Text>
                                 </div>
                             ))}
+                            <form className='acc-dropdown__reset' onSubmit={handleDemoResetSubmit}>
+                                <div className='acc-dropdown__reset-title'>Reset Demo Account Balance</div>
+                                <p className='acc-dropdown__reset-copy'>
+                                    Set the starting balance for your current demo account.
+                                </p>
+                                <div className='acc-dropdown__reset-input-row'>
+                                    <input
+                                        className='acc-dropdown__reset-input'
+                                        inputMode='decimal'
+                                        type='text'
+                                        value={demoResetAmount}
+                                        onChange={event => setDemoResetAmount(event.target.value)}
+                                        placeholder={`Enter amount in ${activeDemoResetCurrency}`}
+                                        aria-label='Demo balance amount'
+                                    />
+                                    <button className='acc-dropdown__reset-button' type='submit'>
+                                        Reset
+                                    </button>
+                                </div>
+                                {!isActiveDemoAccount && (
+                                    <p className='acc-dropdown__reset-hint'>
+                                        Switch to a demo account first, then set the amount you want to start with.
+                                    </p>
+                                )}
+                                {demoResetError && <p className='acc-dropdown__reset-error'>{demoResetError}</p>}
+                                {demoResetSuccess && <p className='acc-dropdown__reset-success'>{demoResetSuccess}</p>}
+                            </form>
                         </div>
+                    )}
+                    {activeDropdownTab === 'real' && realAccounts.length === 0 && (
+                        <div className='acc-dropdown__empty'>No real accounts available.</div>
+                    )}
+                    {activeDropdownTab === 'demo' && demoAccounts.length === 0 && (
+                        <div className='acc-dropdown__empty'>No demo accounts available.</div>
                     )}
                     <div className='acc-dropdown__traders-hub'>Looking for CFD accounts? Go to Trader&apos;s Hub</div>
                     <div className='acc-dropdown__footer'>
