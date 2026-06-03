@@ -130,6 +130,15 @@ describe('AccountSwitcher', () => {
         expect(screen.getByTestId('dt_balance')).toHaveTextContent('100.00 USD');
     });
 
+    it('renders the currency switcher on desktop too', () => {
+        const { useDevice } = require('@deriv-com/ui');
+        useDevice.mockReturnValue({ isDesktop: true });
+
+        render(<AccountSwitcher activeAccount={mockRealActiveAccount} />);
+
+        expect(screen.getByText('USD', { selector: 'button.acc-info__currency-button' })).toBeInTheDocument();
+    });
+
     it('opens dropdown on click when multiple accounts exist', () => {
         render(<AccountSwitcher activeAccount={mockRealActiveAccount} />);
         fireEvent.click(screen.getByTestId('dt_acc_info'));

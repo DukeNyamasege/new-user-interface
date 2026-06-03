@@ -10,7 +10,6 @@ import { useStore } from '@/hooks/useStore';
 import { isDemoAccount } from '@/utils/account-helpers';
 import { DISPLAY_CURRENCIES, formatDisplayBalanceValue, resolveDisplayCurrency, TDisplayCurrency } from '@/utils/display-currency';
 import { Localize } from '@deriv-com/translations';
-import { useDevice } from '@deriv-com/ui';
 import { TAccountSwitcher } from './common/types';
 import AccountInfoWrapper from './account-info-wrapper';
 import './account-switcher.scss';
@@ -41,7 +40,6 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const { accountList, activeLoginid } = useApiBase();
     const { client, run_panel } = useStore() ?? {};
-    const { isDesktop } = useDevice();
 
     const is_bot_running = run_panel?.is_running || api_base.is_running;
     const isSingleAccount = !accountList || accountList.length <= 1;
@@ -208,38 +206,36 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
     return (
         <div className='acc-info__wrapper' ref={wrapperRef}>
             <AccountInfoWrapper>
-                {!isDesktop && (
-                    <div className='acc-info__currency-switcher'>
-                        <button
-                            className='acc-info__currency-button'
-                            type='button'
-                            onClick={toggleCurrencyMenu}
-                            aria-expanded={isCurrencyMenuOpen}
-                            aria-haspopup='listbox'
-                        >
-                            {selectedDisplayCurrency}
-                            <svg width='10' height='10' viewBox='0 0 10 10' fill='none' aria-hidden='true'>
-                                <path d='M2 3.5L5 6.5L8 3.5' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
-                            </svg>
-                        </button>
-                        {isCurrencyMenuOpen && (
-                            <div className='acc-info__currency-menu' role='listbox'>
-                                {DISPLAY_CURRENCIES.map(option => (
-                                    <button
-                                        key={option}
-                                        type='button'
-                                        className={classNames('acc-info__currency-option', {
-                                            'acc-info__currency-option--active': option === selectedDisplayCurrency,
-                                        })}
-                                        onClick={() => handleDisplayCurrencySelect(option)}
-                                    >
-                                        {option}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
+                <div className='acc-info__currency-switcher'>
+                    <button
+                        className='acc-info__currency-button'
+                        type='button'
+                        onClick={toggleCurrencyMenu}
+                        aria-expanded={isCurrencyMenuOpen}
+                        aria-haspopup='listbox'
+                    >
+                        {selectedDisplayCurrency}
+                        <svg width='10' height='10' viewBox='0 0 10 10' fill='none' aria-hidden='true'>
+                            <path d='M2 3.5L5 6.5L8 3.5' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+                        </svg>
+                    </button>
+                    {isCurrencyMenuOpen && (
+                        <div className='acc-info__currency-menu' role='listbox'>
+                            {DISPLAY_CURRENCIES.map(option => (
+                                <button
+                                    key={option}
+                                    type='button'
+                                    className={classNames('acc-info__currency-option', {
+                                        'acc-info__currency-option--active': option === selectedDisplayCurrency,
+                                    })}
+                                    onClick={() => handleDisplayCurrencySelect(option)}
+                                >
+                                    {option}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
                 <div
                     data-testid='dt_acc_info'
                     id='dt_core_account-info_acc-info'
