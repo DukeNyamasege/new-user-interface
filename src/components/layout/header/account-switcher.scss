@@ -814,6 +814,7 @@ $account-balance-green: #0b6b37;
     z-index: 30;
     width: 32rem;
     max-width: calc(100vw - 1.2rem);
+    box-sizing: border-box;
     background-color: var(--general-main-2);
     border-radius: 0;
     box-shadow: 0 1.2rem 2.4rem rgb(0 0 0 / 28%);
@@ -821,11 +822,19 @@ $account-balance-green: #0b6b37;
     color: var(--text-prominent);
 
     @include mobile-screen {
-        right: -0.4rem;
+        position: fixed;
+        top: calc(env(safe-area-inset-top, 0px) + 4.6rem);
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        width: min(32rem, calc(100vw - 2.4rem));
+        max-width: calc(100vw - 2.4rem);
+        max-height: calc(100vh - env(safe-area-inset-top, 0px) - 5.8rem);
         border: 0;
         box-shadow: 0 1rem 2.2rem rgb(0 0 0 / 34%);
         outline: 1px solid var(--general-section-1);
         outline-offset: -1px;
+        overflow-y: auto;
     }
 
     &__tabs {
@@ -989,6 +998,11 @@ $account-balance-green: #0b6b37;
     &__reset-input-row {
         display: flex;
         gap: 0.8rem;
+
+        @include mobile-screen {
+            flex-direction: column;
+            align-items: stretch;
+        }
     }
 
     &__reset-input {
@@ -1012,6 +1026,11 @@ $account-balance-green: #0b6b37;
         font-weight: 700;
         min-width: 8.6rem;
         padding: 0 1.4rem;
+
+        @include mobile-screen {
+            min-height: 3.8rem;
+            width: 100%;
+        }
     }
 
     &__empty {
@@ -1029,6 +1048,10 @@ $account-balance-green: #0b6b37;
         display: flex;
         justify-content: space-between;
         padding: 1.2rem 1.2rem 1.4rem;
+
+        @include mobile-screen {
+            gap: 1rem;
+        }
     }
 
     &__manage,
