@@ -41,8 +41,7 @@ jest.mock('@/external/bot-skeleton', () => ({
 
 jest.mock('@/utils/trade-purchase', () => ({
     buyContractForUi: jest.fn(),
-    emitContractSoldStatus: jest.fn(),
-    getContractSnapshot: jest.fn(),
+    streamContractUntilSettled: jest.fn(() => Promise.resolve({ profit: 0, is_sold: true })),
 }));
 
 jest.mock('@/stores/condition-notifier-store', () => ({

@@ -6,7 +6,7 @@ import ThemedScrollbars from '@/components/shared_ui/themed-scrollbars';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { api_base, observer as globalObserver } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
-import { buyContractForUi, emitContractSoldStatus, getContractSnapshot } from '@/utils/trade-purchase';
+import { buyContractForUi, streamContractUntilSettled } from '@/utils/trade-purchase';
 import { recordDiagnosticEvent, setDiagnosticGauge } from '@/utils/diagnostics';
 import { conditionNotifierStore } from '@/stores/condition-notifier-store';
 import { getLastDigitFromQuote, isExpectedStreamInterruption } from '@/utils/market-data';
@@ -272,8 +272,7 @@ const Combo = observer(() => {
     const lastUiRefreshAtRef = useRef(0);
     const uiRefreshTimerRef = useRef<number | null>(null);
     const restartTimerRef = useRef<number | null>(null);
-    const pollTimersRef = useRef<Set<number>>(new Set());
-    const pollResolversRef = useRef<Set<(value: Record<string, any>) => void>>(new Set());
+    const contractStreamAbortControllersRef = useRef<Set<AbortController>>(new Set());
 
     const show_combo = active_tab === DBOT_TABS.COMBO;
     showComboRef.current = show_combo;
@@ -368,14 +367,6 @@ const Combo = observer(() => {
         updateSubscriptionDiagnostics();
     }, [rows.length, updateSubscriptionDiagnostics]);
 
-    const schedulePoll = useCallback((callback: () => void) => {
-        const timer = window.setTimeout(() => {
-            pollTimersRef.current.delete(timer);
-            if (!unmountedRef.current && showComboRef.current) callback();
-        }, 800);
-        pollTimersRef.current.add(timer);
-    }, []);
-
     const clearDeferredWork = useCallback(() => {
         if (uiRefreshTimerRef.current !== null) {
             window.clearTimeout(uiRefreshTimerRef.current);
@@ -385,10 +376,8 @@ const Combo = observer(() => {
             window.clearTimeout(restartTimerRef.current);
             restartTimerRef.current = null;
         }
-        pollTimersRef.current.forEach(timer => window.clearTimeout(timer));
-        pollTimersRef.current.clear();
-        pollResolversRef.current.forEach(resolve => resolve({ profit: 0, is_sold: true }));
-        pollResolversRef.current.clear();
+        contractStreamAbortControllersRef.current.forEach(controller => controller.abort());
+        contractStreamAbortControllersRef.current.clear();
         restartInFlightRef.current = false;
     }, []);
 
@@ -404,44 +393,6 @@ const Combo = observer(() => {
         [run_panel, summary_card, transactions]
     );
 
-    // Poll until contract is settled and push final data
-    const pollContract = useCallback(
-        (contractId: number): Promise<Record<string, any>> =>
-            new Promise(resolve => {
-                const finish = (value: Record<string, any>) => {
-                    pollResolversRef.current.delete(finish);
-                    resolve(value);
-                };
-                pollResolversRef.current.add(finish);
-                const check = async () => {
-                    if (unmountedRef.current || !showComboRef.current) {
-                        finish({ profit: 0, is_sold: true });
-                        return;
-                    }
-                    try {
-                        const resp = await (api_base.api as any).send({
-                            proposal_open_contract: 1,
-                            contract_id: contractId,
-                        });
-                        const c = resp?.proposal_open_contract;
-                        if (!c) {
-                            schedulePoll(check);
-                            return;
-                        }
-                        pushTx(getContractSnapshot(c));
-                        if (c.is_sold) {
-                            emitContractSoldStatus(c);
-                            finish(c);
-                        } else schedulePoll(check);
-                    } catch {
-                        finish({ profit: 0, is_sold: true });
-                    }
-                };
-                check();
-            }),
-        [pushTx, schedulePoll]
-    );
-
     // Execute all rows simultaneously; return per-row profits
     const fireAllRows = useCallback(async () => {
         const cur = rowsRef.current;
@@ -452,6 +403,7 @@ const Combo = observer(() => {
                 if (!live) return { rowId: row.id, profit: 0 };
                 const ct = row.contractType;
                 const stk = live.liveStake;
+                const abortController = new AbortController();
 
                 const params: Record<string, any> = {
                     amount: stk,
@@ -479,12 +431,35 @@ const Combo = observer(() => {
                         contract_type: ct,
                         currency: currency || 'USD',
                     });
-                    const c = await pollContract(contract_id);
+                    contractStreamAbortControllersRef.current.add(abortController);
+                    const c = await streamContractUntilSettled({
+                        contractId: contract_id,
+                        fallback: {
+                            buy_price,
+                            contract_id,
+                            transaction_ids: { buy: transaction_id },
+                            date_start: Math.floor(Date.now() / 1000),
+                            display_name: row.symbol,
+                            underlying_symbol: row.symbol,
+                            shortcode: `COMBO_${ct}_${row.symbol}`,
+                            contract_type: ct,
+                            currency: currency || 'USD',
+                        },
+                        onUpdate: snapshot => {
+                            if (!unmountedRef.current) {
+                                pushTx(snapshot);
+                            }
+                        },
+                        signal: abortController.signal,
+                        source: 'Combo',
+                    });
                     return { rowId: row.id, profit: Number(c.profit ?? 0) };
                 } catch (err) {
                     console.error('[Combo] executeTrade exception:', err);
                     setError(err instanceof Error ? err.message : 'Combo could not purchase this contract.');
                     return { rowId: row.id, profit: 0 };
+                } finally {
+                    contractStreamAbortControllersRef.current.delete(abortController);
                 }
             })
         );
@@ -533,7 +508,7 @@ const Combo = observer(() => {
 
         comboFiringRef.current = false;
         refresh();
-    }, [currency, pollContract, pushTx, run_panel, refresh]);
+    }, [currency, pushTx, run_panel, refresh]);
 
     // Tick handler — each row uses its OWN contractType and digit for pattern detection
     const handleTick = useCallback(

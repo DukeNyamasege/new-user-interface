@@ -11,7 +11,7 @@ import { conditionNotifierStore } from '@/stores/condition-notifier-store';
 import { API_BASE } from '@/utils/api-base';
 import { recordDiagnosticEvent, setDiagnosticGauge } from '@/utils/diagnostics';
 import { getLastDigitFromQuote, getMarketPipSize, isExpectedStreamInterruption } from '@/utils/market-data';
-import { buyContractForUi, emitContractSoldStatus, getContractSnapshot } from '@/utils/trade-purchase';
+import { buyContractForUi, streamContractUntilSettled } from '@/utils/trade-purchase';
 import { safeSubscribe } from '@/utils/websocket-handler';
 import './auto-trades.scss';
 
@@ -1155,8 +1155,7 @@ const AutoTrades = observer(() => {
     const uiRefreshTimerRef = useRef<number | null>(null);
     const restartTimerRef = useRef<number | null>(null);
     const modeTransitionTimerRef = useRef<number | null>(null);
-    const contractPollTimersRef = useRef<Set<number>>(new Set());
-    const contractPollResolversRef = useRef<Set<(value: Record<string, any>) => void>>(new Set());
+    const contractStreamAbortControllersRef = useRef<Set<AbortController>>(new Set());
     const aiFabDragRef = useRef({
         active: false,
         moved: false,
@@ -1627,16 +1626,6 @@ const AutoTrades = observer(() => {
         }
     }, [run_panel]);
 
-    const pollCancellationRef = useRef<AbortController | null>(null);
-
-    const scheduleContractPoll = useCallback((callback: () => void) => {
-        const timer = window.setTimeout(() => {
-            contractPollTimersRef.current.delete(timer);
-            if (!unmountedRef.current && show_auto_ref.current) callback();
-        }, 800);
-        contractPollTimersRef.current.add(timer);
-    }, []);
-
     const clearDeferredWork = useCallback(() => {
         if (uiRefreshTimerRef.current !== null) {
             window.clearTimeout(uiRefreshTimerRef.current);
@@ -1651,67 +1640,10 @@ const AutoTrades = observer(() => {
             modeTransitionTimerRef.current = null;
         }
         modeTransitionLockRef.current = false;
-        contractPollTimersRef.current.forEach(timer => window.clearTimeout(timer));
-        contractPollTimersRef.current.clear();
-        contractPollResolversRef.current.forEach(resolve => resolve({ profit: 0, is_sold: true }));
-        contractPollResolversRef.current.clear();
+        contractStreamAbortControllersRef.current.forEach(controller => controller.abort());
+        contractStreamAbortControllersRef.current.clear();
         restartInFlightRef.current = false;
     }, []);
-
-    const pollContractResult = (contractId: number): Promise<Record<string, any>> =>
-        new Promise(resolve => {
-            const finish = (value: Record<string, any>) => {
-                contractPollResolversRef.current.delete(finish);
-                resolve(value);
-            };
-            contractPollResolversRef.current.add(finish);
-            const abortController = new AbortController();
-            pollCancellationRef.current = abortController;
-            const { signal } = abortController;
-            const maxRetries = 50; // max ~40 seconds of polling
-            let retryCount = 0;
-            const check = async () => {
-                if (signal.aborted || unmountedRef.current) {
-                    finish({ profit: 0, is_sold: true });
-                    return;
-                }
-                if (retryCount >= maxRetries) {
-                    console.warn('[AutoTrades] Contract polling timeout after max retries');
-                    finish({ profit: 0, is_sold: true });
-                    return;
-                }
-                try {
-                    const resp = await (api_base.api as any).send({
-                        proposal_open_contract: 1,
-                        contract_id: contractId,
-                    });
-                    if (signal.aborted || unmountedRef.current) {
-                        finish({ profit: 0, is_sold: true });
-                        return;
-                    }
-                    const c = resp?.proposal_open_contract;
-                    if (!c) {
-                        retryCount++;
-                        scheduleContractPoll(check);
-                        return;
-                    }
-                    if (!unmountedRef.current) {
-                        pushContract(getContractSnapshot(c));
-                    }
-                    if (c.is_sold) {
-                        emitContractSoldStatus(c);
-                        finish(c);
-                    } else {
-                        retryCount++;
-                        scheduleContractPoll(check);
-                    }
-                } catch (err) {
-                    console.error('[AutoTrades] Contract poll error:', err);
-                    finish({ profit: 0, is_sold: true });
-                }
-            };
-            check();
-        });
 
     const executeTrade = useCallback(
         async (symbol: string, stakeAmount: number, lastResult: 'win' | 'loss' | null): Promise<number> => {
@@ -1719,6 +1651,7 @@ const AutoTrades = observer(() => {
             const bar = getActiveDigitBarrier(ct, lastResult, consecutiveLossRef.current);
             const tradeStartTime = Math.floor(Date.now() / 1000);
             const verificationId = `${symbol}_${tradeStartTime}_${Math.random().toString(36).substring(2, 11)}`;
+            const abortController = new AbortController();
 
             const params: Record<string, any> = {
                 amount: stakeAmount,
@@ -1747,12 +1680,36 @@ const AutoTrades = observer(() => {
                     verification_id: verificationId,
                 });
 
-                const contract = await pollContractResult(contract_id);
+                contractStreamAbortControllersRef.current.add(abortController);
+                const contract = await streamContractUntilSettled({
+                    contractId: contract_id,
+                    fallback: {
+                        buy_price,
+                        contract_id,
+                        transaction_ids: { buy: transaction_id },
+                        date_start: tradeStartTime,
+                        display_name: symbol,
+                        underlying_symbol: symbol,
+                        shortcode: `AUTO_${ct}_${symbol}`,
+                        contract_type: ct,
+                        currency: currency || 'USD',
+                        verification_id: verificationId,
+                    },
+                    onUpdate: snapshot => {
+                        if (!unmountedRef.current) {
+                            pushContract(snapshot);
+                        }
+                    },
+                    signal: abortController.signal,
+                    source: 'AutoTrades',
+                });
                 return Number(contract.profit ?? 0);
             } catch (err) {
                 console.error('[AutoTrades] executeTrade exception:', err);
                 setError(err instanceof Error ? err.message : 'Auto Trades could not purchase this contract.');
                 return 0;
+            } finally {
+                contractStreamAbortControllersRef.current.delete(abortController);
             }
         },
         [currency, getActiveDigitBarrier, pushContract, setError]
@@ -2341,8 +2298,6 @@ const AutoTrades = observer(() => {
         consecutiveLossRef.current = 0;
         previousContractResultRef.current = null;
         clearDeferredWork();
-        pollCancellationRef.current?.abort();
-        pollCancellationRef.current = null;
         Object.values(marketStatesRef.current).forEach(state => {
             state.trading = false;
             state.consecutive = 0;
@@ -2473,8 +2428,6 @@ const AutoTrades = observer(() => {
         () => () => {
             unmountedRef.current = true;
             clearDeferredWork();
-            // Abort any in-flight contract polling
-            pollCancellationRef.current?.abort();
             // Invalidate all subscription callbacks by bumping version
             subscriptionVersionRef.current++;
             runningRef.current = false;

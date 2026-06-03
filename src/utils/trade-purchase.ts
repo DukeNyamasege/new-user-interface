@@ -1,5 +1,6 @@
 import { api_base, observer as globalObserver } from '@/external/bot-skeleton';
 import { assertApiTokenScope } from '@/utils/api-token-permissions';
+import { safeSubscribe } from '@/utils/websocket-handler';
 import type { Buy } from '@deriv/api-types';
 
 type TTradeParameters = Record<string, number | string>;
@@ -207,3 +208,140 @@ export const emitContractSoldStatus = (contract: Record<string, any>) => {
         contract,
     });
 };
+
+type TStreamContractUntilSettledArgs = {
+    contractId: number;
+    fallback?: Record<string, any>;
+    onUpdate?: (snapshot: Record<string, any>, rawContract: Record<string, any>) => void;
+    signal?: AbortSignal;
+    source: string;
+    timeoutMs?: number;
+};
+
+const getSettledFallbackSnapshot = (contractId: number, fallback: Record<string, any> = {}) =>
+    getContractSnapshot(
+        {
+            contract_id: contractId,
+            is_sold: true,
+            profit: fallback.profit ?? 0,
+            transaction_ids: fallback.transaction_ids,
+        },
+        fallback
+    );
+
+export const streamContractUntilSettled = ({
+    contractId,
+    fallback = {},
+    onUpdate,
+    signal,
+    source,
+    timeoutMs = 45000,
+}: TStreamContractUntilSettledArgs): Promise<Record<string, any>> =>
+    new Promise(resolve => {
+        let finished = false;
+        let subscription: { unsubscribe?: () => void } | null = null;
+        let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+        const cleanup = () => {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+            }
+            if (signal) {
+                signal.removeEventListener('abort', handleAbort);
+            }
+            try {
+                subscription?.unsubscribe?.();
+            } catch (unsubscribeError) {
+                console.warn(`[${source}] Failed to unsubscribe contract stream.`, unsubscribeError);
+            }
+            subscription = null;
+        };
+
+        const finish = (value: Record<string, any>) => {
+            if (finished) return;
+            finished = true;
+            cleanup();
+            resolve(value);
+        };
+
+        const handleAbort = () => {
+            finish(getSettledFallbackSnapshot(contractId, fallback));
+        };
+
+        const finalizeWithSnapshot = async () => {
+            if (finished) return;
+            try {
+                const response = await (api_base.api as any)?.send?.({
+                    proposal_open_contract: 1,
+                    contract_id: contractId,
+                });
+                const contract = response?.proposal_open_contract;
+                if (contract) {
+                    const snapshot = getContractSnapshot(contract, fallback);
+                    onUpdate?.(snapshot, contract);
+                    if (snapshot.is_sold) {
+                        emitContractSoldStatus(snapshot);
+                    }
+                    finish(snapshot);
+                    return;
+                }
+            } catch (snapshotError) {
+                console.warn(`[${source}] Final contract snapshot failed.`, snapshotError);
+            }
+
+            finish(getSettledFallbackSnapshot(contractId, fallback));
+        };
+
+        if (signal?.aborted) {
+            handleAbort();
+            return;
+        }
+
+        if (signal) {
+            signal.addEventListener('abort', handleAbort, { once: true });
+        }
+
+        timeoutId = setTimeout(() => {
+            console.warn(`[${source}] Contract stream timed out for ${contractId}, requesting final snapshot.`);
+            void finalizeWithSnapshot();
+        }, timeoutMs);
+
+        try {
+            const observable = (api_base.api as any)?.subscribe?.({
+                proposal_open_contract: 1,
+                contract_id: contractId,
+            });
+
+            subscription = safeSubscribe(
+                observable,
+                (data: any) => {
+                    if (finished) return;
+                    if (data?.error) {
+                        console.warn(`[${source}] Contract stream error for ${contractId}.`, data.error);
+                        void finalizeWithSnapshot();
+                        return;
+                    }
+
+                    const contract = data?.proposal_open_contract;
+                    if (!contract) return;
+
+                    const snapshot = getContractSnapshot(contract, fallback);
+                    onUpdate?.(snapshot, contract);
+
+                    if (snapshot.is_sold) {
+                        emitContractSoldStatus(snapshot);
+                        finish(snapshot);
+                    }
+                },
+                streamError => {
+                    if (finished) return;
+                    console.warn(`[${source}] Contract stream subscription failed for ${contractId}.`, streamError);
+                    void finalizeWithSnapshot();
+                }
+            );
+        } catch (subscribeError) {
+            console.warn(`[${source}] Could not subscribe to contract stream for ${contractId}.`, subscribeError);
+            void finalizeWithSnapshot();
+        }
+    });

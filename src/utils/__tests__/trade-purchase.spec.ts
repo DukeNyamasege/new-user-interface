@@ -1,12 +1,15 @@
 const mockSend = jest.fn();
+const mockSubscribe = jest.fn();
 const mockEmit = jest.fn();
 const mockGetState = jest.fn();
+const mockUnsubscribe = jest.fn();
 
 jest.mock('@/external/bot-skeleton', () => ({
     api_base: {
         is_authorized: true,
         api: {
             send: (...args: unknown[]) => mockSend(...args),
+            subscribe: (...args: unknown[]) => mockSubscribe(...args),
         },
     },
     observer: {
@@ -20,10 +23,12 @@ jest.mock('@/utils/api-token-permissions', () => ({
 }));
 
 import { buyContractForUi } from '../trade-purchase';
+import { streamContractUntilSettled } from '../trade-purchase';
 
 describe('buyContractForUi', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockSubscribe.mockReset();
         mockGetState.mockImplementation(key => {
             if (key !== 'client.store') return undefined;
 
@@ -106,5 +111,77 @@ describe('buyContractForUi', () => {
 
         expect(mockSend).toHaveBeenCalledTimes(2);
         expect(mockSend).toHaveBeenLastCalledWith({ buy: 'proposal-2', price: 15 });
+    });
+
+    it('streams live open-contract updates until the exact sold tick arrives', async () => {
+        const onUpdate = jest.fn();
+        let subscriber: ((data: any) => void) | undefined;
+
+        mockSubscribe.mockImplementation(() => ({
+            subscribe: (callback: (data: any) => void) => {
+                subscriber = callback;
+                return { unsubscribe: mockUnsubscribe };
+            },
+        }));
+
+        const contractPromise = streamContractUntilSettled({
+            contractId: 42,
+            fallback: {
+                transaction_ids: { buy: 99 },
+                currency: 'USD',
+                shortcode: 'AUTO_DIGITOVER_R_10',
+            },
+            onUpdate,
+            source: 'Auto Trades',
+        });
+
+        subscriber?.({
+            proposal_open_contract: {
+                contract_id: 42,
+                status: 'open',
+                entry_tick: 100.12,
+                entry_tick_time: 1700000001,
+                transaction_ids: { buy: 99 },
+                currency: 'USD',
+            },
+        });
+        subscriber?.({
+            proposal_open_contract: {
+                contract_id: 42,
+                status: 'won',
+                is_sold: true,
+                profit: 2.5,
+                entry_tick: 100.12,
+                entry_tick_time: 1700000001,
+                exit_tick: 100.45,
+                exit_tick_time: 1700000002,
+                transaction_ids: { buy: 99, sell: 101 },
+                currency: 'USD',
+            },
+        });
+
+        await expect(contractPromise).resolves.toEqual(
+            expect.objectContaining({
+                contract_id: 42,
+                is_sold: true,
+                profit: 2.5,
+                entry_tick: 100.12,
+                exit_tick: 100.45,
+            })
+        );
+
+        expect(onUpdate).toHaveBeenCalledTimes(2);
+        expect(mockEmit).toHaveBeenCalledWith(
+            'contract.status',
+            expect.objectContaining({
+                id: 'contract.sold',
+                contract: expect.objectContaining({
+                    contract_id: 42,
+                    is_sold: true,
+                    profit: 2.5,
+                }),
+            })
+        );
+        expect(mockUnsubscribe).toHaveBeenCalled();
     });
 });

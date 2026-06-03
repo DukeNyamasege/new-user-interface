@@ -1,6 +1,6 @@
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { useStore } from '@/hooks/useStore';
-import { buyContractForUi } from '@/utils/trade-purchase';
+import { buyContractForUi, streamContractUntilSettled } from '@/utils/trade-purchase';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AutoTrades from '../auto-trades';
@@ -52,8 +52,7 @@ jest.mock('@/external/bot-skeleton', () => ({
 
 jest.mock('@/utils/trade-purchase', () => ({
     buyContractForUi: jest.fn(),
-    emitContractSoldStatus: jest.fn(),
-    getContractSnapshot: jest.fn(),
+    streamContractUntilSettled: jest.fn(() => Promise.resolve({ profit: 0, is_sold: true })),
 }));
 
 jest.mock('@/stores/condition-notifier-store', () => ({
@@ -96,6 +95,7 @@ const createMockStore = () => ({
 describe('<AutoTrades />', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        (streamContractUntilSettled as jest.Mock).mockResolvedValue({ profit: 0, is_sold: true });
         Object.keys(tickSubscribers).forEach(symbol => delete tickSubscribers[symbol]);
         Object.keys(candleSubscribers).forEach(symbol => delete candleSubscribers[symbol]);
         localStorage.clear();
@@ -303,17 +303,7 @@ describe('<AutoTrades />', () => {
             buy_price: 1,
             transaction_id: 10,
         });
-        mockApiSend.mockImplementation((request: any) => {
-            if (request?.proposal_open_contract) {
-                return Promise.resolve({ proposal_open_contract: { is_sold: true, profit: -1 } });
-            }
-            return Promise.resolve({
-                history: {
-                    prices: Array.from({ length: 1000 }, (_, index) => 100 + index / 100),
-                    times: Array.from({ length: 1000 }, (_, index) => 1700000000 + index),
-                },
-            });
-        });
+        (streamContractUntilSettled as jest.Mock).mockResolvedValue({ profit: -1, is_sold: true });
 
         render(<AutoTrades />);
 
