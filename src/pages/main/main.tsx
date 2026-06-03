@@ -424,6 +424,7 @@ const AppWrapper = observer(() => {
                 <div
                     className={classNames('main__container', {
                         'main__container--active': active_tour && active_tab === DASHBOARD && !isDesktop,
+                        'main__container--with-open-run-panel': isDesktop && is_drawer_open,
                     })}
                 >
                     <div>

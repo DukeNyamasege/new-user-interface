@@ -66,6 +66,12 @@
             overflow: hidden;
         }
 
+        &--with-open-run-panel {
+            width: calc(100% - 38.2rem);
+            max-width: calc(100% - 38.2rem);
+            transition: width 0.3s ease;
+        }
+
         &--active {
             // css for onboard tour overlay
             &:before {
