@@ -25,9 +25,15 @@ jest.mock('@/utils/api-token-permissions', () => ({
 import { buyContractForUi } from '../trade-purchase';
 import { streamContractUntilSettled } from '../trade-purchase';
 
+const flushPromises = async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+};
+
 describe('buyContractForUi', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        jest.useRealTimers();
         mockSubscribe.mockReset();
         mockUnsubscribe.mockReset();
         mockGetState.mockImplementation(key => {
@@ -41,6 +47,10 @@ describe('buyContractForUi', () => {
                 hasSufficientDemoBalance: (amount: number) => amount <= 20,
             };
         });
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
     });
 
     it('blocks demo purchases that exceed the available displayed balance', async () => {
@@ -268,6 +278,128 @@ describe('buyContractForUi', () => {
             }),
             expect.objectContaining({
                 status: 'lost',
+            })
+        );
+    });
+
+    it('does not fake-close stale contracts and recovers the sold result from the profit table', async () => {
+        jest.useFakeTimers();
+        const onUpdate = jest.fn();
+
+        mockSubscribe.mockImplementation(() => ({
+            subscribe: () => ({ unsubscribe: mockUnsubscribe }),
+        }));
+        mockSend.mockImplementation((request: Record<string, any>) => {
+            if (request?.proposal_open_contract) {
+                return Promise.resolve({
+                    proposal_open_contract: {
+                        contract_id: 88,
+                        status: 'open',
+                        buy_price: 0.7,
+                        entry_tick: 770520.07,
+                        entry_tick_time: 1700000001,
+                        transaction_ids: { buy: 800 },
+                    },
+                });
+            }
+
+            if (request?.profit_table) {
+                return Promise.resolve({
+                    profit_table: {
+                        transactions: [
+                            {
+                                contract_id: 88,
+                                contract_type: 'DIGITOVER',
+                                underlying_symbol: 'R_25',
+                                shortcode: 'AUTO_DIGITOVER_R_25',
+                                buy_price: 0.7,
+                                sell_price: 1.29,
+                                payout: 1.29,
+                                purchase_time: 1700000001,
+                                sell_time: 1700000002,
+                                transaction_id: 801,
+                            },
+                        ],
+                    },
+                });
+            }
+
+            return Promise.resolve({});
+        });
+
+        let settled = false;
+        const contractPromise = streamContractUntilSettled({
+            contractId: 88,
+            fallback: {
+                buy_price: 0.7,
+                transaction_ids: { buy: 800 },
+                currency: 'USD',
+                shortcode: 'AUTO_DIGITOVER_R_25',
+            },
+            onUpdate,
+            settlementCheckMs: 10,
+            source: 'Auto Trades',
+            timeoutMs: 10,
+        }).then(contract => {
+            settled = true;
+            return contract;
+        });
+
+        await flushPromises();
+        expect(settled).toBe(false);
+
+        jest.advanceTimersByTime(10);
+        await flushPromises();
+
+        await expect(contractPromise).resolves.toEqual(
+            expect.objectContaining({
+                contract_id: 88,
+                is_sold: true,
+                profit: 0.59,
+                sell_price: 1.29,
+                exit_tick_time: 1700000002,
+            })
+        );
+
+        expect(mockSend).toHaveBeenCalledWith(
+            expect.objectContaining({
+                proposal_open_contract: 1,
+                contract_id: 88,
+            })
+        );
+        expect(mockSend).toHaveBeenCalledWith(
+            expect.objectContaining({
+                profit_table: 1,
+                limit: 25,
+                sort: 'DESC',
+            })
+        );
+        expect(mockEmit).toHaveBeenCalledWith(
+            'contract.status',
+            expect.objectContaining({
+                id: 'contract.settlement_recovery',
+                data: 88,
+            })
+        );
+        expect(mockEmit).toHaveBeenCalledWith(
+            'contract.status',
+            expect.objectContaining({
+                id: 'contract.sold',
+                contract: expect.objectContaining({
+                    contract_id: 88,
+                    is_sold: true,
+                    profit: 0.59,
+                }),
+            })
+        );
+        expect(onUpdate).toHaveBeenCalledWith(
+            expect.objectContaining({
+                contract_id: 88,
+                is_sold: true,
+                profit: 0.59,
+            }),
+            expect.objectContaining({
+                contract_id: 88,
             })
         );
     });

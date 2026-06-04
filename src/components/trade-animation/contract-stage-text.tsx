@@ -14,6 +14,7 @@ export const text_contract_stages = Object.freeze({
     PURCHASE_RECEIVED: 'Contract bought',
     IS_STOPPING: 'Bot is stopping',
     CONTRACT_CLOSED: 'Contract closed',
+    SETTLEMENT_RECOVERY: 'Checking contract result',
 });
 
 const ContractStageText: React.FC<TContractStageText> = ({ contract_stage }) => {
@@ -32,6 +33,8 @@ const ContractStageText: React.FC<TContractStageText> = ({ contract_stage }) => 
             return <Localize i18n_default_text={text_contract_stages.IS_STOPPING} />;
         case contract_stages.CONTRACT_CLOSED:
             return <Localize i18n_default_text={text_contract_stages.CONTRACT_CLOSED} />;
+        case contract_stages.SETTLEMENT_RECOVERY:
+            return <Localize i18n_default_text={text_contract_stages.SETTLEMENT_RECOVERY} />;
         case contract_stages.NOT_RUNNING:
         default:
             return <Localize i18n_default_text={text_contract_stages.NOT_RUNNING} />;

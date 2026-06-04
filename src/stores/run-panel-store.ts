@@ -662,6 +662,11 @@ export default class RunPanelStore {
 
                 break;
             }
+            case 'contract.settlement_recovery': {
+                this.is_contract_buying_in_progress = false;
+                this.setContractStage(contract_stages.SETTLEMENT_RECOVERY);
+                break;
+            }
             case 'contract.sold': {
                 this.is_sell_requested = false;
                 this.setContractStage(contract_stages.CONTRACT_CLOSED);

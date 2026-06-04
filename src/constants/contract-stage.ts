@@ -1,4 +1,4 @@
-export type TContractStage = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type TContractStage = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export const contract_stages = Object.freeze({
     NOT_RUNNING: 0,
@@ -8,4 +8,5 @@ export const contract_stages = Object.freeze({
     PURCHASE_RECEIVED: 4,
     IS_STOPPING: 5,
     CONTRACT_CLOSED: 6,
+    SETTLEMENT_RECOVERY: 7,
 });

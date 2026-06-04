@@ -175,6 +175,8 @@ export const buyContractForUi = async ({ parameters, price, source }: TBuyContra
 };
 
 const CLOSED_CONTRACT_STATUSES = new Set(['sold', 'won', 'lost']);
+const DEFAULT_SETTLEMENT_RECOVERY_CHECK_MS = 1000;
+const PROFIT_TABLE_RECOVERY_CHECK_MS = 5000;
 
 const isContractSettled = (contract: Record<string, any> = {}) =>
     Boolean(contract.is_sold) || CLOSED_CONTRACT_STATUSES.has(String(contract.status || '').toLowerCase());
@@ -228,16 +230,55 @@ type TStreamContractUntilSettledArgs = {
     timeoutMs?: number;
 };
 
-const getSettledFallbackSnapshot = (contractId: number, fallback: Record<string, any> = {}) =>
+const getAbortedContractSnapshot = (contractId: number, fallback: Record<string, any> = {}) =>
     getContractSnapshot(
         {
             contract_id: contractId,
-            is_sold: true,
-            profit: fallback.profit ?? 0,
+            is_sold: false,
+            status: fallback.status ?? 'open',
             transaction_ids: fallback.transaction_ids,
         },
         fallback
     );
+
+const getProfitTableContractSnapshot = (transaction: Record<string, any>, fallback: Record<string, any> = {}) => {
+    const buy_price = Number(transaction.buy_price ?? fallback.buy_price ?? 0);
+    const sell_price =
+        transaction.sell_price !== undefined && transaction.sell_price !== null
+            ? Number(transaction.sell_price)
+            : undefined;
+    const payout = transaction.payout !== undefined && transaction.payout !== null ? Number(transaction.payout) : undefined;
+    const profit =
+        transaction.profit !== undefined && transaction.profit !== null
+            ? Number(transaction.profit)
+            : sell_price !== undefined
+              ? Number((sell_price - buy_price).toFixed(8))
+              : fallback.profit;
+
+    return getContractSnapshot(
+        {
+            contract_id: transaction.contract_id,
+            is_sold: transaction.sell_time !== undefined && transaction.sell_time !== null,
+            status: Number(profit ?? 0) < 0 ? 'lost' : 'won',
+            buy_price,
+            sell_price,
+            bid_price: sell_price ?? payout,
+            payout,
+            profit,
+            transaction_ids: {
+                ...fallback.transaction_ids,
+                sell: transaction.transaction_id ?? fallback.transaction_ids?.sell,
+            },
+            date_start: transaction.purchase_time ?? fallback.date_start,
+            exit_tick_time: transaction.sell_time ?? fallback.exit_tick_time,
+            shortcode: transaction.shortcode ?? fallback.shortcode,
+            contract_type: transaction.contract_type ?? fallback.contract_type,
+            underlying_symbol: transaction.underlying_symbol ?? fallback.underlying_symbol,
+            display_name: transaction.underlying_symbol ?? fallback.display_name,
+        },
+        fallback
+    );
+};
 
 export const streamContractUntilSettled = ({
     contractId,
@@ -251,6 +292,9 @@ export const streamContractUntilSettled = ({
     new Promise(resolve => {
         let finished = false;
         let snapshotRequestInFlight = false;
+        let profitTableRequestInFlight = false;
+        let recoveryMode = false;
+        let lastProfitTableRecoveryCheck = 0;
         let subscription: { unsubscribe?: () => void } | null = null;
         let settlementCheckId: ReturnType<typeof setInterval> | null = null;
         let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -283,7 +327,7 @@ export const streamContractUntilSettled = ({
         };
 
         const handleAbort = () => {
-            finish(getSettledFallbackSnapshot(contractId, fallback));
+            finish(getAbortedContractSnapshot(contractId, fallback));
         };
 
         const handleContractUpdate = (contract: Record<string, any>) => {
@@ -295,6 +339,52 @@ export const streamContractUntilSettled = ({
             if (snapshot.is_sold) {
                 emitContractSoldStatus(snapshot);
                 finish(snapshot);
+            }
+        };
+
+        const requestProfitTableSnapshot = async (reason: string) => {
+            const now = Date.now();
+            if (
+                finished ||
+                profitTableRequestInFlight ||
+                (lastProfitTableRecoveryCheck && now - lastProfitTableRecoveryCheck < PROFIT_TABLE_RECOVERY_CHECK_MS)
+            ) {
+                return;
+            }
+
+            profitTableRequestInFlight = true;
+            lastProfitTableRecoveryCheck = now;
+            try {
+                const response = await (api_base.api as any)?.send?.({
+                    profit_table: 1,
+                    description: 1,
+                    limit: 25,
+                    sort: 'DESC',
+                });
+                if (response?.error) {
+                    console.warn(
+                        `[${source}] Profit table recovery failed for ${contractId} (${reason}).`,
+                        response.error
+                    );
+                    return;
+                }
+
+                const transaction = response?.profit_table?.transactions?.find(
+                    (item: Record<string, any>) => Number(item?.contract_id) === Number(contractId)
+                );
+
+                if (!transaction) return;
+
+                const snapshot = getProfitTableContractSnapshot(transaction, fallback);
+                if (snapshot.is_sold) {
+                    onUpdate?.(snapshot, transaction);
+                    emitContractSoldStatus(snapshot);
+                    finish(snapshot);
+                }
+            } catch (profitTableError) {
+                console.warn(`[${source}] Profit table recovery failed for ${contractId} (${reason}).`, profitTableError);
+            } finally {
+                profitTableRequestInFlight = false;
             }
         };
 
@@ -310,11 +400,25 @@ export const streamContractUntilSettled = ({
                 if (contract) {
                     handleContractUpdate(contract);
                 }
+                if (!finished && recoveryMode && (!contract || !isContractSettled(contract))) {
+                    void requestProfitTableSnapshot(reason);
+                }
             } catch (snapshotError) {
                 console.warn(`[${source}] Contract settlement snapshot failed for ${contractId} (${reason}).`, snapshotError);
+                if (recoveryMode) void requestProfitTableSnapshot(reason);
             } finally {
                 snapshotRequestInFlight = false;
             }
+        };
+
+        const startSettlementPolling = (intervalMs: number) => {
+            if (settlementCheckId) {
+                clearInterval(settlementCheckId);
+                settlementCheckId = null;
+            }
+            settlementCheckId = setInterval(() => {
+                void requestSettlementSnapshot(recoveryMode ? 'recovery-watchdog' : 'watchdog');
+            }, intervalMs);
         };
 
         if (signal?.aborted) {
@@ -327,13 +431,21 @@ export const streamContractUntilSettled = ({
         }
 
         timeoutId = setTimeout(() => {
-            console.warn(`[${source}] Contract settlement timed out for ${contractId}; closing local watcher.`);
-            finish(getSettledFallbackSnapshot(contractId, fallback));
+            if (finished) return;
+            recoveryMode = true;
+            timeoutId = null;
+            console.warn(
+                `[${source}] Contract settlement is stale for ${contractId}; continuing recovery polling until Deriv returns the sold result.`
+            );
+            globalObserver.emit('contract.status', {
+                id: 'contract.settlement_recovery',
+                data: contractId,
+            });
+            startSettlementPolling(Math.max(settlementCheckMs, DEFAULT_SETTLEMENT_RECOVERY_CHECK_MS));
+            void requestSettlementSnapshot('timeout-recovery');
         }, timeoutMs);
 
-        settlementCheckId = setInterval(() => {
-            void requestSettlementSnapshot('watchdog');
-        }, settlementCheckMs);
+        startSettlementPolling(settlementCheckMs);
 
         try {
             const observable = (api_base.api as any)?.subscribe?.({

@@ -191,6 +191,11 @@
             animation: animate-progress-complete 0.5s 1;
             animation-fill-mode: forwards;
         }
+
+        &-7 {
+            width: 75%;
+            border-radius: 5px 0 0 5px;
+        }
     }
 
     &--running {
