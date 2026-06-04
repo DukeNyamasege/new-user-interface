@@ -70,7 +70,12 @@ When a navigation request fails, users see:
 
 ## Install UI
 
-The `InstallAppButton` component listens for `beforeinstallprompt` and shows an `Install App` button only when supported. It hides itself after installation.
+The `InstallAppButton` component listens for `beforeinstallprompt` and opens a centered install modal when the app is installable and not already installed. The modal has:
+
+- Accept: opens the browser install prompt.
+- Deny: closes the modal for the current page load only.
+
+Deny is intentionally not saved. If the user refreshes before installing, the modal can appear again. After installation, the component stores an installed flag and hides the modal.
 
 For iPhone and iPad, programmatic installation is not available, so the component shows:
 
