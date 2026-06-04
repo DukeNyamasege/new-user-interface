@@ -77,9 +77,14 @@ The `InstallAppButton` component is mounted from the main layout body, not the h
 
 Deny is intentionally not saved. If the user refreshes before installing, the modal can appear again. After installation, the component stores an installed flag and hides the modal. If the browser has not released the install prompt yet, the modal stays on the body and explains that the user should wait, try Accept again, or use the browser address-bar Install button.
 
-For iPhone and iPad, programmatic installation is not available, so the component shows:
+For iPhone and iPad, programmatic installation is not available, so the component does not show "Accept to install". It shows a Safari-specific guide with visual steps:
 
-`To install this app on iPhone/iPad, tap Share, then Add to Home Screen.`
+- Open in Safari.
+- Tap Share.
+- Tap Add to Home Screen.
+- Tap Add, then launch Risk managers from the Home Screen.
+
+If the user is in Chrome, WhatsApp, Facebook, Instagram, or another iOS in-app browser, the modal tells them to open the page in Safari first and offers a Copy link action.
 
 ## Local testing
 

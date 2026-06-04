@@ -20,18 +20,52 @@ const isIOSDevice = () => {
     return /iphone|ipad|ipod/.test(userAgent) || (platform === 'macintel' && window.navigator.maxTouchPoints > 1);
 };
 
+const isIOSSafariBrowser = () => {
+    const userAgent = window.navigator.userAgent;
+
+    return (
+        /safari/i.test(userAgent) && !/crios|fxios|edgios|opios|mercury|fbav|fban|instagram|whatsapp/i.test(userAgent)
+    );
+};
+
+const IOS_INSTALL_STEPS = [
+    {
+        detail: 'This only works from Safari on iPhone/iPad.',
+        label: 'Open in Safari',
+        visual: 'Safari',
+    },
+    {
+        detail: 'Tap the Share button in Safari.',
+        label: 'Tap Share',
+        visual: 'Share',
+    },
+    {
+        detail: 'Choose Add to Home Screen from the share options.',
+        label: 'Add to Home Screen',
+        visual: 'Add',
+    },
+    {
+        detail: 'Tap Add, then launch Risk managers from your Home Screen.',
+        label: 'Finish',
+        visual: 'Home',
+    },
+];
+
 const InstallAppButton = () => {
     const [installPrompt, setInstallPrompt] = useState<TBeforeInstallPromptEvent | null>(() =>
         getDeferredInstallPrompt()
     );
     const [isInstalled, setIsInstalled] = useState(() => isPwaInstalled());
     const [isModalVisible, setIsModalVisible] = useState(false);
-    const [showIOSHelp, setShowIOSHelp] = useState(false);
     const [installNotice, setInstallNotice] = useState('');
 
     const isiOS = useMemo(() => {
         if (typeof window === 'undefined') return false;
         return isIOSDevice();
+    }, []);
+    const isIOSSafari = useMemo(() => {
+        if (typeof window === 'undefined') return false;
+        return isIOSSafariBrowser();
     }, []);
 
     useEffect(() => {
@@ -44,7 +78,6 @@ const InstallAppButton = () => {
 
             if (installed) {
                 setIsModalVisible(false);
-                setShowIOSHelp(false);
                 setInstallNotice('');
                 return;
             }
@@ -73,12 +106,6 @@ const InstallAppButton = () => {
     }, [isiOS]);
 
     const handleInstallClick = useCallback(async () => {
-        if (isiOS && !installPrompt) {
-            setShowIOSHelp(true);
-            setInstallNotice(IOS_INSTALL_MESSAGE);
-            return;
-        }
-
         if (!installPrompt) {
             setInstallNotice(
                 'The browser has not made the install prompt available yet. If the Install button is visible in the address bar, use it there, or refresh once after the page finishes loading.'
@@ -108,44 +135,76 @@ const InstallAppButton = () => {
             console.error('Risk managers install prompt failed:', error);
             setInstallNotice('The install prompt could not open. Use the browser Install button in the address bar.');
         }
-    }, [installPrompt, isiOS]);
+    }, [installPrompt]);
 
     const handleDeny = useCallback(() => {
         setIsModalVisible(false);
-        setShowIOSHelp(false);
     }, []);
+
+    const handleIOSConfirm = useCallback(async () => {
+        if (isIOSSafari) {
+            handleDeny();
+            return;
+        }
+
+        try {
+            await window.navigator.clipboard?.writeText(window.location.href);
+            setInstallNotice('Link copied. Open Safari, paste the link, then use Share and Add to Home Screen.');
+        } catch {
+            setInstallNotice('Open this exact page in Safari, then use Share and Add to Home Screen.');
+        }
+    }, [handleDeny, isIOSSafari]);
 
     if (isInstalled) return null;
 
     return (
         <Dialog
-            cancel_button_text='Deny'
+            cancel_button_text={isiOS ? 'Later' : 'Deny'}
             className='install-app-modal'
-            confirm_button_text={isiOS && showIOSHelp ? 'Done' : 'Accept'}
+            confirm_button_text={isiOS ? (isIOSSafari ? 'Done' : 'Copy link') : 'Accept'}
             dismissable={false}
             is_mobile_full_width={false}
             is_visible={isModalVisible}
             login={() => undefined}
             onCancel={handleDeny}
-            onConfirm={isiOS && showIOSHelp ? handleDeny : handleInstallClick}
+            onConfirm={isiOS ? handleIOSConfirm : handleInstallClick}
             portal_element_id='modal_root'
-            title='Install Risk managers'
+            title={isiOS ? 'Add Risk managers to Home Screen' : 'Install Risk managers'}
         >
             <div className='install-app-modal__content'>
-                <p className='install-app-modal__message'>
-                    Install Risk managers on this device for a faster app-like trading experience.
-                </p>
-                {isiOS && (
-                    <p className='install-app-modal__hint'>
-                        {showIOSHelp
-                            ? IOS_INSTALL_MESSAGE
-                            : 'iPhone and iPad installation opens from Safari Share options.'}
-                    </p>
-                )}
-                {!isiOS && (
-                    <p className='install-app-modal__hint'>
-                        Choose Accept to open your browser install prompt, or Deny to continue in the browser.
-                    </p>
+                {isiOS ? (
+                    <>
+                        <p className='install-app-modal__message'>
+                            iPhone and iPad cannot install this app automatically. Use Safari&apos;s Share menu to add
+                            it to your Home Screen.
+                        </p>
+                        {!isIOSSafari && (
+                            <p className='install-app-modal__notice install-app-modal__notice--warning'>
+                                You are not in Safari. Open this page in Safari first, then follow the steps below.
+                            </p>
+                        )}
+                        <ol className='install-app-modal__ios-steps' aria-label={IOS_INSTALL_MESSAGE}>
+                            {IOS_INSTALL_STEPS.map((step, index) => (
+                                <li className='install-app-modal__ios-step' key={step.label}>
+                                    <span className='install-app-modal__ios-step-number'>{index + 1}</span>
+                                    <span className='install-app-modal__ios-step-visual'>{step.visual}</span>
+                                    <span className='install-app-modal__ios-step-text'>
+                                        <strong>{step.label}</strong>
+                                        <span>{step.detail}</span>
+                                    </span>
+                                </li>
+                            ))}
+                        </ol>
+                    </>
+                ) : (
+                    <>
+                        <p className='install-app-modal__message'>
+                            Install Risk managers on this device for a faster app-like trading experience.
+                        </p>
+                        <p className='install-app-modal__hint'>
+                            Choose Accept to open your browser install prompt, or Deny to continue in the browser.
+                        </p>
+                    </>
                 )}
                 {installNotice && <p className='install-app-modal__notice'>{installNotice}</p>}
             </div>
