@@ -266,6 +266,23 @@ describe('risk-filtered streak gating', () => {
         expect(getEffectiveSignalStreak({ trade_type: 'DIGITEVEN', configured_streak: 2 })).toBe(2);
     });
 
+    it('allows one matching digit for Digit Match and Differs strategies', () => {
+        expect(getEffectiveSignalStreak({ trade_type: 'DIGITDIFF', configured_streak: 1 })).toBe(1);
+        expect(getEffectiveSignalStreak({ trade_type: 'DIGITMATCH', configured_streak: 1 })).toBe(1);
+    });
+
+    it('recognizes digit 0 as a valid Differs barrier trigger', () => {
+        expect(
+            hasRequiredDigitStreak({
+                trade_type: 'DIGITDIFF',
+                digits: [7, 3, 0],
+                barrier: 0,
+                inverse: false,
+                streak: 1,
+            })
+        ).toBe(true);
+    });
+
     it('accepts a Digit Under streak only when the trailing digits all satisfy the active barrier', () => {
         expect(
             hasRequiredDigitStreak({

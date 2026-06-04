@@ -345,6 +345,45 @@ describe('<AutoTrades />', () => {
         );
     });
 
+    it('keeps digit 0 as the Differs barrier when purchasing', async () => {
+        const user = userEvent.setup();
+        const store = createMockStore();
+        mockUseStore.mockReturnValue(store);
+        localStorage.setItem('auto_trades_tradeType', 'DIGITDIFF');
+        localStorage.setItem('auto_trades_barrier', '0');
+        localStorage.setItem('auto_trades_streak', '1');
+        (buyContractForUi as jest.Mock).mockResolvedValue({
+            contract_id: 1,
+            buy_price: 1,
+            transaction_id: 10,
+        });
+
+        render(<AutoTrades />);
+
+        await user.click(screen.getByRole('button', { name: /Run Auto Trades/i }));
+
+        await waitFor(() => {
+            expect(tickSubscribers['1HZ10V']).toBeDefined();
+        });
+
+        act(() => {
+            tickSubscribers['1HZ10V']({ tick: { quote: 100.0 } });
+        });
+
+        await waitFor(() => {
+            expect(buyContractForUi).toHaveBeenCalledTimes(1);
+        });
+        expect(buyContractForUi).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                parameters: expect.objectContaining({
+                    barrier: '0',
+                    contract_type: 'DIGITDIFF',
+                    symbol: '1HZ10V',
+                }),
+            })
+        );
+    });
+
     it('requires bullish 5m candle and falling streak before Rise execution', async () => {
         const user = userEvent.setup();
         const store = createMockStore();

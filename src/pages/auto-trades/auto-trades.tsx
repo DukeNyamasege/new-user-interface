@@ -346,6 +346,11 @@ const getAiDigitString = (value: unknown) => {
     return Number.isInteger(digit) && digit >= 0 && digit <= 9 ? String(digit) : undefined;
 };
 
+const getDigitNumber = (value: unknown, fallback: number) => {
+    const digit = Number(value);
+    return Number.isFinite(digit) ? Math.min(9, Math.max(0, Math.trunc(digit))) : fallback;
+};
+
 const getAiBoundedIntString = (value: unknown, min: number, max: number) => {
     const numeric = Number(value);
     return Number.isInteger(numeric) && numeric >= min && numeric <= max ? String(numeric) : undefined;
@@ -375,7 +380,7 @@ export const normalizeAiAutoTradePlan = (plan: Partial<AiAutoTradeParseResult>):
     const analysisTicks = getAiBoundedIntString(settings.analysisTicks, 1, 10);
     if (analysisTicks !== undefined) normalizedSettings.analysisTicks = analysisTicks;
 
-    const streak = getAiBoundedIntString(settings.streak, 2, 10);
+    const streak = getAiBoundedIntString(settings.streak, 1, 10);
     if (streak !== undefined) normalizedSettings.streak = streak;
 
     if (Array.isArray(settings.selectedMarketSymbols)) {
@@ -486,7 +491,7 @@ export const parseAiAutoTradeStrategy = (rawText: string): AiAutoTradeParseResul
         summary.push(`${analysisTicks} analysis tick${analysisTicks === '1' ? '' : 's'}`);
     }
 
-    const streak = getAiNumber(text, [/\bstreak\s*(?:of|=|is)?\s*(\d+)\b/, /\b(\d+)\s*(?:match|matches|streak)\b/], 2, 10);
+    const streak = getAiNumber(text, [/\bstreak\s*(?:of|=|is)?\s*(\d+)\b/, /\b(\d+)\s*(?:match|matches|streak)\b/], 1, 10);
     if (streak) {
         settings.streak = streak;
         summary.push(`Streak ${streak}`);
@@ -605,7 +610,7 @@ export const getEffectiveSignalStreak = ({
     trade_type: TradeType;
     configured_streak: number;
 }) => {
-    const normalizedStreak = Math.min(10, Math.max(2, Math.trunc(configured_streak) || 4));
+    const normalizedStreak = Math.min(10, Math.max(1, Math.trunc(configured_streak) || 4));
     return usesLossPrediction(trade_type) ? Math.max(3, normalizedStreak) : normalizedStreak;
 };
 
@@ -1017,7 +1022,7 @@ const AutoTrades = observer(() => {
     const [predictionAfterLoss, setPredictionAfterLoss] = useState(() =>
         loadSavedNum('predictionAfterLoss', '5', 0, 9)
     );
-    const [streak, setStreak] = useState(() => loadSavedNum('streak', '4', 2, 10));
+    const [streak, setStreak] = useState(() => loadSavedNum('streak', '4', 1, 10));
     const [analysisTicks, setAnalysisTicks] = useState(() => loadSavedNum('analysisTicks', '1', 1, 10));
     const [selectedMarketSymbols, setSelectedMarketSymbols] = useState<string[]>(loadSavedMarkets);
     const selectedMarkets = useMemo(
@@ -1284,7 +1289,7 @@ const AutoTrades = observer(() => {
         }
     }, [tradeType]);
     useEffect(() => {
-        barrierRef.current = Number(barrier) || 4;
+        barrierRef.current = getDigitNumber(barrier, 4);
         try {
             localStorage.setItem('auto_trades_barrier', barrier);
         } catch {
@@ -1292,7 +1297,7 @@ const AutoTrades = observer(() => {
         }
     }, [barrier]);
     useEffect(() => {
-        predictionBeforeLossRef.current = Math.min(9, Math.max(0, Number(predictionBeforeLoss) || 0));
+        predictionBeforeLossRef.current = getDigitNumber(predictionBeforeLoss, 0);
         try {
             localStorage.setItem('auto_trades_predictionBeforeLoss', predictionBeforeLoss);
         } catch {
@@ -1300,7 +1305,7 @@ const AutoTrades = observer(() => {
         }
     }, [predictionBeforeLoss]);
     useEffect(() => {
-        predictionAfterLossRef.current = Math.min(9, Math.max(0, Number(predictionAfterLoss) || 0));
+        predictionAfterLossRef.current = getDigitNumber(predictionAfterLoss, 0);
         try {
             localStorage.setItem('auto_trades_predictionAfterLoss', predictionAfterLoss);
         } catch {
@@ -1308,7 +1313,7 @@ const AutoTrades = observer(() => {
         }
     }, [predictionAfterLoss]);
     useEffect(() => {
-        streakRef.current = Math.min(10, Math.max(2, Number(streak) || 4));
+        streakRef.current = Math.min(10, Math.max(1, Number(streak) || 4));
         try {
             localStorage.setItem('auto_trades_streak', streak);
         } catch {
@@ -2729,7 +2734,7 @@ const AutoTrades = observer(() => {
                                             <input
                                                 className='auto-trades-config__streak-slider'
                                                 type='range'
-                                                min='2'
+                                                min='1'
                                                 max='10'
                                                 step='1'
                                                 value={streak}
