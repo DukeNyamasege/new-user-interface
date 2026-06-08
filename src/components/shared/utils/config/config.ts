@@ -99,7 +99,7 @@ const DEFAULT_DOMAIN_FEATURES: DomainFeatureFlags = {
     scanner: true,
     printPopups: true,
     autoTrades: true,
-    manualTrading: false,
+    manualTrading: true,
     chart: true,
     tutorials: true,
 };

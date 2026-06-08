@@ -15,7 +15,7 @@ describe('DOMAIN_CONFIG', () => {
                 scanner: false,
                 printPopups: false,
                 autoTrades: true,
-                manualTrading: false,
+                manualTrading: true,
             },
         });
     });
