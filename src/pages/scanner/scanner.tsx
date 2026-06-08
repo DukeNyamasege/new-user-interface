@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import { useDevice } from '@deriv-com/ui';
 import { contract_stages } from '@/constants/contract-stage';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { api_base, observer as globalObserver } from '@/external/bot-skeleton';
@@ -220,6 +221,7 @@ const buildAnalysis = (strategy: TScannerStrategy, ticks: TTickPoint[], symbol: 
 
 const Scanner = observer(() => {
     const { client, dashboard, run_panel, summary_card, transactions } = useStore();
+    const { isDesktop } = useDevice();
     const { active_tab } = dashboard;
     const [selectedSymbol, setSelectedSymbol] = useState('R_10');
     const [strategy, setStrategy] = useState<TScannerStrategy>('Matches & Differs');
@@ -251,6 +253,7 @@ const Scanner = observer(() => {
     const timerSoundRef = useRef<HTMLAudioElement | null>(null);
     const currency = client.currency || 'USD';
     const showScanner = active_tab === DBOT_TABS.SCANNER;
+    const isCoveredByMobileRunPanel = !isDesktop && run_panel.is_drawer_open;
     const selectedMarket = MARKETS.find(market => market.symbol === selectedSymbol) ?? MARKETS[0];
     const latestTick = ticks[ticks.length - 1];
     const latestDigit = latestTick ? getLastDigitFromQuote(latestTick.quote, selectedSymbol) : null;
@@ -727,7 +730,7 @@ const Scanner = observer(() => {
     if (!showScanner) return null;
 
     return (
-        <div className='scanner-page'>
+        <div className={`scanner-page${isCoveredByMobileRunPanel ? ' scanner-page--run-panel-open' : ''}`}>
             <div className='background'>
                 <div className='scrolling-text'>{scrollingText}</div>
             </div>

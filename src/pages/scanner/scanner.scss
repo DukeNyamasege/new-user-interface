@@ -11,6 +11,11 @@
     position: relative;
     overflow: auto;
 
+    &--run-panel-open {
+        pointer-events: none;
+        visibility: hidden;
+    }
+
     * {
         box-sizing: border-box;
         font-family: Arial, sans-serif;
