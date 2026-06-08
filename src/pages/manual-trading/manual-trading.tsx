@@ -33,11 +33,18 @@ type TManualTradeAction = {
     tone: 'blue' | 'red' | 'teal' | 'slate';
 };
 
+type TProposalPreview = {
+    payout: string;
+    returnLabel: string;
+    status: 'ready' | 'unavailable';
+};
+
 const DEFAULT_TICK_COUNT = 1000;
 const MIN_TICK_COUNT = 10;
 const MAX_TICK_COUNT = 1000;
 const DEFAULT_STAKE = '1';
 const DEFAULT_DURATION = '1';
+const LIVE_TICK_STALE_MS = 4500;
 
 const MANUAL_MARKETS: TManualMarket[] = [
     { label: 'Volatility 10 (1s) Index', symbol: '1HZ10V' },
@@ -151,8 +158,25 @@ const formatPayout = (value: unknown, currency: string) => {
     return `${payout.toFixed(2)} ${currency}`;
 };
 
-const getProposalPayout = (proposal: any, currency: string) =>
-    formatPayout(proposal?.payout ?? proposal?.display_value, currency);
+const getProposalPreview = (proposal: any, requestedStake: number, currency: string): TProposalPreview | null => {
+    const payout = Number(proposal?.payout ?? proposal?.display_value);
+    const stake = Number(proposal?.ask_price ?? requestedStake);
+    if (!Number.isFinite(payout) || !Number.isFinite(stake) || stake <= 0) return null;
+
+    const profitPercent = ((payout - stake) / stake) * 100;
+
+    return {
+        payout: formatPayout(payout, currency),
+        returnLabel: `${profitPercent >= 0 ? '+' : ''}${profitPercent.toFixed(2)}% profit`,
+        status: 'ready',
+    };
+};
+
+const getUnavailablePreview = (message = 'Payout unavailable'): TProposalPreview => ({
+    payout: message,
+    returnLabel: 'Retrying quote',
+    status: 'unavailable',
+});
 
 const ManualTrading = observer(() => {
     const { client, dashboard, run_panel, summary_card, transactions, ui } = useStore();
@@ -171,12 +195,14 @@ const ManualTrading = observer(() => {
     const [isPurchasing, setIsPurchasing] = useState(false);
     const [tradeMessage, setTradeMessage] = useState('');
     const [tradeError, setTradeError] = useState('');
-    const [proposalPayouts, setProposalPayouts] = useState<Record<string, string>>({});
+    const [proposalPreviews, setProposalPreviews] = useState<Record<string, TProposalPreview>>({});
     const [isProposalLoading, setIsProposalLoading] = useState(false);
     const [proposalRefreshKey, setProposalRefreshKey] = useState(0);
     const subscriptionRef = useRef<{ unsubscribe?: () => void } | null>(null);
     const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const proposalRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const streamWatchdogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const lastLiveTickAtRef = useRef(0);
     const requestVersionRef = useRef(0);
     const proposalVersionRef = useRef(0);
 
@@ -204,6 +230,13 @@ const ManualTrading = observer(() => {
         }
     }, []);
 
+    const clearStreamWatchdogTimer = useCallback(() => {
+        if (streamWatchdogTimerRef.current) {
+            clearTimeout(streamWatchdogTimerRef.current);
+            streamWatchdogTimerRef.current = null;
+        }
+    }, []);
+
     const unsubscribe = useCallback(() => {
         try {
             subscriptionRef.current?.unsubscribe?.();
@@ -212,11 +245,20 @@ const ManualTrading = observer(() => {
         }
         subscriptionRef.current = null;
         setIsLive(false);
-    }, []);
+        clearStreamWatchdogTimer();
+    }, [clearStreamWatchdogTimer]);
 
     const applyTick = useCallback(
         (tick: TTickPoint) => {
-            setTicks(previous_ticks => [...previous_ticks, tick].slice(-activeTickCount));
+            lastLiveTickAtRef.current = Date.now();
+            setTicks(previous_ticks => {
+                const hasDuplicateTick = previous_ticks.some(
+                    previous_tick => previous_tick.epoch === tick.epoch && previous_tick.quote === tick.quote
+                );
+                if (hasDuplicateTick) return previous_ticks;
+
+                return [...previous_ticks, tick].slice(-activeTickCount);
+            });
             setIsLive(true);
             setError(null);
         },
@@ -231,15 +273,29 @@ const ManualTrading = observer(() => {
 
         const requestVersion = requestVersionRef.current + 1;
         requestVersionRef.current = requestVersion;
-        setTicks([]);
 
         const reconnectMarketStream = (delay = 900) => {
             clearRetryTimer();
+            clearStreamWatchdogTimer();
             setIsLive(false);
             setIsLoading(true);
             retryTimerRef.current = setTimeout(() => {
                 void loadMarketData();
             }, delay);
+        };
+
+        const scheduleStreamWatchdog = () => {
+            clearStreamWatchdogTimer();
+            streamWatchdogTimerRef.current = setTimeout(() => {
+                if (requestVersionRef.current !== requestVersion || !showManualTrading) return;
+                const elapsed = Date.now() - lastLiveTickAtRef.current;
+                if (elapsed >= LIVE_TICK_STALE_MS) {
+                    setError(null);
+                    reconnectMarketStream();
+                    return;
+                }
+                scheduleStreamWatchdog();
+            }, LIVE_TICK_STALE_MS);
         };
 
         if (!api_base.api) {
@@ -257,8 +313,10 @@ const ManualTrading = observer(() => {
         try {
             const response = await (api_base.api as any).send({
                 ticks_history: selectedSymbol,
+                adjust_start_time: 1,
                 end: 'latest',
                 count: activeTickCount,
+                start: 1,
                 style: 'ticks',
             });
             if (requestVersionRef.current !== requestVersion) return;
@@ -274,6 +332,7 @@ const ManualTrading = observer(() => {
                 .slice(-activeTickCount);
 
             setTicks(historyTicks);
+            lastLiveTickAtRef.current = Date.now();
 
             const tickObservable = (api_base.api as any).subscribe({ ticks: selectedSymbol });
             subscriptionRef.current = safeSubscribe(
@@ -302,6 +361,7 @@ const ManualTrading = observer(() => {
                 }
             );
             setIsLive(true);
+            scheduleStreamWatchdog();
         } catch (loadError) {
             if (requestVersionRef.current !== requestVersion) return;
 
@@ -313,11 +373,20 @@ const ManualTrading = observer(() => {
                 setIsLoading(false);
             }
         }
-    }, [activeTickCount, applyTick, clearRetryTimer, selectedSymbol, showManualTrading, unsubscribe]);
+    }, [
+        activeTickCount,
+        applyTick,
+        clearRetryTimer,
+        clearStreamWatchdogTimer,
+        selectedSymbol,
+        showManualTrading,
+        unsubscribe,
+    ]);
 
     useEffect(() => {
         if (!showManualTrading) {
             clearRetryTimer();
+            clearStreamWatchdogTimer();
             unsubscribe();
             return undefined;
         }
@@ -326,9 +395,10 @@ const ManualTrading = observer(() => {
 
         return () => {
             clearRetryTimer();
+            clearStreamWatchdogTimer();
             unsubscribe();
         };
-    }, [clearRetryTimer, loadMarketData, showManualTrading, unsubscribe]);
+    }, [clearRetryTimer, clearStreamWatchdogTimer, loadMarketData, showManualTrading, unsubscribe]);
 
     const buildTradeParameters = useCallback(
         (contractType: TManualTradeAction['contractType']) => {
@@ -368,7 +438,7 @@ const ManualTrading = observer(() => {
         const proposalVersion = proposalVersionRef.current + 1;
         proposalVersionRef.current = proposalVersion;
         clearProposalRetryTimer();
-        setProposalPayouts({});
+        setProposalPreviews({});
         setIsProposalLoading(false);
 
         const stake = Number(stakeInput);
@@ -390,7 +460,7 @@ const ManualTrading = observer(() => {
         setIsProposalLoading(true);
 
         const loadProposals = async () => {
-            const nextPayouts: Record<string, string> = {};
+            const nextPreviews: Record<string, TProposalPreview> = {};
 
             await Promise.all(
                 activeActions.map(async action => {
@@ -400,18 +470,18 @@ const ManualTrading = observer(() => {
                             subscribe: 0,
                             ...buildTradeParameters(action.contractType),
                         });
-                        const payout = getProposalPayout(proposalResponse?.proposal, currency);
-                        nextPayouts[action.contractType] = payout || 'Payout unavailable';
+                        const preview = getProposalPreview(proposalResponse?.proposal, stake, currency);
+                        nextPreviews[action.contractType] = preview || getUnavailablePreview();
                     } catch {
-                        nextPayouts[action.contractType] = 'Payout unavailable';
+                        nextPreviews[action.contractType] = getUnavailablePreview();
                     }
                 })
             );
 
             if (proposalVersionRef.current === proposalVersion) {
-                setProposalPayouts(nextPayouts);
+                setProposalPreviews(nextPreviews);
                 setIsProposalLoading(false);
-                if (Object.values(nextPayouts).some(value => value === 'Payout unavailable')) {
+                if (Object.values(nextPreviews).some(preview => preview.status === 'unavailable')) {
                     queueProposalRetry(3000);
                 }
             }
@@ -444,8 +514,14 @@ const ManualTrading = observer(() => {
     };
 
     const handleMarketChange = (symbol: string) => {
+        requestVersionRef.current += 1;
+        clearRetryTimer();
+        clearStreamWatchdogTimer();
+        unsubscribe();
+        lastLiveTickAtRef.current = 0;
         setSelectedSymbol(symbol);
         setTicks([]);
+        setProposalPreviews({});
         setError(null);
         setIsLoading(true);
     };
@@ -677,21 +753,25 @@ const ManualTrading = observer(() => {
                 </div>
 
                 <div className='manual-trading-actions'>
-                    {activeActions.map(action => (
-                        <button
-                            className={`manual-trading-actions__button manual-trading-actions__button--${action.tone}`}
-                            disabled={isPurchasing}
-                            key={action.contractType}
-                            type='button'
-                            onClick={() => void handleManualPurchase(action)}
-                        >
-                            <strong>{action.label}</strong>
-                            <span>
-                                {proposalPayouts[action.contractType] ||
-                                    (isProposalLoading ? 'Payout loading...' : 'Payout unavailable')}
-                            </span>
-                        </button>
-                    ))}
+                    {activeActions.map(action => {
+                        const preview = proposalPreviews[action.contractType];
+                        const payoutLabel = preview?.payout || (isProposalLoading ? 'Payout loading...' : 'Payout unavailable');
+                        const returnLabel = preview?.returnLabel || (isProposalLoading ? 'Quoting from Deriv' : 'Retrying quote');
+
+                        return (
+                            <button
+                                className={`manual-trading-actions__button manual-trading-actions__button--${action.tone}`}
+                                disabled={isPurchasing}
+                                key={action.contractType}
+                                type='button'
+                                onClick={() => void handleManualPurchase(action)}
+                            >
+                                <strong>{action.label}</strong>
+                                <span>{payoutLabel}</span>
+                                <small>{returnLabel}</small>
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {(tradeMessage || tradeError) && (

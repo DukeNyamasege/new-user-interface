@@ -45,6 +45,10 @@ export const isExpectedStreamInterruption = (error: unknown) => {
         code.includes('closed') ||
         message.includes('interrupted') ||
         message.includes('disconnect') ||
+        message.includes('timeout') ||
+        message.includes('timed out') ||
+        message.includes('network') ||
+        message.includes('aborted') ||
         message.includes('connection closed') ||
         message.includes('socket closed') ||
         message.includes('subscription not found')

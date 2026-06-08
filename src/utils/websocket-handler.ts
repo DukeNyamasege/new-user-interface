@@ -3,7 +3,12 @@
  * Wraps event listeners in try/catch and logs errors with stack traces to prevent unhandled exceptions.
  */
 
-export const safeSubscribe = (observable: any, onData: (data: any) => void, onError?: (error: unknown) => void) => {
+export const safeSubscribe = (
+    observable: any,
+    onData: (data: any) => void,
+    onError?: (error: unknown) => void,
+    onComplete?: () => void
+) => {
     if (!observable || typeof observable.subscribe !== 'function') {
         console.error('[WebSocketHandler] Invalid observable provided to safeSubscribe');
         return { unsubscribe: () => {} };
@@ -35,8 +40,19 @@ export const safeSubscribe = (observable: any, onData: (data: any) => void, onEr
         }
     };
 
+    const safeOnComplete = () => {
+        try {
+            onComplete?.();
+        } catch (err) {
+            console.error(
+                '[WebSocketHandler] Exception in onComplete listener:\n',
+                err instanceof Error ? err.stack : err
+            );
+        }
+    };
+
     try {
-        const subscription = observable.subscribe(safeOnData, safeOnError);
+        const subscription = observable.subscribe(safeOnData, safeOnError, safeOnComplete);
         const originalUnsubscribe = subscription?.unsubscribe?.bind(subscription);
         return {
             unsubscribe: () => {

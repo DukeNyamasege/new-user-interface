@@ -332,6 +332,12 @@
         opacity: 0.9;
     }
 
+    small {
+        margin-top: 0.35rem;
+        font-size: 1rem;
+        opacity: 0.82;
+    }
+
     &:disabled {
         cursor: progress;
         opacity: 0.65;
