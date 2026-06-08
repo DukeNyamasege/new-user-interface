@@ -29,6 +29,7 @@ const CURRENCY_NAMES: Record<string, string> = {
 };
 
 const getCurrencyName = (currency?: string) => CURRENCY_NAMES[currency?.toUpperCase() ?? ''] ?? currency ?? 'Account';
+const DOLLAR_ICON_DEMO_LOGINID = 'DOT91317422';
 
 const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -141,6 +142,7 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
     const activeDemoOverride = client?.getDemoBalanceOverride?.(loginid);
     const activeDemoResetCurrency = currency || 'USD';
     const isActiveDemoAccount = Boolean(loginid && isVirtual);
+    const shouldShowDollarIconForActiveDemo = loginid === DOLLAR_ICON_DEMO_LOGINID;
     const headerBalance = formatDisplayBalanceValue(
         balance ?? 0,
         currency || 'USD',
@@ -256,7 +258,10 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                     }}
                 >
                     <span className='acc-info__id' aria-hidden='true'>
-                        <CurrencyIcon currency={currency?.toLowerCase()} isVirtual={isVirtual} />
+                        <CurrencyIcon
+                            currency={currency?.toLowerCase()}
+                            isVirtual={isVirtual && !shouldShowDollarIconForActiveDemo}
+                        />
                     </span>
                     <div className='acc-info__content'>
                         {(typeof balance !== 'undefined' || !currency) && (
@@ -381,44 +386,51 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                                     ^
                                 </span>
                             </div>
-                            {demoAccounts.map(account => (
-                                <div
-                                    key={account.loginid}
-                                    role='option'
-                                    aria-selected={account.isActive}
-                                    tabIndex={0}
-                                    className={classNames('acc-dropdown__account', {
-                                        'acc-dropdown__account--selected': account.isActive,
-                                    })}
-                                    onClick={() => !account.isActive && handleAccountSelect(account.loginid)}
-                                    onKeyDown={e => {
-                                        if (!account.isActive && (e.key === 'Enter' || e.key === ' ')) {
-                                            e.preventDefault();
-                                            handleAccountSelect(account.loginid);
-                                        }
-                                    }}
-                                >
-                                    <span className='acc-dropdown__account-icon'>
-                                        <CurrencyIcon currency={account.currency?.toLowerCase()} isVirtual />
-                                    </span>
-                                    <span className='acc-dropdown__account-info'>
-                                        <Text as='span' size='xs' weight='bold' className='acc-dropdown__currency'>
-                                            Demo
+                            {demoAccounts.map(account => {
+                                const shouldShowDollarIcon = account.loginid === DOLLAR_ICON_DEMO_LOGINID;
+
+                                return (
+                                    <div
+                                        key={account.loginid}
+                                        role='option'
+                                        aria-selected={account.isActive}
+                                        tabIndex={0}
+                                        className={classNames('acc-dropdown__account', {
+                                            'acc-dropdown__account--selected': account.isActive,
+                                        })}
+                                        onClick={() => !account.isActive && handleAccountSelect(account.loginid)}
+                                        onKeyDown={e => {
+                                            if (!account.isActive && (e.key === 'Enter' || e.key === ' ')) {
+                                                e.preventDefault();
+                                                handleAccountSelect(account.loginid);
+                                            }
+                                        }}
+                                    >
+                                        <span className='acc-dropdown__account-icon'>
+                                            <CurrencyIcon
+                                                currency={account.currency?.toLowerCase()}
+                                                isVirtual={!shouldShowDollarIcon}
+                                            />
+                                        </span>
+                                        <span className='acc-dropdown__account-info'>
+                                            <Text as='span' size='xs' weight='bold' className='acc-dropdown__currency'>
+                                                Demo
+                                            </Text>
+                                            <Text as='span' size='xxxs' className='acc-dropdown__loginid'>
+                                                {account.loginid}
+                                            </Text>
+                                        </span>
+                                        <Text as='span' size='xs' weight='bold' className='acc-dropdown__balance'>
+                                            {formatDisplayBalanceValue(
+                                                account.balance,
+                                                account.currency,
+                                                selectedDisplayCurrency,
+                                                client?.usd_kes_rate
+                                            )}
                                         </Text>
-                                        <Text as='span' size='xxxs' className='acc-dropdown__loginid'>
-                                            {account.loginid}
-                                        </Text>
-                                    </span>
-                                    <Text as='span' size='xs' weight='bold' className='acc-dropdown__balance'>
-                                        {formatDisplayBalanceValue(
-                                            account.balance,
-                                            account.currency,
-                                            selectedDisplayCurrency,
-                                            client?.usd_kes_rate
-                                        )}
-                                    </Text>
-                                </div>
-                            ))}
+                                    </div>
+                                );
+                            })}
                             <form className='acc-dropdown__reset' onSubmit={handleDemoResetSubmit}>
                                 <div className='acc-dropdown__reset-title'>Reset Demo Account Balance</div>
                                 <p className='acc-dropdown__reset-copy'>
