@@ -36,7 +36,7 @@ type TManualTradeAction = {
 type TProposalPreview = {
     payout: string;
     returnLabel: string;
-    status: 'ready' | 'unavailable';
+    status: 'ready' | 'estimated';
 };
 
 const DEFAULT_TICK_COUNT = 1000;
@@ -158,6 +158,75 @@ const formatPayout = (value: unknown, currency: string) => {
     return `${payout.toFixed(2)} ${currency}`;
 };
 
+const OVER_UNDER_PROFIT_PERCENT: Record<'DIGITOVER' | 'DIGITUNDER', Record<number, number>> = {
+    DIGITOVER: {
+        0: 6,
+        1: 19,
+        2: 36,
+        3: 59,
+        4: 91,
+        5: 138,
+        6: 218,
+        7: 377,
+        8: 853,
+    },
+    DIGITUNDER: {
+        1: 853,
+        2: 377,
+        3: 218,
+        4: 138,
+        5: 91,
+        6: 59,
+        7: 36,
+        8: 19,
+        9: 6,
+    },
+};
+
+const getStandardizedProfitPercent = (contractType: TManualTradeAction['contractType'], barrier: string) => {
+    if (contractType === 'DIGITEVEN' || contractType === 'DIGITODD') return 85;
+    if (contractType === 'DIGITDIFF') return 6;
+    if (contractType === 'DIGITMATCH') return 800;
+
+    const digitBarrier = Number(barrier);
+    if (!Number.isInteger(digitBarrier)) return null;
+
+    return OVER_UNDER_PROFIT_PERCENT[contractType]?.[digitBarrier] ?? null;
+};
+
+const getLocalPayoutPreview = (
+    contractType: TManualTradeAction['contractType'],
+    stake: number,
+    currency: string,
+    barrier: string
+): TProposalPreview => {
+    const profitPercent = getStandardizedProfitPercent(contractType, barrier);
+
+    if (!Number.isFinite(stake) || stake <= 0) {
+        return {
+            payout: `0.00 ${currency}`,
+            returnLabel: 'Enter stake',
+            status: 'estimated',
+        };
+    }
+
+    if (profitPercent === null) {
+        return {
+            payout: `0.00 ${currency}`,
+            returnLabel: 'Select valid barrier',
+            status: 'estimated',
+        };
+    }
+
+    const payout = stake * (1 + profitPercent / 100);
+
+    return {
+        payout: formatPayout(payout, currency),
+        returnLabel: `+${profitPercent.toFixed(2)}% profit`,
+        status: 'estimated',
+    };
+};
+
 const getProposalPreview = (proposal: any, requestedStake: number, currency: string): TProposalPreview | null => {
     const payout = Number(proposal?.payout ?? proposal?.display_value);
     const stake = Number(proposal?.ask_price ?? requestedStake);
@@ -171,12 +240,6 @@ const getProposalPreview = (proposal: any, requestedStake: number, currency: str
         status: 'ready',
     };
 };
-
-const getUnavailablePreview = (message = 'Payout unavailable'): TProposalPreview => ({
-    payout: message,
-    returnLabel: 'Retrying quote',
-    status: 'unavailable',
-});
 
 const ManualTrading = observer(() => {
     const { client, dashboard, run_panel, summary_card, transactions, ui } = useStore();
@@ -215,6 +278,14 @@ const ManualTrading = observer(() => {
     const needsBarrier = BARRIER_TRADE_GROUPS.has(tradeGroup);
     const activeActions = TRADE_ACTIONS[tradeGroup];
     const currency = client.currency || 'USD';
+    const localProposalPreviews = useMemo(() => {
+        const stake = Number(stakeInput);
+
+        return activeActions.reduce<Record<string, TProposalPreview>>((previews, action) => {
+            previews[action.contractType] = getLocalPayoutPreview(action.contractType, stake, currency, selectedBarrier);
+            return previews;
+        }, {});
+    }, [activeActions, currency, selectedBarrier, stakeInput]);
 
     const clearRetryTimer = useCallback(() => {
         if (retryTimerRef.current) {
@@ -438,7 +509,7 @@ const ManualTrading = observer(() => {
         const proposalVersion = proposalVersionRef.current + 1;
         proposalVersionRef.current = proposalVersion;
         clearProposalRetryTimer();
-        setProposalPreviews({});
+        setProposalPreviews(localProposalPreviews);
         setIsProposalLoading(false);
 
         const stake = Number(stakeInput);
@@ -471,9 +542,9 @@ const ManualTrading = observer(() => {
                             ...buildTradeParameters(action.contractType),
                         });
                         const preview = getProposalPreview(proposalResponse?.proposal, stake, currency);
-                        nextPreviews[action.contractType] = preview || getUnavailablePreview();
+                        nextPreviews[action.contractType] = preview || localProposalPreviews[action.contractType];
                     } catch {
-                        nextPreviews[action.contractType] = getUnavailablePreview();
+                        nextPreviews[action.contractType] = localProposalPreviews[action.contractType];
                     }
                 })
             );
@@ -481,7 +552,7 @@ const ManualTrading = observer(() => {
             if (proposalVersionRef.current === proposalVersion) {
                 setProposalPreviews(nextPreviews);
                 setIsProposalLoading(false);
-                if (Object.values(nextPreviews).some(preview => preview.status === 'unavailable')) {
+                if (Object.values(nextPreviews).some(preview => preview.status !== 'ready')) {
                     queueProposalRetry(3000);
                 }
             }
@@ -495,6 +566,7 @@ const ManualTrading = observer(() => {
         buildTradeParameters,
         clearProposalRetryTimer,
         currency,
+        localProposalPreviews,
         proposalRefreshKey,
         showManualTrading,
         stakeInput,
@@ -521,7 +593,7 @@ const ManualTrading = observer(() => {
         lastLiveTickAtRef.current = 0;
         setSelectedSymbol(symbol);
         setTicks([]);
-        setProposalPreviews({});
+        setProposalPreviews(localProposalPreviews);
         setError(null);
         setIsLoading(true);
     };
@@ -754,9 +826,10 @@ const ManualTrading = observer(() => {
 
                 <div className='manual-trading-actions'>
                     {activeActions.map(action => {
-                        const preview = proposalPreviews[action.contractType];
-                        const payoutLabel = preview?.payout || (isProposalLoading ? 'Payout loading...' : 'Payout unavailable');
-                        const returnLabel = preview?.returnLabel || (isProposalLoading ? 'Quoting from Deriv' : 'Retrying quote');
+                        const preview = proposalPreviews[action.contractType] ?? localProposalPreviews[action.contractType];
+                        const payoutLabel = preview.payout;
+                        const returnLabel =
+                            preview.status === 'ready' || !isProposalLoading ? preview.returnLabel : `${preview.returnLabel} · quoting`;
 
                         return (
                             <button
