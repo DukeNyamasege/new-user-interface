@@ -4,10 +4,10 @@
 .app-header {
     height: 4rem;
     min-height: 4rem;
-    background: linear-gradient(180deg, #1f1a14 0%, #141414 100%), #141414 !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32) !important;
+    background: var(--rm-shell-top) !important;
+    box-shadow: none !important;
     border: 0 !important;
-    border-bottom: 1px solid rgba(200, 164, 93, 0.35) !important;
+    border-bottom: 0 !important;
 
     &--mobile {
         overflow: visible;
@@ -23,7 +23,7 @@
 
     &__account-settings {
         padding-inline-end: 1.2rem;
-        border-inline-end: 0.1rem solid rgba(200, 164, 93, 0.24);
+        border-inline-end: 0;
     }
 
     &__account-settings,
@@ -31,11 +31,15 @@
     &__menu {
         svg > path,
         svg > g > path {
-            fill: #d4af37;
+            fill: var(--rm-shell-gold);
         }
     }
 
-    color: #eae6dc;
+    color: var(--rm-shell-muted);
+}
+
+.theme--light .app-header {
+    background: var(--rm-shell-top-light) !important;
 }
 
 .account-switcher {
@@ -118,7 +122,7 @@
     overflow: hidden;
 
     @include mobile-or-tablet-screen {
-        background: #080808;
+        background: var(--rm-shell-nav);
         box-shadow: none;
         padding: 0;
     }
@@ -307,16 +311,41 @@
     align-items: center;
 
     button {
-        font-weight: 400;
+        font-weight: 700;
         margin-inline-end: 1.6rem;
-        border-radius: 16px;
+        border-radius: 4px;
         height: 3.2rem;
         min-height: 3.2rem;
         padding-block: 0;
-        color: #f5d58a !important;
+        color: var(--rm-shell-text) !important;
 
         &:hover {
-            color: #fff3c4 !important;
+            color: var(--rm-shell-text) !important;
+        }
+    }
+
+    .dc-btn--primary,
+    .dc-btn--primary__light {
+        background: var(--rm-shell-auth-blue) !important;
+        border: 1px solid var(--rm-shell-auth-blue) !important;
+        color: var(--rm-shell-text) !important;
+    }
+
+    .dc-btn--tertiary {
+        background: var(--rm-shell-auth-blue) !important;
+        border: 1px solid var(--rm-shell-auth-blue) !important;
+        color: var(--rm-shell-text) !important;
+    }
+
+    .dc-btn--tertiary:first-child {
+        background: transparent !important;
+        border: 1px solid var(--rm-shell-auth-border) !important;
+        color: var(--rm-shell-text) !important;
+    }
+
+    .theme--light & {
+        .dc-btn--tertiary:first-child {
+            color: var(--rm-shell-top) !important;
         }
     }
 
@@ -347,7 +376,7 @@
     &__input {
         min-height: 9.6rem;
         resize: vertical;
-        border: 1px solid rgba(200, 164, 93, 0.42);
+        border: 1px solid var(--rm-shell-auth-border);
         border-radius: 4px;
         background: var(--general-main-1);
         color: var(--text-prominent);
@@ -358,7 +387,7 @@
         width: 100%;
 
         &:focus {
-            border-color: #d4af37;
+            border-color: var(--rm-shell-auth-blue);
             outline: none;
         }
     }

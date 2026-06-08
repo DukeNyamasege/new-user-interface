@@ -8,12 +8,37 @@ body {
     background: var(--general-main-1);
 }
 
+:root,
+.theme--light,
+.theme--dark {
+    --rm-shell-top: #111111;
+    --rm-shell-top-light: #ffffff;
+    --rm-shell-nav: #1f1978;
+    --rm-shell-nav-active: #11105f;
+    --rm-shell-nav-hover: #15136b;
+    --rm-shell-gold: #ffb300;
+    --rm-shell-text: #ffffff;
+    --rm-shell-muted: #9a9a9a;
+    --rm-shell-auth-blue: #003b73;
+    --rm-shell-auth-border: #8f8f8f;
+    --rm-shell-run: #00b8ad;
+    --rm-shell-run-hover: #0bc7bc;
+    --rm-shell-run-panel: #111111;
+    --rm-shell-run-panel-light: #ffffff;
+    --rm-shell-progress-track: #dfe3e6;
+    --rm-shell-progress-dot: #222222;
+}
+
 .deriv-header {
     height: 40px !important;
     min-height: 40px !important;
-    background: linear-gradient(180deg, #1f1a14 0%, #141414 100%), #141414 !important;
-    border-bottom: 1px solid rgba(200, 164, 93, 0.35) !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32) !important;
+    background: var(--rm-shell-top) !important;
+    border-bottom: 0 !important;
+    box-shadow: none !important;
+}
+
+.theme--light .deriv-header {
+    background: var(--rm-shell-top-light) !important;
 }
 
 .icon-general-fill-path {
@@ -33,7 +58,7 @@ body {
 .icon-orange-fill-g-path {
     g {
         path {
-            fill: #c8a45d;
+            fill: var(--rm-shell-gold);
         }
     }
 }
