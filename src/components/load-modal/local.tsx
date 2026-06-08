@@ -4,7 +4,6 @@ import { observer } from 'mobx-react-lite';
 import Button from '@/components/shared_ui/button';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { useStore } from '@/hooks/useStore';
-// import { DerivLightLocalDeviceIcon, DerivLightMyComputerIcon } from '@deriv/quill-icons';
 import { LegacyClose1pxIcon, LegacyInfo1pxIcon } from '@deriv/quill-icons/Legacy';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
@@ -106,10 +105,10 @@ const LocalComponent = observer(() => {
                     }}
                 >
                     {!isDesktop ? (
-                        <div style={{ height: '96px', width: '96px', background: 'gray' }}>Icon</div>
+                        <img src='/assets/icons/IcMyComputer.svg' alt='' aria-hidden='true' height='96' width='96' />
                     ) : (
                         <React.Fragment>
-                            <div style={{ height: '128px', width: '128px', background: 'gray' }}>Icon</div>
+                            <img src='/assets/icons/IcMyComputer.svg' alt='' aria-hidden='true' height='128' width='128' />
                             <div className='load-strategy__local-title'>
                                 <Localize i18n_default_text='Drag your XML file here' />
                             </div>

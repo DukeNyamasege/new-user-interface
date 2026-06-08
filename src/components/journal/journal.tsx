@@ -58,7 +58,7 @@ const Journal = observer(() => {
                             <JournalLoader is_mobile={!isDesktop} />
                         ) : (
                             <div className='journal-empty'>
-                                <div style={{ height: '64px', width: '64px', background: 'gray' }}>Icon</div>
+                                <img src='/assets/icons/IcReports.svg' alt='' aria-hidden='true' height='64' width='64' />
                                 <Text
                                     as='h4'
                                     size='xs'

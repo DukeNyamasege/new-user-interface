@@ -371,14 +371,16 @@ const Scanner = observer(() => {
     }, [loadMarketData, unsubscribe]);
 
     useEffect(() => {
-        if (showScanner) {
-            dashboard.registerTradingStopHandler('scanner', stopTrading);
-            globalObserver.register('bot.manual_stop', stopTrading);
-        }
+        if (!showScanner) return undefined;
+
+        dashboard.registerTradingStopHandler('scanner', stopTrading);
+        globalObserver.register('bot.manual_stop', stopTrading);
 
         return () => {
             dashboard.unregisterTradingStopHandler('scanner');
-            globalObserver.unregister('bot.manual_stop', stopTrading);
+            if (globalObserver.isRegistered('bot.manual_stop')) {
+                globalObserver.unregister('bot.manual_stop', stopTrading);
+            }
             shouldStopRef.current = true;
             tradeActiveRef.current = false;
         };

@@ -30,18 +30,10 @@ type TCardArray = {
 
 const DashboardActionIcon = ({ name, alt }: { name: string; alt: string }) => {
     const [has_load_error, setHasLoadError] = React.useState(false);
-    const fallback_label = alt
-        .split(' ')
-        .map(word => word[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase();
 
     if (has_load_error) {
         return (
-            <span className='tab__dashboard__table__icon tab__dashboard__table__icon--fallback' aria-label={alt}>
-                {fallback_label}
-            </span>
+            <img className='tab__dashboard__table__icon' src='/assets/icons/IcDashboard.svg' alt='' aria-label={alt} />
         );
     }
 

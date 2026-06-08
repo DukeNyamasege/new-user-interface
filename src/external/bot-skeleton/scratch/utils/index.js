@@ -165,6 +165,117 @@ const normalizeBotBlockType = type => {
     return blockTypeAliases[cleaned_type] || blockTypeAliases[collapsed_type] || collapsed_type;
 };
 
+const createXmlElement = (xml, name) => (xml.ownerDocument || document).createElement(name);
+
+const getDirectChild = (node, child_name, attribute_name, attribute_value) =>
+    Array.from(node?.children || []).find(child => {
+        const is_matching_name = child.nodeName?.toLowerCase() === child_name;
+        if (!is_matching_name) return false;
+        if (!attribute_name) return true;
+        return child.getAttribute(attribute_name) === attribute_value;
+    });
+
+const normalizePurchaseType = purchase_type => {
+    const normalized_type = String(purchase_type || '')
+        .trim()
+        .toUpperCase();
+
+    if (!normalized_type) return 'CALL';
+    if (normalized_type.includes('CALL')) return 'CALL';
+    if (normalized_type.includes('PUT')) return 'PUT';
+    if (normalized_type.includes('DIGITMATCH')) return 'DIGITMATCH';
+    if (normalized_type.includes('DIGITDIFF')) return 'DIGITDIFF';
+    if (normalized_type.includes('DIGITEVEN')) return 'DIGITEVEN';
+    if (normalized_type.includes('DIGITODD')) return 'DIGITODD';
+    if (normalized_type.includes('DIGITOVER')) return 'DIGITOVER';
+    if (normalized_type.includes('DIGITUNDER')) return 'DIGITUNDER';
+    if (normalized_type.includes('MULTUP')) return 'MULTUP';
+    if (normalized_type.includes('MULTDOWN')) return 'MULTDOWN';
+
+    return normalized_type;
+};
+
+const inferDefaultPurchaseType = xml => {
+    const existing_purchase_type = xml
+        .querySelector('block[type="purchase"] field[name="PURCHASE_LIST"]')
+        ?.textContent?.trim();
+    if (existing_purchase_type) return normalizePurchaseType(existing_purchase_type);
+
+    const selected_contract_type = xml
+        .querySelector('block[type="trade_definition_contracttype"] field[name="TYPE_LIST"]')
+        ?.textContent?.trim();
+    if (selected_contract_type) return normalizePurchaseType(selected_contract_type);
+
+    return 'CALL';
+};
+
+const createPurchaseBlock = (xml, purchase_type) => {
+    const purchase_block = createXmlElement(xml, 'block');
+    purchase_block.setAttribute('type', 'purchase');
+
+    const purchase_field = createXmlElement(xml, 'field');
+    purchase_field.setAttribute('name', 'PURCHASE_LIST');
+    purchase_field.textContent = normalizePurchaseType(purchase_type);
+    purchase_block.appendChild(purchase_field);
+
+    return purchase_block;
+};
+
+const appendBlockToStatement = (xml, statement, block) => {
+    const first_block = getDirectChild(statement, 'block');
+
+    if (!first_block) {
+        statement.appendChild(block);
+        return;
+    }
+
+    let current_block = first_block;
+    let next_node = getDirectChild(current_block, 'next');
+    while (next_node && getDirectChild(next_node, 'block')) {
+        current_block = getDirectChild(next_node, 'block');
+        next_node = getDirectChild(current_block, 'next');
+    }
+
+    if (!next_node) {
+        next_node = createXmlElement(xml, 'next');
+        current_block.appendChild(next_node);
+    }
+    next_node.appendChild(block);
+};
+
+const ensureMandatoryPurchaseCondition = xml => {
+    if (!xml?.querySelectorAll) return xml;
+
+    const root = xml.nodeType === 9 ? xml.documentElement : xml;
+    if (root?.nodeName?.toLowerCase() !== 'xml') return xml;
+
+    Array.from(xml.querySelectorAll('block[type="before_purchase"], block[type="purchase"]')).forEach(block_node => {
+        block_node.removeAttribute('disabled');
+    });
+
+    let before_purchase_block = xml.querySelector('block[type="before_purchase"]');
+    if (!before_purchase_block) {
+        before_purchase_block = createXmlElement(xml, 'block');
+        before_purchase_block.setAttribute('type', 'before_purchase');
+        before_purchase_block.setAttribute('x', '0');
+        before_purchase_block.setAttribute('y', '260');
+        root.appendChild(before_purchase_block);
+    }
+
+    const has_purchase_inside_before_purchase = Boolean(before_purchase_block.querySelector('block[type="purchase"]'));
+    if (has_purchase_inside_before_purchase) return xml;
+
+    let purchase_statement = getDirectChild(before_purchase_block, 'statement', 'name', 'BEFOREPURCHASE_STACK');
+    if (!purchase_statement) {
+        purchase_statement = createXmlElement(xml, 'statement');
+        purchase_statement.setAttribute('name', 'BEFOREPURCHASE_STACK');
+        before_purchase_block.appendChild(purchase_statement);
+    }
+
+    appendBlockToStatement(xml, purchase_statement, createPurchaseBlock(xml, inferDefaultPurchaseType(xml)));
+    return xml;
+};
+
 const normalizeBotXml = xml => {
     if (!xml?.querySelectorAll) return xml;
 
@@ -194,6 +305,8 @@ const normalizeBotXml = xml => {
     ) {
         root.setAttribute('is_dbot', 'true');
     }
+
+    ensureMandatoryPurchaseCondition(xml);
 
     return xml;
 };

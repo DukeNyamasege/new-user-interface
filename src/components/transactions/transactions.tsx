@@ -182,9 +182,13 @@ const Transactions = observer(({ is_drawer_open }: TTransactions) => {
                                     <div className='transactions-empty-box'>
                                         <div className='transactions-empty'>
                                             <div className='transactions-empty__icon-box'>
-                                                <div style={{ height: '64px', width: '64px', background: 'gray' }}>
-                                                    Icon
-                                                </div>
+                                                <img
+                                                    src='/assets/icons/IcReports.svg'
+                                                    alt=''
+                                                    aria-hidden='true'
+                                                    height='64'
+                                                    width='64'
+                                                />
                                             </div>
                                             <Text
                                                 as='h4'

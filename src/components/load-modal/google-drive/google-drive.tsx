@@ -4,7 +4,6 @@ import { observer } from 'mobx-react-lite';
 import Button from '@/components/shared_ui/button';
 import StaticUrl from '@/components/shared_ui/static-url';
 import { useStore } from '@/hooks/useStore';
-// import { DerivLightGoogleDriveIcon } from '@deriv/quill-icons';
 import { Localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
@@ -21,7 +20,13 @@ const GoogleDrive: React.FC = observer(() => {
     return (
         <div className='load-strategy__container' data-testid='dt_google_drive'>
             <div className='load-strategy__google-drive'>
-                <div style={{ height: icon_size, width: icon_size, background: 'gray' }}>Icon</div>
+                <img
+                    src='/assets/icons/IcGoogleDriveDbot.svg'
+                    alt=''
+                    aria-hidden='true'
+                    height={icon_size}
+                    width={icon_size}
+                />
                 <div className='load-strategy__google-drive-connected-text'>
                     {is_authorised ? (
                         <Localize i18n_default_text='You are connected to Google Drive' />

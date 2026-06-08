@@ -100,27 +100,13 @@ const SaveModalForm: React.FC<TSaveModalForm> = ({
                                             <IconRadio
                                                 text={localize('Local')}
                                                 icon={
-                                                    is_mobile ? (
-                                                        <div
-                                                            style={{
-                                                                height: '48px',
-                                                                width: '48px',
-                                                                background: 'gray',
-                                                            }}
-                                                        >
-                                                            Icon
-                                                        </div>
-                                                    ) : (
-                                                        <div
-                                                            style={{
-                                                                height: '48px',
-                                                                width: '48px',
-                                                                background: 'gray',
-                                                            }}
-                                                        >
-                                                            Icon
-                                                        </div>
-                                                    )
+                                                    <img
+                                                        src='/assets/icons/IcMyComputer.svg'
+                                                        alt=''
+                                                        aria-hidden='true'
+                                                        height='48'
+                                                        width='48'
+                                                    />
                                                 }
                                             />
                                         }
@@ -132,9 +118,13 @@ const SaveModalForm: React.FC<TSaveModalForm> = ({
                                             <IconRadio
                                                 text={'Google Drive'}
                                                 icon={
-                                                    <div style={{ height: '48px', width: '48px', background: 'gray' }}>
-                                                        Icon
-                                                    </div>
+                                                    <img
+                                                        src='/assets/icons/IcGoogleDriveDbot.svg'
+                                                        alt=''
+                                                        aria-hidden='true'
+                                                        height='48'
+                                                        width='48'
+                                                    />
                                                 }
                                                 google_drive_connected={is_authorised}
                                                 onDriveConnect={onDriveConnect}
