@@ -24,9 +24,9 @@ type TScannerSignal = {
 };
 
 const MAX_TICKS = 1000;
-const DEFAULT_STAKE = '1';
-const DEFAULT_STOP_LOSS = '5';
-const DEFAULT_TAKE_PROFIT = '5';
+const DEFAULT_STAKE = '10';
+const DEFAULT_STOP_LOSS = '500';
+const DEFAULT_TAKE_PROFIT = '500';
 const PROFIT_CHECK_RUNS = 5;
 const TIMER_SOUND_URL = 'https://www.fesliyanstudios.com/play-mp3/4386';
 
