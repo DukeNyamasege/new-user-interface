@@ -209,6 +209,8 @@
 }
 
 .manual-trading-ticket {
+    display: flex;
+    flex-direction: column;
     width: 100%;
     max-width: 72rem;
     margin: 0 auto;
@@ -388,6 +390,7 @@
     }
 
     .manual-trading-digits-card {
+        margin-bottom: 0.8rem;
         padding: 2.4rem 1.4rem 2rem;
     }
 
@@ -428,6 +431,27 @@
     .manual-trading-ticket__header {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .manual-trading-actions {
+        order: 2;
+        margin-bottom: 1.2rem;
+    }
+
+    .manual-trading-trade-types {
+        order: 3;
+    }
+
+    .manual-trading-barrier {
+        order: 4;
+    }
+
+    .manual-trading-ticket__inputs {
+        order: 5;
+    }
+
+    .manual-trading-ticket__message {
+        order: 6;
     }
 
     .manual-trading-trade-types {

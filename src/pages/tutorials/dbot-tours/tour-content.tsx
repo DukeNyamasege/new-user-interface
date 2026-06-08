@@ -32,7 +32,7 @@ export const DBOT_ONBOARDING = [
                         <Localize i18n_default_text='Create your bot using our drag-and-drop blocks or click Quick Strategy to choose from the ready-to-use bot templates.' />
                     </>,
                     <>
-                        <Localize i18n_default_text='We also provide a guide on the Tutorial tab to show you how you can build and execute a simple strategy.' />
+                        <Localize i18n_default_text='Use Quick Strategy or the Bot Builder tools to create and test a simple strategy.' />
                     </>,
                 ]}
                 media={'/assets/videos/dbot-onboarding-tour-step-1.mp4'}
@@ -43,7 +43,7 @@ export const DBOT_ONBOARDING = [
         disableOverlay: false,
     },
     {
-        target: '#id-tradingview',
+        target: '#id-analysistool',
         content: (
             <TourSteps
                 label={<Localize i18n_default_text='Monitor the market' />}
@@ -61,14 +61,14 @@ export const DBOT_ONBOARDING = [
         disableOverlay: false,
     },
     {
-        target: '#id-tutorials',
+        target: '#id-bot-builder',
         content: (
             <TourSteps
-                label={<Localize i18n_default_text='Learn more with our tutorials' />}
+                label={<Localize i18n_default_text='Build and refine strategies' />}
                 content={[
                     <Localize
-                        key='explore tutorials'
-                        i18n_default_text='Explore the video guides and FAQs to build your bot in the tutorials tab.'
+                        key='build-and-refine-strategies'
+                        i18n_default_text='Use the builder controls and quick strategy flow to refine your bot setup.'
                     />,
                 ]}
                 media={'/assets/videos/dbot-onboarding-tour-step-3.mp4'}
@@ -135,13 +135,13 @@ export const DBOT_ONBOARDING = [
         disableOverlay: false,
     },
     {
-        target: '#id-tutorials',
+        target: '#id-bot-builder',
         content: (
             <TourSteps
                 label={<Localize i18n_default_text='Want to retake the tour?' />}
                 content={[
-                    <Text key={`${0}-id-tutorials`} as='p'>
-                        <Localize i18n_default_text='Head to the Tutorials tab to do so.' />
+                    <Text key={`${0}-id-bot-builder`} as='p'>
+                        <Localize i18n_default_text='Open Bot Builder any time to start again.' />
                     </Text>,
                 ]}
                 step_index={7}
@@ -517,12 +517,12 @@ export const DBOT_ONBOARDING_MOBILE: TMobileTourConfig[] = [
         tour_step_key: 3,
     },
     {
-        header: <Localize i18n_default_text='Learn more with our tutorials' />,
+        header: <Localize i18n_default_text='Build and refine strategies' />,
         content: [
-            <span key='learn-more-with-our-tutorials-wrapper'>
+            <span key='build-and-refine-strategies-wrapper'>
                 <Localize
-                    key='learn-more-with-our-tutorials'
-                    i18n_default_text='Explore the video guides and FAQs to build your bot in the tutorials tab.'
+                    key='build-and-refine-strategies'
+                    i18n_default_text='Use the builder controls and quick strategy flow to refine your bot setup.'
                 />
             </span>,
         ],
@@ -574,7 +574,7 @@ export const DBOT_ONBOARDING_MOBILE: TMobileTourConfig[] = [
         img: getImageLocation('dbot-mobile-onboarding-step-7.png'),
         content: [
             <span key='want-to-retake-the-tour-wrapper'>
-                <Localize key='want-to-retake-the-tour' i18n_default_text='Head to the Tutorials tab to do so.' />
+                <Localize key='want-to-retake-the-tour' i18n_default_text='Open Bot Builder any time to start again.' />
             </span>,
         ],
         tour_step_key: 8,

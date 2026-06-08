@@ -25,45 +25,10 @@ type TBotStats = {
     loss_amount?: number | string | null;
 };
 
-const MIN_RUNS_FOR_RATING = 3;
-const DEVELOPER_DISPLAY_NAME = 'Mr Duke';
-
 const formatMoney = (value: number | string | null | undefined) => {
     const n = Number(value || 0);
     const sign = n < 0 ? '-' : '';
     return `${sign}$${Math.abs(n).toFixed(2)}`;
-};
-
-const computeStars = (profits: number, losses: number) => {
-    const total = (profits || 0) + (losses || 0);
-    if (total < MIN_RUNS_FOR_RATING) return 0;
-    const rate = profits / total;
-    if (rate >= 0.8) return 5;
-    if (rate >= 0.6) return 4;
-    if (rate >= 0.4) return 3;
-    if (rate >= 0.2) return 2;
-    return 1;
-};
-
-const StarRating = ({ profits, losses }: { profits: number; losses: number }) => {
-    const stars = computeStars(profits, losses);
-    if (stars === 0) {
-        return <span className='bb-card__rating bb-card__rating--new'>New – not enough runs</span>;
-    }
-    return (
-        <span className='bb-card__rating' title={`${stars} out of 5`}>
-            {Array.from({ length: 5 }, (_, i) => (
-                <span
-                    key={i}
-                    className={`bb-card__star${i < stars ? ' bb-card__star--filled' : ''}`}
-                    aria-hidden='true'
-                >
-                    ★
-                </span>
-            ))}
-            <span className='bb-card__rating-value'>{stars}/5</span>
-        </span>
-    );
 };
 
 const RISK_MANAGERS_BOTS: TBot[] = [
@@ -547,33 +512,43 @@ const BotCard = observer(({ bot, stats }: { bot: TBot; stats: TBotStats | undefi
     const losses = stats?.losses ?? 0;
     const profitAmount = stats?.profit_amount ?? 0;
     const lossAmount = stats?.loss_amount ?? 0;
+    const netAmount = Number(profitAmount || 0) - Number(lossAmount || 0);
+    const winRate = totalRuns > 0 ? Math.round((profits / totalRuns) * 100) : 0;
 
     return (
         <div className='bb-card'>
-            <span className='bb-card__emoji'>{bot.emoji}</span>
-            <h3 className='bb-card__name'>{bot.name}</h3>
-            <p className='bb-card__developer'>
-                Developed by <strong>{DEVELOPER_DISPLAY_NAME}</strong>
-            </p>
-            <p className='bb-card__desc'>{bot.description}</p>
-
-            <div className='bb-card__stats'>
-                <span className='bb-card__stat bb-card__stat--runs'>🔄 {totalRuns} Runs</span>
-                <span className='bb-card__stat bb-card__stat--profit'>
-                    ✅ {profits} Wins · +{formatMoney(profitAmount)}
-                </span>
-                <span className='bb-card__stat bb-card__stat--loss'>
-                    ❌ {losses} Losses · -{formatMoney(lossAmount)}
+            <div className='bb-card__header'>
+                <h3 className='bb-card__name'>{bot.name}</h3>
+                <span className={`bb-card__net${netAmount >= 0 ? ' bb-card__net--profit' : ' bb-card__net--loss'}`}>
+                    {formatMoney(netAmount)}
                 </span>
             </div>
-            <StarRating profits={profits} losses={losses} />
+
+            <div className='bb-card__performance' aria-label={`${bot.name} performance`}>
+                <span>
+                    <strong>{totalRuns}</strong>
+                    Runs
+                </span>
+                <span>
+                    <strong>{winRate}%</strong>
+                    Win rate
+                </span>
+                <span>
+                    <strong>{profits}</strong>
+                    Wins
+                </span>
+                <span>
+                    <strong>{losses}</strong>
+                    Losses
+                </span>
+            </div>
 
             <button
                 className={`bb-card__btn${loaded ? ' bb-card__btn--loaded' : ''}${error ? ' bb-card__btn--error' : ''}`}
                 onClick={handleLoad}
                 disabled={loading}
             >
-                {loading ? 'Loading…' : loaded ? '✓ Loaded to Builder' : error ? '✗ Failed — retry' : 'Load Bot'}
+                {loading ? 'Loading...' : loaded ? 'Loaded' : error ? 'Retry' : 'Load Bot'}
             </button>
         </div>
     );

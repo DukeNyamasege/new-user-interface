@@ -1,16 +1,13 @@
-import React, { lazy, Suspense, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import { useLocation, useNavigate } from 'react-router-dom';
-import ChunkLoader from '@/components/loader/chunk-loader';
 import { generateOAuthURL, isDomainFeatureEnabled } from '@/components/shared';
 import DesktopWrapper from '@/components/shared_ui/desktop-wrapper';
 import Dialog from '@/components/shared_ui/dialog';
 import MobileWrapper from '@/components/shared_ui/mobile-wrapper';
 import Tabs from '@/components/shared_ui/tabs/tabs';
 import TradeTypeConfirmationModal from '@/components/trade-type-confirmation-modal';
-import TradingViewComponent from '@/components/trading-view-chart/trading-view';
-import TradingViewModal from '@/components/trading-view-chart/trading-view-modal';
 import { DBOT_TABS, TAB_IDS } from '@/constants/bot-contents';
 import { api_base, updateWorkspaceName } from '@/external/bot-skeleton';
 import { CONNECTION_STATUS } from '@/external/bot-skeleton/services/api/observables/connection-status-stream';
@@ -37,11 +34,9 @@ import {
     LabelPairedChartTrendUpCaptionRegularIcon,
     LabelPairedCircleStarCaptionRegularIcon,
     LabelPairedLightbulbCaptionRegularIcon,
-    LabelPairedMagnifyingGlassPlusCaptionRegularIcon,
     LabelPairedObjectsColumnCaptionRegularIcon,
     LabelPairedPuzzlePieceTwoCaptionBoldIcon,
 } from '@deriv/quill-icons/LabelPaired';
-import { LegacyGuide1pxIcon } from '@deriv/quill-icons/Legacy';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 import RunPanel from '../../components/run-panel';
@@ -52,11 +47,8 @@ import ChartModal from '../chart/chart-modal';
 import Dashboard from '../dashboard';
 import ManualTrading from '../manual-trading';
 import RunStrategy from '../dashboard/run-strategy';
-import Scanner from '../scanner';
 import Analysistool from '../analysistool';
 import './main.scss';
-
-const Tutorial = lazy(() => import('../tutorials'));
 
 const AppWrapper = observer(() => {
     const { connectionStatus } = useApiBase();
@@ -90,7 +82,7 @@ const AppWrapper = observer(() => {
         [key: string]: string;
     };
     const { clear } = summary_card;
-    const { BOT_BUILDER, BOT_IDEAS, DASHBOARD, SCANNER: SCANNER_TAB, AUTO_TRADES, MANUAL_TRADING } = DBOT_TABS;
+    const { BOT_BUILDER, BOT_IDEAS, DASHBOARD, AUTO_TRADES, MANUAL_TRADING } = DBOT_TABS;
     const init_render = React.useRef(true);
     const hash = [
         'bot_ideas',
@@ -99,18 +91,13 @@ const AppWrapper = observer(() => {
         'bot_builder',
         'auto_trades',
         'manual_trading',
-        'scanner',
         'analysistool',
-        'tradingview',
-        'tutorial',
     ];
     const show_bot_ideas = isDomainFeatureEnabled('botIdeas');
-    const show_scanner = isDomainFeatureEnabled('scanner');
     const show_auto_trades = isDomainFeatureEnabled('autoTrades');
     const show_manual_trading = isDomainFeatureEnabled('manualTrading');
     const isMainTabVisible = (tab_index: number) => {
         if (tab_index === BOT_IDEAS) return show_bot_ideas;
-        if (tab_index === SCANNER_TAB) return show_scanner;
         if (tab_index === AUTO_TRADES) return show_auto_trades;
         if (tab_index === MANUAL_TRADING) return show_manual_trading;
         return true;
@@ -178,7 +165,7 @@ const AppWrapper = observer(() => {
 
     React.useEffect(() => {
         const el_dashboard = document.getElementById('id-dbot-dashboard');
-        const el_tutorial = document.getElementById('id-tutorials');
+        const el_last_tab = document.getElementById('id-analysistool');
 
         const observer_dashboard = new window.IntersectionObserver(
             ([entry]) => {
@@ -194,7 +181,7 @@ const AppWrapper = observer(() => {
             }
         );
 
-        const observer_tutorial = new window.IntersectionObserver(
+        const observer_last_tab = new window.IntersectionObserver(
             ([entry]) => {
                 if (entry.isIntersecting) {
                     setRightTabShadow(false);
@@ -207,9 +194,14 @@ const AppWrapper = observer(() => {
                 threshold: 0.5, // set offset 0.1 means trigger if atleast 10% of element in viewport
             }
         );
-        observer_dashboard.observe(el_dashboard);
-        observer_tutorial.observe(el_tutorial);
-    });
+        if (el_dashboard) observer_dashboard.observe(el_dashboard);
+        if (el_last_tab) observer_last_tab.observe(el_last_tab);
+
+        return () => {
+            observer_dashboard.disconnect();
+            observer_last_tab.disconnect();
+        };
+    }, []);
 
     React.useEffect(() => {
         const is_recoverable_trading_module = active_trading_module === 'auto_trades';
@@ -545,23 +537,6 @@ const AppWrapper = observer(() => {
                                     <ManualTrading />
                                 </div>
                             )}
-                            {show_scanner && (
-                                <div
-                                    label={
-                                        <>
-                                            <LabelPairedMagnifyingGlassPlusCaptionRegularIcon
-                                                height='24px'
-                                                width='24px'
-                                                fill='#c8a45d'
-                                            />
-                                            <Localize i18n_default_text='Scanner' />
-                                        </>
-                                    }
-                                    id='id-scanner'
-                                >
-                                    <Scanner />
-                                </div>
-                            )}
                             <div
                                 label={
                                     <>
@@ -577,47 +552,6 @@ const AppWrapper = observer(() => {
                             >
                                 <Analysistool />
                             </div>
-                            <div
-                                label={
-                                    <>
-                                        <LabelPairedChartTrendUpCaptionRegularIcon
-                                            height='24px'
-                                            width='24px'
-                                            fill='#c8a45d'
-                                        />
-                                        <span>TradingView</span>
-                                    </>
-                                }
-                                id='id-tradingview'
-                            >
-                                <div className='main__iframe-page'>
-                                    <TradingViewComponent />
-                                </div>
-                            </div>
-                            <div
-                                label={
-                                    <>
-                                        <LegacyGuide1pxIcon
-                                            height='16px'
-                                            width='16px'
-                                            fill='#c8a45d'
-                                            className='icon-orange-fill-g-path'
-                                        />
-                                        <Localize i18n_default_text='Tutorials' />
-                                    </>
-                                }
-                                id='id-tutorials'
-                            >
-                                <div className='tutorials-wrapper'>
-                                    <Suspense
-                                        fallback={
-                                            <ChunkLoader message={localize('Please wait, loading tutorials...')} />
-                                        }
-                                    >
-                                        <Tutorial handleTabChange={handleTabChange} />
-                                    </Suspense>
-                                </div>
-                            </div>
                         </Tabs>
                         {!isDesktop && right_tab_shadow && <span className='tabs-shadow tabs-shadow--right' />}{' '}
                     </div>
@@ -629,7 +563,6 @@ const AppWrapper = observer(() => {
                     <RunPanel />
                 </div>
                 <ChartModal />
-                <TradingViewModal />
             </DesktopWrapper>
             <MobileWrapper>{!is_open && <RunPanel />}</MobileWrapper>
             <Dialog

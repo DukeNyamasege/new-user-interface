@@ -25,6 +25,98 @@
     }
 }
 
+.best-bots {
+    min-height: 100%;
+    padding: 1.6rem;
+
+    @include mobile-or-tablet-screen {
+        padding: 1rem;
+    }
+
+    &__grid {
+        max-width: 112rem;
+        grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
+        gap: 1.2rem;
+
+        @include mobile-or-tablet-screen {
+            grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+            gap: 1rem;
+        }
+    }
+}
+
+.bb-card {
+    gap: 1.2rem;
+    min-height: auto;
+    padding: 1.4rem;
+    border-radius: 0.9rem;
+
+    &__header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.8rem;
+        align-items: start;
+    }
+
+    &__name {
+        display: -webkit-box;
+        overflow: hidden;
+        font-size: 1.35rem;
+        line-height: 1.25;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    &__net {
+        padding: 0.35rem 0.7rem;
+        border-radius: 999rem;
+        font-size: 1.15rem;
+        font-weight: 800;
+        white-space: nowrap;
+
+        &--profit {
+            background: rgb(0 168 85 / 12%);
+            color: #00a855;
+        }
+
+        &--loss {
+            background: rgb(236 64 64 / 12%);
+            color: #ec4040;
+        }
+    }
+
+    &__performance {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.7rem;
+
+        span {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            min-width: 0;
+            padding: 0.8rem;
+            border-radius: 0.7rem;
+            background: var(--general-section-1);
+            color: var(--text-less-prominent);
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        strong {
+            color: var(--text-general);
+            font-size: 1.35rem;
+            line-height: 1;
+        }
+    }
+
+    &__btn {
+        padding: 0.9rem 1.2rem;
+        border-radius: 0.7rem;
+        font-size: 1.25rem;
+    }
+}
+
 // ─── Bot Card ────────────────────────────────────────────────────────────────
 .bb-card {
     background: var(--general-main-2);

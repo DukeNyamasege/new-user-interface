@@ -12,7 +12,6 @@ describe('DOMAIN_CONFIG', () => {
             useLegacyOAuthLogin: false,
             features: {
                 botIdeas: false,
-                scanner: false,
                 printPopups: false,
                 autoTrades: true,
                 manualTrading: true,
@@ -20,10 +19,9 @@ describe('DOMAIN_CONFIG', () => {
         });
     });
 
-    it('keeps Bot Ideas and Scanner enabled on Risk Managers', () => {
+    it('keeps Bot Ideas enabled on Risk Managers', () => {
         expect(getDomainConfigForHost('riskmanagers.site')?.features).toMatchObject({
             botIdeas: true,
-            scanner: true,
             printPopups: true,
             autoTrades: true,
             manualTrading: true,

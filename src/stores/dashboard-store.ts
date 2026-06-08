@@ -64,7 +64,6 @@ export interface IDashboardStore {
     strategy_save_type: string;
     toast_message: string;
     is_chart_modal_visible: boolean;
-    is_trading_view_modal_visible: boolean;
     setPreviewOnPopup: (is_preview_on_popup: boolean) => void;
     active_trading_module: TTradingModule | null;
     is_leave_trading_dialog_open: boolean;
@@ -138,7 +137,6 @@ export default class DashboardStore implements IDashboardStore {
             setStrategySaveType: action.bound,
             setShowMobileTourDialog: action.bound,
             is_chart_modal_visible: observable,
-            is_trading_view_modal_visible: observable,
             bot_builder_symbol: observable,
             cancelPendingTradingNavigation: action.bound,
             confirmPendingTradingNavigation: action.bound,
@@ -228,7 +226,6 @@ export default class DashboardStore implements IDashboardStore {
     quick_strategy_tab_content = quick_strategy_content;
     filtered_tab_list = [];
     is_chart_modal_visible = false;
-    is_trading_view_modal_visible = false;
     faq_title = '';
     active_trading_module: TTradingModule | null = null;
     is_leave_trading_dialog_open = false;
@@ -320,10 +317,6 @@ export default class DashboardStore implements IDashboardStore {
 
     setChartModalVisibility = () => {
         this.is_chart_modal_visible = !this.is_chart_modal_visible;
-    };
-
-    setTradingViewModalVisibility = () => {
-        this.is_trading_view_modal_visible = !this.is_trading_view_modal_visible;
     };
 
     setIsFileSupported = (is_file_supported: boolean) => {

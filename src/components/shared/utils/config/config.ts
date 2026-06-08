@@ -24,12 +24,10 @@ type MartingaleMode = 'no_martingale' | 'fixed_loss_trigger' | 'consecutive_loss
 
 type DomainFeatureFlags = {
     botIdeas: boolean;
-    scanner: boolean;
     printPopups: boolean;
     autoTrades: boolean;
     manualTrading: boolean;
     chart: boolean;
-    tutorials: boolean;
 };
 
 type MartingaleConfig = {
@@ -96,12 +94,10 @@ interface HostedDomainDefinition {
 const DEFAULT_BOTS_FOLDER = 'optimumtraders.site';
 const DEFAULT_DOMAIN_FEATURES: DomainFeatureFlags = {
     botIdeas: true,
-    scanner: true,
     printPopups: true,
     autoTrades: true,
     manualTrading: true,
     chart: true,
-    tutorials: true,
 };
 
 const DEFAULT_MARTINGALE_CONFIG: MartingaleConfig = {
@@ -205,7 +201,6 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
         includeLegacyAppIdInOAuth: true,
         features: {
             botIdeas: false,
-            scanner: false,
             printPopups: false,
         },
     }),

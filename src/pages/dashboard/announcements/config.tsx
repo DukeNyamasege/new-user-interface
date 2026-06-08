@@ -209,7 +209,7 @@ export const ANNOUNCEMENTS: Record<string, TAnnouncement> = {
                 { id: 2, text: localize('Manage risks while capitalising on market opportunities.') },
             ],
         },
-        switch_tab_on_cancel: DBOT_TABS.TUTORIAL,
+        switch_tab_on_cancel: DBOT_TABS.BOT_BUILDER,
         switch_tab_on_confirm: DBOT_TABS.BOT_BUILDER,
         onConfirm: () => handleOnConfirmAccumulator(),
     },

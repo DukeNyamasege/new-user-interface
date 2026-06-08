@@ -11,9 +11,9 @@ describe('DashboardStore trading navigation guard', () => {
         const store = createStore();
 
         store.setActiveTab(DBOT_TABS.DASHBOARD);
-        store.setActiveTab(DBOT_TABS.SCANNER);
+        store.setActiveTab(DBOT_TABS.ANALYSIS_TOOL);
 
-        expect(store.active_tab).toBe(DBOT_TABS.SCANNER);
+        expect(store.active_tab).toBe(DBOT_TABS.ANALYSIS_TOOL);
         expect(store.is_leave_trading_dialog_open).toBe(false);
     });
 

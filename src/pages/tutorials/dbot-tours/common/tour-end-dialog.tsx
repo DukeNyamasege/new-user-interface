@@ -30,7 +30,7 @@ const TourEndDialog = observer(() => {
                     <Localize
                         key={0}
                         i18n_default_text={
-                            'Note: If you wish to learn more about the Bot Builder, you can proceed to the <0>Tutorials</0> tab.'
+                            'Note: You can continue refining this setup in the Bot Builder.'
                         }
                         components={[<strong key={0} />]}
                     />

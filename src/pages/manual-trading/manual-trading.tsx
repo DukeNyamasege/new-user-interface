@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
@@ -151,6 +151,9 @@ const formatPayout = (value: unknown, currency: string) => {
     return `${payout.toFixed(2)} ${currency}`;
 };
 
+const getProposalPayout = (proposal: any, currency: string) =>
+    formatPayout(proposal?.payout ?? proposal?.display_value, currency);
+
 const ManualTrading = observer(() => {
     const { client, dashboard, run_panel, summary_card, transactions, ui } = useStore();
     const { active_tab } = dashboard;
@@ -169,8 +172,11 @@ const ManualTrading = observer(() => {
     const [tradeMessage, setTradeMessage] = useState('');
     const [tradeError, setTradeError] = useState('');
     const [proposalPayouts, setProposalPayouts] = useState<Record<string, string>>({});
+    const [isProposalLoading, setIsProposalLoading] = useState(false);
+    const [proposalRefreshKey, setProposalRefreshKey] = useState(0);
     const subscriptionRef = useRef<{ unsubscribe?: () => void } | null>(null);
     const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const proposalRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const requestVersionRef = useRef(0);
     const proposalVersionRef = useRef(0);
 
@@ -188,6 +194,13 @@ const ManualTrading = observer(() => {
         if (retryTimerRef.current) {
             clearTimeout(retryTimerRef.current);
             retryTimerRef.current = null;
+        }
+    }, []);
+
+    const clearProposalRetryTimer = useCallback(() => {
+        if (proposalRetryTimerRef.current) {
+            clearTimeout(proposalRetryTimerRef.current);
+            proposalRetryTimerRef.current = null;
         }
     }, []);
 
@@ -219,6 +232,15 @@ const ManualTrading = observer(() => {
         const requestVersion = requestVersionRef.current + 1;
         requestVersionRef.current = requestVersion;
         setTicks([]);
+
+        const reconnectMarketStream = (delay = 900) => {
+            clearRetryTimer();
+            setIsLive(false);
+            setIsLoading(true);
+            retryTimerRef.current = setTimeout(() => {
+                void loadMarketData();
+            }, delay);
+        };
 
         if (!api_base.api) {
             setIsLoading(true);
@@ -262,7 +284,10 @@ const ManualTrading = observer(() => {
                     if (data?.error) {
                         if (!isExpectedStreamInterruption(data.error)) {
                             setError(data.error.message || 'Deriv tick stream error.');
+                        } else {
+                            setError(null);
                         }
+                        reconnectMarketStream();
                         return;
                     }
 
@@ -272,10 +297,8 @@ const ManualTrading = observer(() => {
                 streamError => {
                     if (requestVersionRef.current !== requestVersion) return;
 
-                    if (!isExpectedStreamInterruption(streamError)) {
-                        setError('Deriv tick stream interrupted. Reconnecting...');
-                    }
-                    setIsLive(false);
+                    setError(null);
+                    reconnectMarketStream();
                 }
             );
             setIsLive(true);
@@ -284,6 +307,7 @@ const ManualTrading = observer(() => {
 
             setError(loadError instanceof Error ? loadError.message : 'Unable to load Deriv market data.');
             setIsLive(false);
+            reconnectMarketStream(1200);
         } finally {
             if (requestVersionRef.current === requestVersion) {
                 setIsLoading(false);
@@ -343,10 +367,27 @@ const ManualTrading = observer(() => {
     useEffect(() => {
         const proposalVersion = proposalVersionRef.current + 1;
         proposalVersionRef.current = proposalVersion;
+        clearProposalRetryTimer();
         setProposalPayouts({});
+        setIsProposalLoading(false);
 
         const stake = Number(stakeInput);
-        if (!showManualTrading || !api_base.api || !Number.isFinite(stake) || stake <= 0) return undefined;
+        if (!showManualTrading || !Number.isFinite(stake) || stake <= 0) return undefined;
+
+        const queueProposalRetry = (delay = 1500) => {
+            clearProposalRetryTimer();
+            proposalRetryTimerRef.current = setTimeout(() => {
+                setProposalRefreshKey(version => version + 1);
+            }, delay);
+        };
+
+        if (!api_base.api) {
+            setIsProposalLoading(true);
+            queueProposalRetry(1000);
+            return () => clearProposalRetryTimer();
+        }
+
+        setIsProposalLoading(true);
 
         const loadProposals = async () => {
             const nextPayouts: Record<string, string> = {};
@@ -359,23 +400,42 @@ const ManualTrading = observer(() => {
                             subscribe: 0,
                             ...buildTradeParameters(action.contractType),
                         });
-                        const payout = formatPayout(proposalResponse?.proposal?.payout, currency);
-                        if (payout) nextPayouts[action.contractType] = payout;
+                        const payout = getProposalPayout(proposalResponse?.proposal, currency);
+                        nextPayouts[action.contractType] = payout || 'Payout unavailable';
                     } catch {
-                        // Proposal previews are optional; the buy button still validates on purchase.
+                        nextPayouts[action.contractType] = 'Payout unavailable';
                     }
                 })
             );
 
             if (proposalVersionRef.current === proposalVersion) {
                 setProposalPayouts(nextPayouts);
+                setIsProposalLoading(false);
+                if (Object.values(nextPayouts).some(value => value === 'Payout unavailable')) {
+                    queueProposalRetry(3000);
+                }
             }
         };
 
         void loadProposals();
 
-        return undefined;
-    }, [activeActions, buildTradeParameters, currency, showManualTrading, stakeInput]);
+        return () => clearProposalRetryTimer();
+    }, [
+        activeActions,
+        buildTradeParameters,
+        clearProposalRetryTimer,
+        currency,
+        proposalRefreshKey,
+        showManualTrading,
+        stakeInput,
+    ]);
+
+    useEffect(
+        () => () => {
+            clearProposalRetryTimer();
+        },
+        [clearProposalRetryTimer]
+    );
 
     const handleApplyTicks = () => {
         const nextTickCount = clampTickCount(Number(tickCountInput));
@@ -626,7 +686,10 @@ const ManualTrading = observer(() => {
                             onClick={() => void handleManualPurchase(action)}
                         >
                             <strong>{action.label}</strong>
-                            <span>{proposalPayouts[action.contractType] || 'Payout loading'}</span>
+                            <span>
+                                {proposalPayouts[action.contractType] ||
+                                    (isProposalLoading ? 'Payout loading...' : 'Payout unavailable')}
+                            </span>
                         </button>
                     ))}
                 </div>

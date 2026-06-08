@@ -61,7 +61,7 @@ const TourStartDialog = observer(() => {
                         <div className='dc-dialog__content__description__text'>
                             <Localize
                                 key={0}
-                                i18n_default_text={'Note: You can find this tutorial in the <0>Tutorials</0> tab.'}
+                                i18n_default_text={'Note: You can restart this tour from the Bot Builder controls.'}
                                 components={[<strong key={0} />]}
                             />
                         </div>
