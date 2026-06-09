@@ -384,6 +384,51 @@ const OPTIMUM_BOTS: TBot[] = [
     },
 ];
 
+const DOLLARSIGNS_BOTS: TBot[] = [
+    {
+        id: 'mwenda-pole',
+        name: 'Mwenda Pole By The Risk Manager (1)',
+        file: 'Mwenda Pole By The Risk Manager (1).xml',
+        description: 'Slow and steady conservative approach for low-risk accounts.',
+        emoji: '🐢',
+    },
+    {
+        id: 'simba-ai',
+        name: 'Simba Ai v1',
+        file: 'Simba Ai v1.xml',
+        description: 'AI-enhanced strategy combining pattern recognition with smart exits.',
+        emoji: '🦁',
+    },
+    {
+        id: 'speedhack',
+        name: 'Speedhack by mrduke.site 00 (1)',
+        file: 'Speedhack by mrduke.site 00 (1).xml',
+        description: 'Ultra-fast tick-based execution for volatile market conditions.',
+        emoji: '🚀',
+    },
+    {
+        id: 'd3-rise-fall',
+        name: 'The-D3 rise and fall',
+        file: 'The-D3 rise and fall.xml',
+        description: 'Trend-following strategy targeting rise and fall market patterns.',
+        emoji: '📊',
+    },
+    {
+        id: 'under789',
+        name: 'under 7,8,9= g2 bot 1==',
+        file: 'under 7,8,9= g2 bot 1==.xml',
+        description: 'Specialised over/under boundary strategy for digit markets.',
+        emoji: '🎲',
+    },
+    {
+        id: 'wealth-generator',
+        name: 'Wealth Generator',
+        file: 'Wealth Generator.xml',
+        description: 'Compound growth strategy built for long-term account building.',
+        emoji: '💰',
+    },
+];
+
 const BOTS_BY_FOLDER: Record<string, TBot[]> = {
     'riskmanagers.site': RISK_MANAGERS_BOTS,
     'termicafx.site': TERMICA_BOTS,
@@ -392,7 +437,7 @@ const BOTS_BY_FOLDER: Record<string, TBot[]> = {
     'masterhunter.site': [],
     'tradinghubs.site': [],
     'mafiahub.site': [],
-    'dollarsigns.site': [],
+    'dollarsigns.site': DOLLARSIGNS_BOTS,
 };
 
 export const getBestBotsForFolder = (bots_folder: string) => BOTS_BY_FOLDER[bots_folder] ?? [];
