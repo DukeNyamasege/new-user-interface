@@ -25,6 +25,14 @@ type TBotStats = {
     loss_amount?: number | string | null;
 };
 
+type TBotManifestEntry = {
+    id?: string;
+    name?: string;
+    file: string;
+    description?: string;
+    emoji?: string;
+};
+
 const formatMoney = (value: number | string | null | undefined) => {
     const n = Number(value || 0);
     const sign = n < 0 ? '-' : '';
@@ -47,6 +55,19 @@ const createRiskManagersBot = (file: string): TBot => {
         file,
         description: `${name} loads into Bot Builder and executes through the standard purchase conditions.`,
         emoji: 'RM',
+    };
+};
+
+const createManifestBot = (entry: TBotManifestEntry): TBot => {
+    const name = entry.name || entry.file.replace(/\.xml$/i, '');
+
+    return {
+        id: entry.id || toBotId(entry.file),
+        name,
+        file: entry.file,
+        description:
+            entry.description || `${name} loads into Bot Builder and executes through the standard purchase conditions.`,
+        emoji: entry.emoji || 'BOT',
     };
 };
 
@@ -401,6 +422,10 @@ const BOTS_BY_FOLDER: Record<string, TBot[]> = {
     'riskmanagers.site': RISK_MANAGERS_BOTS,
     'termicafx.site': TERMICA_BOTS,
     'optimumtraders.site': OPTIMUM_BOTS,
+    'mrzetuzetu.site': [],
+    'masterhunter.site': [],
+    'tradinghubs.site': [],
+    'mafiahub.site': [],
 };
 
 export const getBestBotsForFolder = (bots_folder: string) => BOTS_BY_FOLDER[bots_folder] ?? [];
@@ -507,7 +532,45 @@ const BotCard = observer(({ bot, stats }: { bot: TBot; stats: TBotStats | undefi
 
 const BestBots = () => {
     const [statsMap, setStatsMap] = useState<Record<string, TBotStats>>({});
-    const bots = getBestBotsForFolder(getBestBotsFolder());
+    const botsFolder = getBestBotsFolder();
+    const [bots, setBots] = useState<TBot[]>(() => getBestBotsForFolder(botsFolder));
+
+    useEffect(() => {
+        let isMounted = true;
+        const configuredBots = getBestBotsForFolder(botsFolder);
+
+        setBots(configuredBots);
+
+        fetch(getBestBotsFileUrl('bots.json'))
+            .then(response => {
+                if (!response.ok) return [];
+                return response.json();
+            })
+            .then((manifestBots: TBotManifestEntry[]) => {
+                if (!isMounted || !Array.isArray(manifestBots)) return;
+                const dynamicBots = manifestBots
+                    .filter(bot => bot?.file?.toLowerCase().endsWith('.xml'))
+                    .map(createManifestBot);
+                const mergedBots = [...configuredBots];
+                const seenFiles = new Set(mergedBots.map(bot => bot.file));
+
+                dynamicBots.forEach(bot => {
+                    if (!seenFiles.has(bot.file)) {
+                        mergedBots.push(bot);
+                        seenFiles.add(bot.file);
+                    }
+                });
+
+                setBots(mergedBots);
+            })
+            .catch(() => {
+                if (isMounted) setBots(configuredBots);
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [botsFolder]);
 
     useEffect(() => {
         const loadStats = () => {
