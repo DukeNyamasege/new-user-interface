@@ -426,6 +426,7 @@ const BOTS_BY_FOLDER: Record<string, TBot[]> = {
     'masterhunter.site': [],
     'tradinghubs.site': [],
     'mafiahub.site': [],
+    'dollarsigns.site': [],
 };
 
 export const getBestBotsForFolder = (bots_folder: string) => BOTS_BY_FOLDER[bots_folder] ?? [];

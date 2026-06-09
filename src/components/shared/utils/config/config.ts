@@ -271,6 +271,22 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
             brandName: 'Mafia Hub',
         },
     }),
+    ...createHostedDomainEntries({
+        primaryDomain: 'dollarsigns.site',
+        aliases: ['www.dollarsigns.site'],
+        clientId: '33uLmMotAXYx94pf0CLe6',
+        appId: '',
+        redirectUri: 'http://dollarsigns.site/',
+        botsFolder: 'dollarsigns.site',
+        includeLegacyAppIdInOAuth: false,
+        features: {
+            autoTrades: true,
+            manualTrading: true,
+        },
+        ui: {
+            brandName: 'Dollarsign',
+        },
+    }),
 };
 
 export const getDomainConfigForHost = (hostname: string): DomainConfig | undefined => DOMAIN_CONFIG[hostname];
