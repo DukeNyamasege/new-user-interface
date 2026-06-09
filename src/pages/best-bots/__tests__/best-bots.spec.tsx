@@ -27,12 +27,12 @@ describe('Best Bots domain catalogs', () => {
         expect(bots).toHaveLength(3);
         expect(bots.every(bot => bot.name === bot.file.replace(/\.xml$/, ''))).toBe(true);
         expect(bots[0]).toMatchObject({
-            name: 'grffy',
-            file: 'grffy.xml',
+            name: 'grffy v1',
+            file: 'grffy v1.xml',
         });
         expect(bots[1]).toMatchObject({
-            name: 'Mr Duke Speed Bot',
-            file: 'Mr Duke Speed Bot.xml',
+            name: 'Mr Duke Speed Bot.1',
+            file: 'Mr Duke Speed Bot.1.xml',
         });
     });
 

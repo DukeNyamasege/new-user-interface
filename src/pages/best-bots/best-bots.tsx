@@ -72,8 +72,8 @@ const createManifestBot = (entry: TBotManifestEntry): TBot => {
 };
 
 const RISK_MANAGERS_BOTS: TBot[] = [
-    'grffy.xml',
-    'Mr Duke Speed Bot.xml',
+    'grffy v1.xml',
+    'Mr Duke Speed Bot.1.xml',
     'Wealth Generator.xml',
 ].map(createRiskManagersBot);
 
