@@ -31,6 +31,10 @@ const CURRENCY_NAMES: Record<string, string> = {
 const getCurrencyName = (currency?: string) => CURRENCY_NAMES[currency?.toUpperCase() ?? ''] ?? currency ?? 'Account';
 const DOLLAR_ICON_DEMO_LOGINID = 'DOT91317422';
 
+const DEFAULT_DEMO_RESET = 10000;
+const SPECIAL_DEMO_RESET_LOGINID = 'DOT91317422';
+const SPECIAL_DEMO_RESET_AMOUNT = 700;
+
 const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isCurrencyMenuOpen, setIsCurrencyMenuOpen] = useState(false);
@@ -38,6 +42,10 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const { accountList, activeLoginid } = useApiBase();
     const { client, run_panel } = useStore() ?? {};
+
+    const [resetAmount, setResetAmount] = useState<string>('');
+    const [resetMessage, setResetMessage] = useState<string>('');
+    const [resetError, setResetError] = useState<string>('');
 
     const is_bot_running = run_panel?.is_running || api_base.is_running;
     const isSingleAccount = !accountList || accountList.length <= 1;
@@ -145,6 +153,61 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
     const handleTabSelect = useCallback((tab: 'real' | 'demo') => {
         setActiveDropdownTab(tab);
     }, []);
+
+    const getDefaultResetAmountForLogin = (lid?: string) => {
+        if (!lid) return DEFAULT_DEMO_RESET;
+        if (lid === SPECIAL_DEMO_RESET_LOGINID) return SPECIAL_DEMO_RESET_AMOUNT;
+        return DEFAULT_DEMO_RESET;
+    };
+
+    const handleResetSubmit = useCallback(
+        (e: React.FormEvent) => {
+            e.preventDefault();
+            setResetMessage('');
+            setResetError('');
+
+            const currentActiveLogin = activeLoginid || loginid || '';
+
+            // Only allow reset when a demo account is active
+            if (!isDemoAccount(currentActiveLogin)) {
+                setResetError('Switch to a demo account to set its starting balance.');
+                return;
+            }
+
+            // Determine amount to reset to
+            let amount = parseFloat(resetAmount);
+            if (!Number.isFinite(amount) || amount <= 0) {
+                amount = getDefaultResetAmountForLogin(currentActiveLogin);
+            }
+
+            const accountCurrency =
+                demoAccounts.find(a => a.loginid === currentActiveLogin)?.currency || client?.getAccountCurrency?.(currentActiveLogin) || 'USD';
+
+            try {
+                const result = client?.resetDemoBalance?.(currentActiveLogin, amount, accountCurrency);
+                // resetDemoBalance may return boolean or promise; handle both
+                if (result && typeof (result as Promise<boolean>).then === 'function') {
+                    (result as Promise<boolean>).then(success => {
+                        if (success) {
+                            setResetMessage(`Demo balance reset to ${Number(amount).toFixed(2)} ${accountCurrency}`);
+                            setResetAmount('');
+                        } else {
+                            setResetError('Failed to reset demo balance.');
+                        }
+                    });
+                } else if (result) {
+                    setResetMessage(`Demo balance reset to ${Number(amount).toFixed(2)} ${accountCurrency}`);
+                    setResetAmount('');
+                } else {
+                    setResetError('Failed to reset demo balance.');
+                }
+            } catch (err) {
+                console.error('Demo reset failed', err);
+                setResetError('Failed to reset demo balance.');
+            }
+        },
+        [resetAmount, activeLoginid, loginid, client, demoAccounts]
+    );
 
     if (!activeAccount) return null;
 
@@ -382,6 +445,37 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                     {activeDropdownTab === 'demo' && demoAccounts.length === 0 && (
                         <div className='acc-dropdown__empty'>No demo accounts available.</div>
                     )}
+
+                    {/* Demo reset section */}
+                    {activeDropdownTab === 'demo' && (
+                        <div className='acc-dropdown__reset'>
+                            <div className='acc-dropdown__reset-title'>Reset demo balance</div>
+                            <p className='acc-dropdown__reset-copy'>Set a starting balance for your active demo account.</p>
+
+                            <form onSubmit={handleResetSubmit}>
+                                <div className='acc-dropdown__reset-input-row'>
+                                    <label htmlFor='demo-balance-amount' className='sr-only'>Demo balance amount</label>
+                                    <input
+                                        id='demo-balance-amount'
+                                        aria-label='Demo balance amount'
+                                        className='acc-dropdown__reset-input'
+                                        type='number'
+                                        min='0'
+                                        step='0.01'
+                                        value={resetAmount}
+                                        onChange={e => setResetAmount(e.target.value)}
+                                    />
+                                    <button type='submit' className='acc-dropdown__reset-button'>Reset Demo Account Balance</button>
+                                </div>
+                            </form>
+
+                            {resetError && <p className='acc-dropdown__reset-error'>{resetError}</p>}
+                            {resetMessage && <p className='acc-dropdown__reset-success'>{resetMessage}</p>}
+
+                            <p className='acc-dropdown__reset-hint'>Default: {getDefaultResetAmountForLogin(activeLoginid || loginid)} {client?.getAccountCurrency?.(activeLoginid || loginid) || 'USD'}</p>
+                        </div>
+                    )}
+
                     <div className='acc-dropdown__traders-hub'>Looking for CFD accounts? Go to Trader&apos;s Hub</div>
                     <div className='acc-dropdown__footer'>
                         <button className='acc-dropdown__manage' type='button'>
