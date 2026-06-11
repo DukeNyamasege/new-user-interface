@@ -1,5 +1,5 @@
 import { TextEncoder } from 'util';
-import { buildBestBotsFileUrl, generateOAuthURL, getDomainConfigForHost } from '../config';
+import { buildBestBotsFileUrl, generateOAuthURL, getCanonicalHostForHost, getDomainConfigForHost } from '../config';
 
 describe('DOMAIN_CONFIG', () => {
     it('returns the configured TermicaFX auth and bot folder settings', () => {
@@ -35,16 +35,19 @@ describe('DOMAIN_CONFIG', () => {
     });
 
     it.each([
-        ['mrzetuzetu.site', '33vlry53HSLhXICBcUURu', '80364', 'Mrzetuzetu', false],
+        ['mrzetuzetu.site', '33vlry53HSLhXICBcUURu', '80364', 'Mrzetuzetu', false, 'optimumtraders.site'],
         ['masterhunter.site', '33g5WCS5YOFHD3aWLZZjj', '96223', 'Master Hunter', false],
         ['tradinghubs.site', '33hi7ev9NiDjWY640JuSw', '122208', 'Trading Hubs', false],
         ['mafiahub.site', '331bCUS8izRudblAnSACt', '120589', 'Mafia Hub', false],
-    ])('returns auth and bot folder settings for %s', (domain, clientId, appId, brandName, useLegacyOAuthLogin) => {
+    ])(
+        'returns auth and bot folder settings for %s',
+        (domain, clientId, appId, brandName, useLegacyOAuthLogin, botsFolder = domain) => {
         expect(getDomainConfigForHost(domain)).toMatchObject({
             clientId,
             appId,
             redirectUri: `https://${domain}/`,
-            botsFolder: domain,
+            botsFolder,
+            canonicalHost: domain,
             includeLegacyAppIdInOAuth: true,
             useLegacyOAuthLogin,
             ui: {
@@ -59,7 +62,8 @@ describe('DOMAIN_CONFIG', () => {
             clientId,
             appId,
             redirectUri: `https://${domain}/`,
-            botsFolder: domain,
+            botsFolder,
+            canonicalHost: domain,
             includeLegacyAppIdInOAuth: true,
             useLegacyOAuthLogin,
             ui: {
@@ -70,6 +74,18 @@ describe('DOMAIN_CONFIG', () => {
                 manualTrading: true,
             },
         });
+        }
+    );
+
+    it('maps mrzertuzetu aliases back to the canonical mrzetuzetu host', () => {
+        expect(getDomainConfigForHost('mrzertuzetu.site')).toMatchObject({
+            redirectUri: 'https://mrzetuzetu.site/',
+            botsFolder: 'optimumtraders.site',
+            canonicalHost: 'mrzetuzetu.site',
+        });
+        expect(getCanonicalHostForHost('mrzertuzetu.site')).toBe('mrzetuzetu.site');
+        expect(getCanonicalHostForHost('www.mrzetuzetu.site')).toBe('mrzetuzetu.site');
+        expect(getCanonicalHostForHost('www.mrzertuzetu.site')).toBe('mrzetuzetu.site');
     });
 
     it('returns OAuth2-only auth and bot folder settings for Dollarsign', () => {

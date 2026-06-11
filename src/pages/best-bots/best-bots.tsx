@@ -433,7 +433,7 @@ const BOTS_BY_FOLDER: Record<string, TBot[]> = {
     'riskmanagers.site': RISK_MANAGERS_BOTS,
     'termicafx.site': TERMICA_BOTS,
     'optimumtraders.site': OPTIMUM_BOTS,
-    'mrzetuzetu.site': [],
+    'mrzetuzetu.site': OPTIMUM_BOTS,
     'masterhunter.site': [],
     'tradinghubs.site': [],
     'mafiahub.site': [],

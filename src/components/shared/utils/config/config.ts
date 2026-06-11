@@ -15,6 +15,7 @@ interface DomainConfig {
     appId: string; // Legacy Deriv APP_ID for intelligent platform routing
     redirectUri: string; // MUST match the redirect URL registered in the OAuth app exactly
     botsFolder: string; // Public folder used by Best Bots XML loading for this domain
+    canonicalHost: string; // Preferred host used for redirects and auth/session consistency
     includeLegacyAppIdInOAuth: boolean; // Only enable when the legacy app redirects to this domain
     useLegacyOAuthLogin: boolean; // Use old OAuth app_id login when OAuth2 client setup is not valid yet
     features: DomainFeatureFlags;
@@ -73,6 +74,7 @@ interface DomainConfig {
     appId: string;
     redirectUri: string;
     botsFolder: string;
+    canonicalHost: string;
     includeLegacyAppIdInOAuth: boolean;
     useLegacyOAuthLogin: boolean;
     features: DomainFeatureFlags;
@@ -156,6 +158,7 @@ const createHostedDomainEntries = ({
         appId,
         redirectUri,
         botsFolder,
+        canonicalHost: primaryDomain,
         includeLegacyAppIdInOAuth,
         useLegacyOAuthLogin,
         features: {
@@ -209,11 +212,11 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
     // Dedicated branded domains wired with the same OAuth2 flow as the working domains.
     ...createHostedDomainEntries({
         primaryDomain: 'mrzetuzetu.site',
-        aliases: ['www.mrzetuzetu.site'],
+        aliases: ['www.mrzetuzetu.site', 'mrzertuzetu.site', 'www.mrzertuzetu.site'],
         clientId: '33vlry53HSLhXICBcUURu',
         appId: '80364',
         redirectUri: 'https://mrzetuzetu.site/',
-        botsFolder: 'mrzetuzetu.site',
+        botsFolder: 'optimumtraders.site',
         includeLegacyAppIdInOAuth: true,
         features: {
             autoTrades: true,
@@ -290,6 +293,7 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
 };
 
 export const getDomainConfigForHost = (hostname: string): DomainConfig | undefined => DOMAIN_CONFIG[hostname];
+export const getCanonicalHostForHost = (hostname: string): string | undefined => DOMAIN_CONFIG[hostname]?.canonicalHost;
 
 /**
  * Returns the DomainConfig for the current hostname.
@@ -308,6 +312,7 @@ export const getDomainConfig = (): DomainConfig => {
         appId: process.env.APP_ID || '71937',
         redirectUri: process.env.REDIRECT_URI || window.location.origin,
         botsFolder: process.env.BOTS_FOLDER || DEFAULT_BOTS_FOLDER,
+        canonicalHost: hostname,
         includeLegacyAppIdInOAuth: true,
         useLegacyOAuthLogin: false,
         features: DEFAULT_DOMAIN_FEATURES,

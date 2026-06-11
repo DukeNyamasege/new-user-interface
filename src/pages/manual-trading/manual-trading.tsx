@@ -5,7 +5,13 @@ import { observer } from 'mobx-react-lite';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { api_base } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
-import { SUPPORTED_VOLATILITY_MARKETS } from '@/utils/digit-strategy';
+import {
+    DIGIT_STRATEGIES,
+    SUPPORTED_VOLATILITY_MARKETS,
+    calculateDigitPercentagesFromDigits,
+    evaluateDigitStrategy,
+    type DigitStrategyId,
+} from '@/utils/digit-strategy';
 import { getLastDigitFromQuote, isExpectedStreamInterruption } from '@/utils/market-data';
 import { buyContractForUi, streamContractUntilSettled } from '@/utils/trade-purchase';
 import { safeSubscribe } from '@/utils/websocket-handler';
@@ -40,6 +46,26 @@ type TProposalPreview = {
     status: 'ready' | 'estimated';
 };
 
+type TMarketStrategyState = {
+    alertLabel: string;
+    entryFingerprint: string;
+    entryReady: boolean;
+    isQualified: boolean;
+    latestDigit: number | null;
+    latestEpoch: number | null;
+    qualifyingWinningDigits: number[];
+    recentDigits: number[];
+    strategyId: DigitStrategyId;
+    symbol: string;
+    trailingTriggerCount: number;
+    updatedAt: number;
+};
+
+type TLoadedSignal = {
+    strategyId: DigitStrategyId;
+    symbol: string;
+};
+
 const DEFAULT_TICK_COUNT = 1000;
 const MIN_TICK_COUNT = 10;
 const MAX_TICK_COUNT = 1000;
@@ -47,6 +73,8 @@ const DEFAULT_STAKE = '1';
 const DEFAULT_DURATION = '1';
 const DEFAULT_RUN_COUNT = '1';
 const LIVE_TICK_STALE_MS = 4500;
+const STRATEGY_MONITOR_SOUND_ID = 'announcement';
+const MONITOR_HISTORY_TICKS = 200;
 
 const MANUAL_MARKETS: TManualMarket[] = SUPPORTED_VOLATILITY_MARKETS.map(({ label, symbol }) => ({ label, symbol }));
 
@@ -143,6 +171,31 @@ const getQuoteFromTick = (data: any): TTickPoint | null => {
         epoch: Number(data?.tick?.epoch) || Math.floor(Date.now() / 1000),
         quote,
     };
+};
+
+const createEmptyStrategyState = (symbol: string, strategyId: DigitStrategyId): TMarketStrategyState => ({
+    alertLabel: DIGIT_STRATEGIES[strategyId].alertLabel,
+    entryFingerprint: '',
+    entryReady: false,
+    isQualified: false,
+    latestDigit: null,
+    latestEpoch: null,
+    qualifyingWinningDigits: [],
+    recentDigits: [],
+    strategyId,
+    symbol,
+    trailingTriggerCount: 0,
+    updatedAt: 0,
+});
+
+const playStrategyMonitorSound = () => {
+    if (typeof document === 'undefined') return;
+
+    const audio = document.getElementById(STRATEGY_MONITOR_SOUND_ID) as HTMLAudioElement | null;
+    if (!audio) return;
+
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
 };
 
 const formatPayout = (value: unknown, currency: string) => {
@@ -256,7 +309,16 @@ const ManualTrading = observer(() => {
     const [proposalPreviews, setProposalPreviews] = useState<Record<string, TProposalPreview>>({});
     const [isProposalLoading, setIsProposalLoading] = useState(false);
     const [proposalRefreshKey, setProposalRefreshKey] = useState(0);
+    const [loadedSignal, setLoadedSignal] = useState<TLoadedSignal | null>(null);
+    const [isSignalTradingActive, setIsSignalTradingActive] = useState(false);
+    const [focusedSignalKey, setFocusedSignalKey] = useState<string | null>(null);
+    const [monitorStatusMessage, setMonitorStatusMessage] = useState(
+        'Watching all volatility and 1s markets for Over 2 and Under 7 signals.'
+    );
+    const [marketStrategyStates, setMarketStrategyStates] = useState<Record<string, TMarketStrategyState>>({});
     const subscriptionRef = useRef<{ unsubscribe?: () => void } | null>(null);
+    const monitorSubscriptionsRef = useRef<Record<string, { unsubscribe?: () => void }>>({});
+    const monitorDigitsRef = useRef<Record<string, number[]>>({});
     const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const proposalRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const streamWatchdogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -264,6 +326,10 @@ const ManualTrading = observer(() => {
     const requestVersionRef = useRef(0);
     const proposalVersionRef = useRef(0);
     const stopRequestedRef = useRef(false);
+    const monitorVersionRef = useRef(0);
+    const loadedSignalRef = useRef<TLoadedSignal | null>(null);
+    const signalTradingActiveRef = useRef(false);
+    const lastTriggeredEntryKeyRef = useRef('');
 
     const showManualTrading = active_tab === DBOT_TABS.MANUAL_TRADING;
     const selectedMarket = MANUAL_MARKETS.find(market => market.symbol === selectedSymbol) ?? MANUAL_MARKETS[0];
@@ -274,6 +340,34 @@ const ManualTrading = observer(() => {
     const needsBarrier = BARRIER_TRADE_GROUPS.has(tradeGroup);
     const activeActions = TRADE_ACTIONS[tradeGroup];
     const currency = client.currency || 'USD';
+    const strategyTelemetry = useMemo(() => {
+        const states = Object.values(marketStrategyStates);
+        const over2Signals = states.filter(state => state.strategyId === 'OVER_2_MARKET' && state.isQualified);
+        const under7Signals = states.filter(state => state.strategyId === 'UNDER_7_MARKET' && state.isQualified);
+        const activeSignals = [...over2Signals, ...under7Signals].sort((left, right) => {
+            const leftScore = Number(left.entryReady) * 2 + Number(left.isQualified);
+            const rightScore = Number(right.entryReady) * 2 + Number(right.isQualified);
+            return rightScore - leftScore || right.updatedAt - left.updatedAt;
+        });
+
+        return {
+            activeSignals,
+            over2Count: over2Signals.length,
+            totalCount: activeSignals.length,
+            under7Count: under7Signals.length,
+        };
+    }, [marketStrategyStates]);
+    const focusedSignal =
+        (focusedSignalKey ? marketStrategyStates[focusedSignalKey] : null) ??
+        strategyTelemetry.activeSignals[0] ??
+        null;
+    const loadedSignalState = loadedSignal
+        ? marketStrategyStates[`${loadedSignal.symbol}:${loadedSignal.strategyId}`] ?? null
+        : null;
+    const signalTradeAction = loadedSignal
+        ? TRADE_ACTIONS.over_under.find(action => action.contractType === DIGIT_STRATEGIES[loadedSignal.strategyId].contractType) ??
+          null
+        : null;
     const localProposalPreviews = useMemo(() => {
         const stake = Number(stakeInput);
 
@@ -282,6 +376,15 @@ const ManualTrading = observer(() => {
             return previews;
         }, {});
     }, [activeActions, currency, selectedBarrier, stakeInput]);
+
+    useEffect(() => {
+        loadedSignalRef.current = loadedSignal;
+    }, [loadedSignal]);
+
+    useEffect(() => {
+        signalTradingActiveRef.current = isSignalTradingActive;
+    }, [isSignalTradingActive]);
+
     const clearRetryTimer = useCallback(() => {
         if (retryTimerRef.current) {
             clearTimeout(retryTimerRef.current);
@@ -466,10 +569,150 @@ const ManualTrading = observer(() => {
         };
     }, [clearRetryTimer, clearStreamWatchdogTimer, loadMarketData, showManualTrading, unsubscribe]);
 
+    const stopSignalTrading = useCallback((message?: string) => {
+        signalTradingActiveRef.current = false;
+        setIsSignalTradingActive(false);
+        stopRequestedRef.current = true;
+        if (message) {
+            setMonitorStatusMessage(message);
+        }
+    }, []);
+
+    const clearStrategyMonitorSubscriptions = useCallback(() => {
+        monitorVersionRef.current += 1;
+        Object.values(monitorSubscriptionsRef.current).forEach(subscription => {
+            try {
+                subscription.unsubscribe?.();
+            } catch {
+                // Ignore cleanup failures while manual trading is leaving the page.
+            }
+        });
+        monitorSubscriptionsRef.current = {};
+        monitorDigitsRef.current = {};
+    }, []);
+
+    useEffect(() => {
+        if (!showManualTrading) {
+            clearStrategyMonitorSubscriptions();
+            return undefined;
+        }
+
+        const monitorVersion = monitorVersionRef.current + 1;
+        monitorVersionRef.current = monitorVersion;
+        clearStrategyMonitorSubscriptions();
+        setMarketStrategyStates({});
+        setFocusedSignalKey(null);
+        setMonitorStatusMessage('Watching all volatility and 1s markets for Over 2 and Under 7 signals.');
+        let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+        const startMonitoringStreams = () => {
+            if (!api_base.api || monitorVersionRef.current !== monitorVersion) return;
+
+            SUPPORTED_VOLATILITY_MARKETS.forEach(market => {
+                void (async () => {
+                    try {
+                        const history = await (api_base.api as any).send({
+                            adjust_start_time: 1,
+                            count: Math.max(activeTickCount, MONITOR_HISTORY_TICKS),
+                            end: 'latest',
+                            start: 1,
+                            style: 'ticks',
+                            ticks_history: market.symbol,
+                        });
+
+                        if (monitorVersionRef.current !== monitorVersion) return;
+
+                        const prices = Array.isArray(history?.history?.prices) ? history.history.prices : [];
+                        const digits = prices
+                            .map((price: unknown) => getLastDigitFromQuote(Number(price), market.symbol, market.pip ?? 2))
+                            .filter(digit => Number.isInteger(digit))
+                            .slice(-Math.max(activeTickCount, MONITOR_HISTORY_TICKS));
+
+                        monitorDigitsRef.current[market.symbol] = digits;
+
+                        const observable = (api_base.api as any).subscribe({ ticks: market.symbol });
+                        monitorSubscriptionsRef.current[market.symbol] = safeSubscribe(observable, (data: any) => {
+                            if (monitorVersionRef.current !== monitorVersion) return;
+                            const quote = Number(data?.tick?.quote);
+                            const epoch = Number(data?.tick?.epoch);
+                            if (!Number.isFinite(quote)) return;
+
+                            const latestDigit = getLastDigitFromQuote(quote, market.symbol, market.pip ?? 2);
+                            const nextDigits = [...(monitorDigitsRef.current[market.symbol] ?? []), latestDigit].slice(
+                                -Math.max(activeTickCount, MONITOR_HISTORY_TICKS)
+                            );
+                            monitorDigitsRef.current[market.symbol] = nextDigits;
+                            const percentages = calculateDigitPercentagesFromDigits(nextDigits);
+
+                            setMarketStrategyStates(previous => {
+                                const nextStateMap = { ...previous };
+
+                                (Object.keys(DIGIT_STRATEGIES) as DigitStrategyId[]).forEach(strategyId => {
+                                    const key = `${market.symbol}:${strategyId}`;
+                                    const prior = previous[key] ?? createEmptyStrategyState(market.symbol, strategyId);
+                                    const evaluation = evaluateDigitStrategy(strategyId, percentages, nextDigits);
+                                    const snapshot: TMarketStrategyState = {
+                                        alertLabel: evaluation.alertLabel,
+                                        entryFingerprint: evaluation.entryReady
+                                            ? `${market.symbol}:${strategyId}:${epoch}:${nextDigits.slice(-4).join('')}`
+                                            : '',
+                                        entryReady: evaluation.entryReady,
+                                        isQualified: evaluation.isQualified,
+                                        latestDigit,
+                                        latestEpoch: Number.isFinite(epoch) ? epoch : null,
+                                        qualifyingWinningDigits: evaluation.qualifyingWinningDigits,
+                                        recentDigits: nextDigits.slice(-4),
+                                        strategyId,
+                                        symbol: market.symbol,
+                                        trailingTriggerCount: evaluation.trailingTriggerCount,
+                                        updatedAt: Date.now(),
+                                    };
+                                    nextStateMap[key] = snapshot;
+
+                                    if (!prior.isQualified && snapshot.isQualified) {
+                                        playStrategyMonitorSound();
+                                        setFocusedSignalKey(key);
+                                        setMonitorStatusMessage(
+                                            `${market.label} matched ${snapshot.alertLabel}. Load market to prepare entry.`
+                                        );
+                                    }
+                                });
+
+                                return nextStateMap;
+                            });
+                        });
+                    } catch {
+                        // Keep background monitoring resilient even if one stream fails.
+                    }
+                })();
+            });
+        };
+
+        const waitForScannerConnection = () => {
+            if (monitorVersionRef.current !== monitorVersion) return;
+            if (api_base.api) {
+                startMonitoringStreams();
+                return;
+            }
+            setMonitorStatusMessage('Connecting multi-market scanner...');
+            retryTimer = setTimeout(waitForScannerConnection, 1000);
+        };
+
+        waitForScannerConnection();
+
+        return () => {
+            if (retryTimer) clearTimeout(retryTimer);
+            clearStrategyMonitorSubscriptions();
+        };
+    }, [activeTickCount, clearStrategyMonitorSubscriptions, showManualTrading]);
+
     const buildTradeParameters = useCallback(
         (contractType: TManualTradeAction['contractType']) => {
             const stake = Number(stakeInput);
             const duration = clampDuration(Number(durationInput));
+            const loadedStrategy = loadedSignalRef.current ? DIGIT_STRATEGIES[loadedSignalRef.current.strategyId] : null;
+            const barrierValue =
+                loadedStrategy?.contractType === contractType ? loadedStrategy.winBarrier : selectedBarrier;
             const parameters: Record<string, number | string> = {
                 amount: stake,
                 basis: 'stake',
@@ -480,7 +723,7 @@ const ManualTrading = observer(() => {
                 symbol: selectedSymbol,
             };
 
-            if (needsBarrier) parameters.barrier = selectedBarrier;
+            if (needsBarrier) parameters.barrier = barrierValue;
 
             return parameters;
         },
@@ -580,17 +823,34 @@ const ManualTrading = observer(() => {
         setActiveTickCount(nextTickCount);
     };
 
-    const handleMarketChange = (symbol: string) => {
+    const changeSelectedMarket = useCallback((symbol: string, source: 'user' | 'signal' = 'user') => {
         requestVersionRef.current += 1;
         clearRetryTimer();
         clearStreamWatchdogTimer();
         unsubscribe();
         lastLiveTickAtRef.current = 0;
+        if (source === 'user') {
+            if (loadedSignalRef.current && loadedSignalRef.current.symbol !== symbol) {
+                stopSignalTrading('Manual market changed. Signal trading was stopped.');
+                setLoadedSignal(null);
+                lastTriggeredEntryKeyRef.current = '';
+            }
+        }
         setSelectedSymbol(symbol);
         setTicks([]);
         setProposalPreviews(localProposalPreviews);
         setError(null);
         setIsLoading(true);
+    }, [
+        clearRetryTimer,
+        clearStreamWatchdogTimer,
+        localProposalPreviews,
+        stopSignalTrading,
+        unsubscribe,
+    ]);
+
+    const handleMarketChange = (symbol: string) => {
+        changeSelectedMarket(symbol, 'user');
     };
 
     const handleTickCountChange = (value: string) => {
@@ -618,7 +878,40 @@ const ManualTrading = observer(() => {
         setStakeInput(cleaned);
     };
 
-    const handleManualPurchase = async (action: TManualTradeAction) => {
+    const handleLoadSignalMarket = useCallback(
+        (signal: TMarketStrategyState) => {
+            const strategy = DIGIT_STRATEGIES[signal.strategyId];
+            setTradeGroup('over_under');
+            setSelectedBarrier(strategy.winBarrier);
+            setLoadedSignal({ strategyId: signal.strategyId, symbol: signal.symbol });
+            setFocusedSignalKey(`${signal.symbol}:${signal.strategyId}`);
+            setMonitorStatusMessage(
+                `${SUPPORTED_VOLATILITY_MARKETS.find(market => market.symbol === signal.symbol)?.label ?? signal.symbol} loaded. Click Start Trading to wait for the entry trigger.`
+            );
+            lastTriggeredEntryKeyRef.current = '';
+            stopSignalTrading();
+            changeSelectedMarket(signal.symbol, 'signal');
+        },
+        [changeSelectedMarket, stopSignalTrading]
+    );
+
+    const handleStartSignalTrading = useCallback(() => {
+        if (!loadedSignalState?.isQualified) {
+            setMonitorStatusMessage('The loaded market no longer matches the strategy. Wait for a fresh signal.');
+            return;
+        }
+
+        signalTradingActiveRef.current = true;
+        setIsSignalTradingActive(true);
+        setTradeError('');
+        setTradeMessage('');
+        stopRequestedRef.current = false;
+        setMonitorStatusMessage(
+            `${SUPPORTED_VOLATILITY_MARKETS.find(market => market.symbol === loadedSignalState.symbol)?.label ?? loadedSignalState.symbol} armed. Waiting for ${DIGIT_STRATEGIES[loadedSignalState.strategyId].entryLabel.toLowerCase()}`
+        );
+    }, [loadedSignalState]);
+
+    const handleManualPurchase = useCallback(async (action: TManualTradeAction) => {
         const stake = Number(stakeInput);
         if (!Number.isFinite(stake) || stake <= 0) {
             setTradeError('Enter a valid stake before buying a contract.');
@@ -705,12 +998,46 @@ const ManualTrading = observer(() => {
             setIsPurchasing(false);
             stopRequestedRef.current = false;
         }
-    };
+    }, [
+        buildTradeParameters,
+        currency,
+        pushContract,
+        runCountInput,
+        selectedMarket.label,
+        selectedSymbol,
+        stakeInput,
+    ]);
 
     const handleStopRuns = () => {
         stopRequestedRef.current = true;
         setTradeMessage('Manual stop requested. The current contract will finish, then remaining runs will halt.');
     };
+
+    useEffect(() => {
+        if (!loadedSignal || !loadedSignalState) return;
+
+        if (!loadedSignalState.isQualified && signalTradingActiveRef.current) {
+            stopSignalTrading(
+                `${SUPPORTED_VOLATILITY_MARKETS.find(market => market.symbol === loadedSignal.symbol)?.label ?? loadedSignal.symbol} no longer matches ${loadedSignalState.alertLabel}. Trading stopped by safety check.`
+            );
+            lastTriggeredEntryKeyRef.current = '';
+        }
+    }, [loadedSignal, loadedSignalState, stopSignalTrading]);
+
+    useEffect(() => {
+        if (!loadedSignalState || !signalTradeAction || !isSignalTradingActive || isPurchasing) return;
+        if (!loadedSignalState.isQualified || !loadedSignalState.entryReady || !loadedSignalState.entryFingerprint) return;
+        if (lastTriggeredEntryKeyRef.current === loadedSignalState.entryFingerprint) return;
+
+        lastTriggeredEntryKeyRef.current = loadedSignalState.entryFingerprint;
+        setMonitorStatusMessage(
+            `${loadedSignalState.alertLabel} entry confirmed on ${
+                SUPPORTED_VOLATILITY_MARKETS.find(market => market.symbol === loadedSignalState.symbol)?.label ??
+                loadedSignalState.symbol
+            }. Executing ${signalTradeAction.label}.`
+        );
+        void handleManualPurchase(signalTradeAction);
+    }, [handleManualPurchase, isPurchasing, isSignalTradingActive, loadedSignalState, signalTradeAction]);
 
     if (!showManualTrading) return null;
 
@@ -913,6 +1240,97 @@ const ManualTrading = observer(() => {
                     </div>
                 )}
             </section>
+
+            <aside
+                className={classNames('manual-trading-signal-popup', {
+                    'manual-trading-signal-popup--active': strategyTelemetry.totalCount > 0 || loadedSignalState,
+                })}
+            >
+                <div className='manual-trading-signal-popup__header'>
+                    <strong>Signal monitor</strong>
+                    <span>{strategyTelemetry.totalCount} active</span>
+                </div>
+
+                <div className='manual-trading-signal-popup__counts'>
+                    <div className='manual-trading-signal-popup__count-card'>
+                        <span>Over 2</span>
+                        <strong>{strategyTelemetry.over2Count}</strong>
+                    </div>
+                    <div className='manual-trading-signal-popup__count-card'>
+                        <span>Under 7</span>
+                        <strong>{strategyTelemetry.under7Count}</strong>
+                    </div>
+                </div>
+
+                <p className='manual-trading-signal-popup__message'>{monitorStatusMessage}</p>
+
+                {focusedSignal && (
+                    <div className='manual-trading-signal-popup__focus'>
+                        <div>
+                            <strong>{SUPPORTED_VOLATILITY_MARKETS.find(market => market.symbol === focusedSignal.symbol)?.label ?? focusedSignal.symbol}</strong>
+                            <span>{focusedSignal.alertLabel}</span>
+                        </div>
+                        <div className='manual-trading-signal-popup__badge'>
+                            {focusedSignal.entryReady ? 'ENTRY READY' : focusedSignal.isQualified ? 'SIGNAL LOADING' : 'WATCHING'}
+                        </div>
+                    </div>
+                )}
+
+                {focusedSignal && (
+                    <p className='manual-trading-signal-popup__detail'>
+                        {focusedSignal.isQualified
+                            ? `Winning digits: ${focusedSignal.qualifyingWinningDigits.join(', ')}. Trigger streak ${focusedSignal.trailingTriggerCount}/3.`
+                            : 'Waiting for the qualification percentages to line up.'}
+                    </p>
+                )}
+
+                <div className='manual-trading-signal-popup__actions'>
+                    <button
+                        type='button'
+                        className='manual-trading-signal-popup__button manual-trading-signal-popup__button--primary'
+                        disabled={!focusedSignal || !focusedSignal.isQualified}
+                        onClick={() => focusedSignal && handleLoadSignalMarket(focusedSignal)}
+                    >
+                        Load market
+                    </button>
+                    <button
+                        type='button'
+                        className='manual-trading-signal-popup__button'
+                        disabled={!loadedSignalState?.isQualified || isSignalTradingActive}
+                        onClick={handleStartSignalTrading}
+                    >
+                        Start trading
+                    </button>
+                    <button
+                        type='button'
+                        className='manual-trading-signal-popup__button'
+                        disabled={!isSignalTradingActive && !isPurchasing}
+                        onClick={() => stopSignalTrading('Signal trading stopped manually.')}
+                    >
+                        Stop
+                    </button>
+                </div>
+
+                {loadedSignalState && (
+                    <div className='manual-trading-signal-popup__loaded'>
+                        Loaded:
+                        {' '}
+                        {SUPPORTED_VOLATILITY_MARKETS.find(market => market.symbol === loadedSignalState.symbol)?.label ?? loadedSignalState.symbol}
+                        {' '}
+                        ·
+                        {' '}
+                        {loadedSignalState.alertLabel}
+                        {' '}
+                        ·
+                        {' '}
+                        {isSignalTradingActive
+                            ? loadedSignalState.entryReady
+                                ? 'Entry live'
+                                : 'Waiting for entry'
+                            : 'Ready to arm'}
+                    </div>
+                )}
+            </aside>
         </div>
     );
 });

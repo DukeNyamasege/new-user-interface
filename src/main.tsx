@@ -1,5 +1,6 @@
 import { configure } from 'mobx';
 import ReactDOM from 'react-dom/client';
+import { getCanonicalHostForHost } from '@/components/shared';
 import { AuthWrapper } from './app/AuthWrapper';
 // Removed AnalyticsInitializer import - analytics dependency removed
 // See migrate-docs/ANALYTICS_IMPLEMENTATION_GUIDE.md for re-implementation
@@ -20,6 +21,19 @@ setupDiagnostics();
 
 removeLegacyPwaState();
 
-// Removed AnalyticsInitializer() call - analytics dependency removed
+const canonicalHost = getCanonicalHostForHost(window.location.hostname);
+const shouldRedirectToCanonicalHost = Boolean(canonicalHost && canonicalHost !== window.location.hostname);
 
-ReactDOM.createRoot(document.getElementById('root')!).render(<AuthWrapper />);
+if (shouldRedirectToCanonicalHost && canonicalHost) {
+    const canonicalUrl = new URL(window.location.href);
+    canonicalUrl.hostname = canonicalHost;
+    canonicalUrl.port = '';
+    window.location.replace(canonicalUrl.toString());
+}
+
+if (shouldRedirectToCanonicalHost) {
+    // Stop bootstrapping on the alias host while the browser navigates.
+} else {
+    // Removed AnalyticsInitializer() call - analytics dependency removed
+    ReactDOM.createRoot(document.getElementById('root')!).render(<AuthWrapper />);
+}
