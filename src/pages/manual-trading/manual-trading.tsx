@@ -2,6 +2,7 @@
 import type { CSSProperties } from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
+import Dialog from '@/components/shared_ui/dialog';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { api_base } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
@@ -312,6 +313,7 @@ const ManualTrading = observer(() => {
     const [loadedSignal, setLoadedSignal] = useState<TLoadedSignal | null>(null);
     const [isSignalTradingActive, setIsSignalTradingActive] = useState(false);
     const [focusedSignalKey, setFocusedSignalKey] = useState<string | null>(null);
+    const [isSignalLauncherVisible, setIsSignalLauncherVisible] = useState(false);
     const [monitorStatusMessage, setMonitorStatusMessage] = useState(
         'Watching all volatility and 1s markets for Over 2 and Under 7 signals.'
     );
@@ -330,6 +332,7 @@ const ManualTrading = observer(() => {
     const loadedSignalRef = useRef<TLoadedSignal | null>(null);
     const signalTradingActiveRef = useRef(false);
     const lastTriggeredEntryKeyRef = useRef('');
+    const previousQualifiedSignalKeyRef = useRef<string | null>(null);
 
     const showManualTrading = active_tab === DBOT_TABS.MANUAL_TRADING;
     const selectedMarket = MANUAL_MARKETS.find(market => market.symbol === selectedSymbol) ?? MANUAL_MARKETS[0];
@@ -361,6 +364,7 @@ const ManualTrading = observer(() => {
         (focusedSignalKey ? marketStrategyStates[focusedSignalKey] : null) ??
         strategyTelemetry.activeSignals[0] ??
         null;
+    const actionableSignal = focusedSignal?.isQualified ? focusedSignal : strategyTelemetry.activeSignals[0] ?? null;
     const loadedSignalState = loadedSignal
         ? marketStrategyStates[`${loadedSignal.symbol}:${loadedSignal.strategyId}`] ?? null
         : null;
@@ -384,6 +388,16 @@ const ManualTrading = observer(() => {
     useEffect(() => {
         signalTradingActiveRef.current = isSignalTradingActive;
     }, [isSignalTradingActive]);
+
+    useEffect(() => {
+        const nextQualifiedSignalKey = actionableSignal ? `${actionableSignal.symbol}:${actionableSignal.strategyId}` : null;
+
+        if (nextQualifiedSignalKey && previousQualifiedSignalKeyRef.current !== nextQualifiedSignalKey) {
+            setIsSignalLauncherVisible(true);
+        }
+
+        previousQualifiedSignalKeyRef.current = nextQualifiedSignalKey;
+    }, [actionableSignal]);
 
     const clearRetryTimer = useCallback(() => {
         if (retryTimerRef.current) {
@@ -1241,11 +1255,23 @@ const ManualTrading = observer(() => {
                 )}
             </section>
 
-            <aside
-                className={classNames('manual-trading-signal-popup', {
-                    'manual-trading-signal-popup--active': strategyTelemetry.totalCount > 0 || loadedSignalState,
-                })}
+            <Dialog
+                className='manual-trading-signal-modal'
+                has_close_icon
+                is_content_centered={false}
+                is_mobile_full_width={false}
+                is_visible={isSignalLauncherVisible && Boolean(actionableSignal || loadedSignalState || isSignalTradingActive)}
+                login={() => undefined}
+                onClose={() => setIsSignalLauncherVisible(false)}
+                onConfirm={() => undefined}
+                portal_element_id='modal_root'
+                title='Strategy launcher'
             >
+                <div
+                    className={classNames('manual-trading-signal-popup', {
+                        'manual-trading-signal-popup--active': strategyTelemetry.totalCount > 0 || loadedSignalState,
+                    })}
+                >
                 <div className='manual-trading-signal-popup__header'>
                     <strong>Signal monitor</strong>
                     <span>{strategyTelemetry.totalCount} active</span>
@@ -1264,22 +1290,22 @@ const ManualTrading = observer(() => {
 
                 <p className='manual-trading-signal-popup__message'>{monitorStatusMessage}</p>
 
-                {focusedSignal && (
+                {actionableSignal && (
                     <div className='manual-trading-signal-popup__focus'>
                         <div>
-                            <strong>{SUPPORTED_VOLATILITY_MARKETS.find(market => market.symbol === focusedSignal.symbol)?.label ?? focusedSignal.symbol}</strong>
-                            <span>{focusedSignal.alertLabel}</span>
+                            <strong>{SUPPORTED_VOLATILITY_MARKETS.find(market => market.symbol === actionableSignal.symbol)?.label ?? actionableSignal.symbol}</strong>
+                            <span>{actionableSignal.alertLabel}</span>
                         </div>
                         <div className='manual-trading-signal-popup__badge'>
-                            {focusedSignal.entryReady ? 'ENTRY READY' : focusedSignal.isQualified ? 'SIGNAL LOADING' : 'WATCHING'}
+                            {actionableSignal.entryReady ? 'ENTRY READY' : actionableSignal.isQualified ? 'SIGNAL READY' : 'WATCHING'}
                         </div>
                     </div>
                 )}
 
-                {focusedSignal && (
+                {actionableSignal && (
                     <p className='manual-trading-signal-popup__detail'>
-                        {focusedSignal.isQualified
-                            ? `Winning digits: ${focusedSignal.qualifyingWinningDigits.join(', ')}. Trigger streak ${focusedSignal.trailingTriggerCount}/3.`
+                        {actionableSignal.isQualified
+                            ? `Winning digits: ${actionableSignal.qualifyingWinningDigits.join(', ')}. Trigger streak ${actionableSignal.trailingTriggerCount}/3.`
                             : 'Waiting for the qualification percentages to line up.'}
                     </p>
                 )}
@@ -1288,8 +1314,8 @@ const ManualTrading = observer(() => {
                     <button
                         type='button'
                         className='manual-trading-signal-popup__button manual-trading-signal-popup__button--primary'
-                        disabled={!focusedSignal || !focusedSignal.isQualified}
-                        onClick={() => focusedSignal && handleLoadSignalMarket(focusedSignal)}
+                        disabled={!actionableSignal || !actionableSignal.isQualified}
+                        onClick={() => actionableSignal && handleLoadSignalMarket(actionableSignal)}
                     >
                         Load market
                     </button>
@@ -1330,7 +1356,8 @@ const ManualTrading = observer(() => {
                             : 'Ready to arm'}
                     </div>
                 )}
-            </aside>
+                </div>
+            </Dialog>
         </div>
     );
 });
