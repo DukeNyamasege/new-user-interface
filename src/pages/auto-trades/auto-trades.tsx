@@ -37,11 +37,18 @@ type AutoMarket = { symbol: string; label: string; pip: number };
 type Direction = 1 | -1 | 0;
 type AiFabPosition = { left: number; top: number };
 type StrategyTemplate = 'STANDARD' | DigitStrategyId;
+type FloatingStrategyAlert = {
+    marketLabel: string;
+    message: string;
+    strategyId: DigitStrategyId;
+    symbol: string;
+};
 
 const FIVE_MINUTE_GRANULARITY = 300;
 const AI_FAB_SIZE = 72;
 const AI_FAB_MARGIN = 12;
 const AI_FAB_BOTTOM_GUARD = 82;
+const STRATEGY_ALERT_SOUND_ID = 'announcement';
 
 const AUTO_MARKETS: AutoMarket[] = SUPPORTED_VOLATILITY_MARKETS.map(market => ({
     label: market.label.replace('Volatility ', 'Vol ').replace(' Index', ''),
@@ -264,6 +271,16 @@ const getTemplateTradeConfig = (template: StrategyTemplate) => {
         return { barrier: '7', tradeType: 'DIGITUNDER' as TradeType };
     }
     return null;
+};
+
+const playStrategyAlertSound = () => {
+    if (typeof document === 'undefined') return;
+
+    const audio = document.getElementById(STRATEGY_ALERT_SOUND_ID) as HTMLAudioElement | null;
+    if (!audio) return;
+
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
 };
 
 const clampAiFabPosition = (left: number, top: number): AiFabPosition => {
@@ -1140,6 +1157,7 @@ const AutoTrades = observer(() => {
     const [cooldownDisplay, setCooldownDisplay] = useState(0);
     const [dataStreamLoading, setDataStreamLoading] = useState(false);
     const [dataStreamMessage, setDataStreamMessage] = useState('Loading selected market data...');
+    const [floatingStrategyAlert, setFloatingStrategyAlert] = useState<FloatingStrategyAlert | null>(null);
 
     const [marketDisplays, setMarketDisplays] = useState<MarketDisplay[]>(
         selectedMarkets.map(m => ({
@@ -1176,6 +1194,7 @@ const AutoTrades = observer(() => {
     const candleSubscriptionsRef = useRef<Record<string, any>>({});
     const selectedMarketsRef = useRef<AutoMarket[]>(selectedMarkets);
     const selectedMarketSymbolsRef = useRef<Set<string>>(new Set(selectedMarketSymbols));
+    const monitoredMarketSymbolsRef = useRef<Set<string>>(new Set(selectedMarketSymbols));
     const marketStatesRef = useRef<Record<string, MarketState>>(
         Object.fromEntries(AUTO_MARKETS.map(m => [m.symbol, createMarketState()]))
     );
@@ -1226,6 +1245,8 @@ const AutoTrades = observer(() => {
     const show_auto_ref = useRef(show_auto);
     show_auto_ref.current = show_auto;
     const unmountedRef = useRef(false);
+    const stopTradingRef = useRef<() => void>(() => {});
+    const floatingStrategyAlertRef = useRef<FloatingStrategyAlert | null>(null);
 
     useEffect(() => {
         setAiFabPosition(current => {
@@ -1441,6 +1462,16 @@ const AutoTrades = observer(() => {
     }, [selectedMarketSymbols, selectedMarkets]);
 
     useEffect(() => {
+        monitoredMarketSymbolsRef.current = new Set(
+            strategyTemplate === 'STANDARD' ? selectedMarketSymbols : AUTO_MARKET_SYMBOLS
+        );
+    }, [selectedMarketSymbols, strategyTemplate]);
+
+    useEffect(() => {
+        floatingStrategyAlertRef.current = floatingStrategyAlert;
+    }, [floatingStrategyAlert]);
+
+    useEffect(() => {
         inverseModeRef.current = inverseMode;
         try {
             localStorage.setItem('auto_trades_inverseMode', String(inverseMode));
@@ -1578,12 +1609,17 @@ const AutoTrades = observer(() => {
 
     useEffect(() => {
         if (!show_auto) return;
+        if (strategyTemplate !== 'STANDARD' || selectedMarketSymbols.length > 0) {
+            setDataRecoveryLoading(
+                strategyTemplate === 'STANDARD' ? 'Loading selected market data...' : 'Loading strategy scanner data...'
+            );
+            return;
+        }
         if (selectedMarketSymbols.length === 0) {
             clearDataRecoveryLoading();
             return;
         }
-        setDataRecoveryLoading('Loading selected market data...');
-    }, [clearDataRecoveryLoading, selectedMarketSymbols.length, setDataRecoveryLoading, show_auto]);
+    }, [clearDataRecoveryLoading, selectedMarketSymbols.length, setDataRecoveryLoading, show_auto, strategyTemplate]);
 
     const handleAddMarket = useCallback((symbol: string) => {
         if (!AUTO_MARKET_LOOKUP.has(symbol) || runningRef.current) return;
@@ -1601,6 +1637,27 @@ const AutoTrades = observer(() => {
 
     const handleClearMarkets = useCallback(() => {
         if (!runningRef.current) setSelectedMarketSymbols([]);
+    }, []);
+
+    const handleLoadAlertMarket = useCallback((symbol: string, strategyId: DigitStrategyId) => {
+        const market = AUTO_MARKET_LOOKUP.get(symbol);
+        const strategy = DIGIT_STRATEGIES[strategyId];
+        if (!market || !strategy) return;
+
+        setStrategyTemplate(strategyId);
+        setTradeType(strategy.contractType);
+        setBarrier(strategy.winBarrier);
+        setSelectedMarketSymbols([symbol]);
+        setFloatingStrategyAlert(null);
+        setError(null);
+        try {
+            localStorage.setItem('auto_trades_strategyTemplate', strategyId);
+            localStorage.setItem('auto_trades_tradeType', strategy.contractType);
+            localStorage.setItem('auto_trades_barrier', strategy.winBarrier);
+            localStorage.setItem('auto_trades_markets', JSON.stringify([symbol]));
+        } catch {
+            // Ignore localStorage write failures.
+        }
     }, []);
 
     const applyAiSettings = useCallback((result: AiAutoTradeParseResult) => {
@@ -1975,7 +2032,7 @@ const AutoTrades = observer(() => {
 
     const handleTick = useCallback(
         (symbol: string, tick: any) => {
-            if (!selectedMarketSymbolsRef.current.has(symbol)) return;
+            if (!monitoredMarketSymbolsRef.current.has(symbol)) return;
 
             const state = marketStatesRef.current[symbol];
             if (!state) return;
@@ -2047,6 +2104,7 @@ const AutoTrades = observer(() => {
                     : null;
 
             if (specialStrategyEvaluation) {
+                const wasAlertActive = state.alertActive;
                 state.alertActive = specialStrategyEvaluation.isQualified;
                 state.specialEntryReady = specialStrategyEvaluation.entryReady;
                 state.trailingTriggerCount = specialStrategyEvaluation.trailingTriggerCount;
@@ -2054,6 +2112,37 @@ const AutoTrades = observer(() => {
                 state.alertMessage = specialStrategyEvaluation.isQualified
                     ? `${specialStrategyEvaluation.alertLabel} ready to watch. Winning digits >= 10.5%: ${specialStrategyEvaluation.qualifyingWinningDigits.join(', ')}`
                     : `${specialStrategyEvaluation.alertLabel} waiting for qualifying percentages.`;
+
+                if (!wasAlertActive && specialStrategyEvaluation.isQualified) {
+                    const marketLabel = AUTO_MARKET_LOOKUP.get(symbol)?.label ?? symbol;
+                    playStrategyAlertSound();
+                    setFloatingStrategyAlert({
+                        marketLabel,
+                        message: state.alertMessage,
+                        strategyId: activeStrategyTemplate,
+                        symbol,
+                    });
+                } else if (
+                    floatingStrategyAlertRef.current?.symbol === symbol &&
+                    floatingStrategyAlertRef.current?.strategyId === activeStrategyTemplate &&
+                    !specialStrategyEvaluation.isQualified
+                ) {
+                    setFloatingStrategyAlert(current =>
+                        current?.symbol === symbol && current.strategyId === activeStrategyTemplate ? null : current
+                    );
+                }
+
+                if (
+                    runningRef.current &&
+                    selectedMarketSymbolsRef.current.has(symbol) &&
+                    !specialStrategyEvaluation.isQualified
+                ) {
+                    stopTradingRef.current();
+                    setError(
+                        `${AUTO_MARKET_LOOKUP.get(symbol)?.label ?? symbol} no longer matches ${specialStrategyEvaluation.alertLabel}. Auto Trades stopped.`
+                    );
+                    return;
+                }
             } else {
                 state.alertActive = false;
                 state.specialEntryReady = false;
@@ -2213,10 +2302,13 @@ const AutoTrades = observer(() => {
 
     const startSubscriptions = useCallback(async () => {
         const subscriptionVersion = subscriptionVersionRef.current;
-        const selectedSymbolSet = new Set(selectedMarketsRef.current.map(({ symbol }) => symbol));
+        const monitorAllMarkets = strategyTemplateRef.current !== 'STANDARD';
+        const marketsToMonitor = monitorAllMarkets ? AUTO_MARKETS : selectedMarketsRef.current;
+        const monitoredSymbolSet = new Set(marketsToMonitor.map(({ symbol }) => symbol));
+        const candleSymbolSet = monitorAllMarkets ? new Set<string>() : new Set(selectedMarketsRef.current.map(({ symbol }) => symbol));
 
         Object.entries(subscriptionsRef.current).forEach(([symbol, sub]) => {
-            if (!selectedSymbolSet.has(symbol)) {
+            if (!monitoredSymbolSet.has(symbol)) {
                 try {
                     sub?.unsubscribe?.();
                 } catch {
@@ -2228,7 +2320,7 @@ const AutoTrades = observer(() => {
         });
 
         Object.entries(candleSubscriptionsRef.current).forEach(([symbol, sub]) => {
-            if (!selectedSymbolSet.has(symbol)) {
+            if (!candleSymbolSet.has(symbol)) {
                 try {
                     sub?.unsubscribe?.();
                 } catch {
@@ -2239,16 +2331,16 @@ const AutoTrades = observer(() => {
             }
         });
 
-        if (selectedMarketsRef.current.length === 0) {
+        if (marketsToMonitor.length === 0) {
             setIsConnected(false);
             clearDataRecoveryLoading();
             return;
         }
 
         lastTickAtRef.current = Date.now();
-        setDataRecoveryLoading('Loading selected market data...');
+        setDataRecoveryLoading(monitorAllMarkets ? 'Loading strategy scanner data...' : 'Loading selected market data...');
 
-        for (const market of selectedMarketsRef.current) {
+        for (const market of marketsToMonitor) {
             if (strategyModeRef.current === 'PERCENTAGE' || strategyTemplateRef.current !== 'STANDARD') {
                 backfillPercentageTicks(market);
             }
@@ -2288,7 +2380,7 @@ const AutoTrades = observer(() => {
                 }
             }
 
-            if (!candleSubscriptionsRef.current[market.symbol]) {
+            if (!monitorAllMarkets && !candleSubscriptionsRef.current[market.symbol]) {
                 try {
                     const obs = (api_base.api as any).subscribe({
                         ticks_history: market.symbol,
@@ -2478,6 +2570,10 @@ const AutoTrades = observer(() => {
 
     const handleStop = useCallback(() => {
         stopTrading();
+    }, [stopTrading]);
+
+    useEffect(() => {
+        stopTradingRef.current = stopTrading;
     }, [stopTrading]);
 
     useEffect(() => {
@@ -2734,6 +2830,32 @@ const AutoTrades = observer(() => {
 
                     {error && <div className='auto-trades-page__error'>{error}</div>}
 
+                    {floatingStrategyAlert && (
+                        <div className='auto-trades-floating-alert' role='status' aria-live='polite'>
+                            <div className='auto-trades-floating-alert__eyebrow'>
+                                {DIGIT_STRATEGIES[floatingStrategyAlert.strategyId].alertLabel} ready
+                            </div>
+                            <strong>{floatingStrategyAlert.marketLabel}</strong>
+                            <p>{floatingStrategyAlert.message}</p>
+                            <div className='auto-trades-floating-alert__actions'>
+                                <button
+                                    type='button'
+                                    onClick={() =>
+                                        handleLoadAlertMarket(
+                                            floatingStrategyAlert.symbol,
+                                            floatingStrategyAlert.strategyId
+                                        )
+                                    }
+                                >
+                                    Load market
+                                </button>
+                                <button type='button' onClick={() => setFloatingStrategyAlert(null)}>
+                                    Dismiss
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     {isDataLoading && (
                         <div className='auto-trades-page__loader'>
                             <div className='auto-trades-data-loader auto-trades-data-loader--panel'>
@@ -2773,7 +2895,7 @@ const AutoTrades = observer(() => {
                                     </div>
                                     <p className='auto-trades-inverse__hint'>
                                         {usingSpecialStrategy
-                                            ? 'Scans every selected market for the percentage alert first, then auto-buys only when the entry digit confirms.'
+                                            ? 'Scans every volatility and 1s market in the background. When one qualifies, load that market and click Start Trading to wait for the entry and buy automatically.'
                                             : 'Use the standard contract builder to configure your own auto-trade rule.'}
                                     </p>
                                 </div>
@@ -3135,11 +3257,11 @@ const AutoTrades = observer(() => {
                                             onClick={handleRun}
                                             disabled={!client.is_logged_in || selectedMarketSymbols.length === 0}
                                         >
-                                            ▶ Run Auto Trades
+                                            ▶ Start Trading
                                         </button>
                                     ) : (
                                         <button className='auto-trades-controls__stop' onClick={handleStop}>
-                                            ■ Stop
+                                            ■ Stop Trading
                                         </button>
                                     )}
                                 </div>
@@ -3172,7 +3294,9 @@ const AutoTrades = observer(() => {
                             )}
                             {selectedMarketSymbols.length === 0 && (
                                 <div className='auto-trades-hint'>
-                                    Select at least one market to show live quotes and enable Auto Trades.
+                                    {usingSpecialStrategy
+                                        ? 'Background scanning is live across all supported volatility markets. Load one alert market to enable Start Trading.'
+                                        : 'Select at least one market to show live quotes and enable Auto Trades.'}
                                 </div>
                             )}
                             <div className='auto-trades-markets__grid'>

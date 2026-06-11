@@ -5,7 +5,7 @@ import { observer } from 'mobx-react-lite';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { api_base } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
-import { DIGIT_STRATEGIES, evaluateDigitStrategy, SUPPORTED_VOLATILITY_MARKETS, type DigitStrategyId } from '@/utils/digit-strategy';
+import { SUPPORTED_VOLATILITY_MARKETS } from '@/utils/digit-strategy';
 import { getLastDigitFromQuote, isExpectedStreamInterruption } from '@/utils/market-data';
 import { buyContractForUi, streamContractUntilSettled } from '@/utils/trade-purchase';
 import { safeSubscribe } from '@/utils/websocket-handler';
@@ -256,7 +256,6 @@ const ManualTrading = observer(() => {
     const [proposalPreviews, setProposalPreviews] = useState<Record<string, TProposalPreview>>({});
     const [isProposalLoading, setIsProposalLoading] = useState(false);
     const [proposalRefreshKey, setProposalRefreshKey] = useState(0);
-    const [guidedStrategy, setGuidedStrategy] = useState<DigitStrategyId>('OVER_2_MARKET');
     const subscriptionRef = useRef<{ unsubscribe?: () => void } | null>(null);
     const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const proposalRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -271,10 +270,6 @@ const ManualTrading = observer(() => {
     const latestTick = ticks[ticks.length - 1] ?? null;
     const latestDigit = latestTick ? getLastDigitFromQuote(latestTick.quote, selectedSymbol) : null;
     const digitStats = useMemo(() => calculateDigitStats(ticks, selectedSymbol), [selectedSymbol, ticks]);
-    const digitPercentages = useMemo(
-        () => Object.fromEntries(digitStats.map(stat => [stat.digit, stat.percent])),
-        [digitStats]
-    );
     const specialDigitColorMap = useMemo(() => getSpecialDigitColorMap(digitStats, ticks.length > 0), [digitStats, ticks.length]);
     const needsBarrier = BARRIER_TRADE_GROUPS.has(tradeGroup);
     const activeActions = TRADE_ACTIONS[tradeGroup];
@@ -287,16 +282,6 @@ const ManualTrading = observer(() => {
             return previews;
         }, {});
     }, [activeActions, currency, selectedBarrier, stakeInput]);
-    const strategyAssessment = useMemo(
-        () =>
-            evaluateDigitStrategy(
-                guidedStrategy,
-                digitPercentages,
-                ticks.map(tick => getLastDigitFromQuote(tick.quote, selectedSymbol))
-            ),
-        [digitPercentages, guidedStrategy, selectedSymbol, ticks]
-    );
-
     const clearRetryTimer = useCallback(() => {
         if (retryTimerRef.current) {
             clearTimeout(retryTimerRef.current);
@@ -727,12 +712,6 @@ const ManualTrading = observer(() => {
         setTradeMessage('Manual stop requested. The current contract will finish, then remaining runs will halt.');
     };
 
-    const applyGuidedStrategy = () => {
-        const strategy = DIGIT_STRATEGIES[guidedStrategy];
-        setTradeGroup('over_under');
-        setSelectedBarrier(strategy.winBarrier);
-    };
-
     if (!showManualTrading) return null;
 
     return (
@@ -817,37 +796,6 @@ const ManualTrading = observer(() => {
                 <div className='manual-trading-ticket__header'>
                     <h2>Digit trade type</h2>
                     <span>{selectedMarket.label}</span>
-                </div>
-
-                <div className='manual-trading-ticket__message'>
-                    <strong>Strategy assistant</strong>
-                    <div className='manual-trading-trade-types' style={{ marginTop: '0.8rem' }}>
-                        {(Object.keys(DIGIT_STRATEGIES) as DigitStrategyId[]).map(strategyId => (
-                            <button
-                                className={classNames('manual-trading-trade-types__button', {
-                                    'manual-trading-trade-types__button--active': guidedStrategy === strategyId,
-                                })}
-                                key={strategyId}
-                                type='button'
-                                onClick={() => setGuidedStrategy(strategyId)}
-                            >
-                                {DIGIT_STRATEGIES[strategyId].alertLabel}
-                            </button>
-                        ))}
-                    </div>
-                    <p style={{ marginTop: '0.8rem' }}>
-                        {strategyAssessment.isQualified
-                            ? `${strategyAssessment.alertLabel} alert active. Winning digits at or above 10.5%: ${strategyAssessment.qualifyingWinningDigits.join(', ')}.`
-                            : `${strategyAssessment.alertLabel} is still waiting for the percentage setup to qualify.`}
-                    </p>
-                    <p style={{ marginTop: '0.4rem' }}>
-                        {strategyAssessment.entryReady
-                            ? 'Entry rule is ready now: trigger streak plus a winning-side digit just printed.'
-                            : `Trailing trigger streak: ${strategyAssessment.trailingTriggerCount}/3.`}
-                    </p>
-                    <button className='manual-trading-toolbar__apply' type='button' onClick={applyGuidedStrategy}>
-                        Apply {DIGIT_STRATEGIES[guidedStrategy].contractType === 'DIGITOVER' ? 'Over 2' : 'Under 7'}
-                    </button>
                 </div>
 
                 <div className='manual-trading-trade-types'>
