@@ -9,6 +9,12 @@ import { api_base, observer as globalObserver } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
 import { conditionNotifierStore } from '@/stores/condition-notifier-store';
 import { API_BASE } from '@/utils/api-base';
+import {
+    DIGIT_STRATEGIES,
+    evaluateDigitStrategy,
+    SUPPORTED_VOLATILITY_MARKETS,
+    type DigitStrategyId,
+} from '@/utils/digit-strategy';
 import { recordDiagnosticEvent, setDiagnosticGauge } from '@/utils/diagnostics';
 import { getLastDigitFromQuote, getMarketPipSize, isExpectedStreamInterruption } from '@/utils/market-data';
 import { buyContractForUi, streamContractUntilSettled } from '@/utils/trade-purchase';
@@ -30,27 +36,18 @@ type MartingaleModeType =
 type AutoMarket = { symbol: string; label: string; pip: number };
 type Direction = 1 | -1 | 0;
 type AiFabPosition = { left: number; top: number };
+type StrategyTemplate = 'STANDARD' | DigitStrategyId;
 
 const FIVE_MINUTE_GRANULARITY = 300;
 const AI_FAB_SIZE = 72;
 const AI_FAB_MARGIN = 12;
 const AI_FAB_BOTTOM_GUARD = 82;
 
-const AUTO_MARKETS: AutoMarket[] = [
-    { symbol: '1HZ10V', label: 'Vol 10 (1s)', pip: 2 },
-    { symbol: '1HZ15V', label: 'Vol 15 (1s)', pip: 3 },
-    { symbol: '1HZ25V', label: 'Vol 25 (1s)', pip: 2 },
-    { symbol: '1HZ30V', label: 'Vol 30 (1s)', pip: 3 },
-    { symbol: '1HZ50V', label: 'Vol 50 (1s)', pip: 2 },
-    { symbol: '1HZ75V', label: 'Vol 75 (1s)', pip: 2 },
-    { symbol: '1HZ90V', label: 'Vol 90 (1s)', pip: 3 },
-    { symbol: '1HZ100V', label: 'Vol 100 (1s)', pip: 2 },
-    { symbol: 'R_10', label: 'Vol 10', pip: 3 },
-    { symbol: 'R_25', label: 'Vol 25', pip: 3 },
-    { symbol: 'R_50', label: 'Vol 50', pip: 3 },
-    { symbol: 'R_75', label: 'Vol 75', pip: 3 },
-    { symbol: 'R_100', label: 'Vol 100', pip: 2 },
-];
+const AUTO_MARKETS: AutoMarket[] = SUPPORTED_VOLATILITY_MARKETS.map(market => ({
+    label: market.label.replace('Volatility ', 'Vol ').replace(' Index', ''),
+    pip: market.pip ?? 2,
+    symbol: market.symbol,
+}));
 
 const AUTO_MARKET_SYMBOLS = AUTO_MARKETS.map(({ symbol }) => symbol);
 const AUTO_MARKET_LOOKUP = new Map(AUTO_MARKETS.map(market => [market.symbol, market]));
@@ -257,6 +254,17 @@ const DEFAULT_BARRIER: Record<TradeType, string> = {
 
 const isRunTradeType = (trade_type: TradeType) => trade_type === 'RUNHIGH' || trade_type === 'RUNLOW';
 const usesLossPrediction = (trade_type: TradeType) => trade_type === 'DIGITOVER' || trade_type === 'DIGITUNDER';
+const STRATEGY_TEMPLATE_IDS: StrategyTemplate[] = ['STANDARD', 'OVER_2_MARKET', 'UNDER_7_MARKET'];
+
+const getTemplateTradeConfig = (template: StrategyTemplate) => {
+    if (template === 'OVER_2_MARKET') {
+        return { barrier: '2', tradeType: 'DIGITOVER' as TradeType };
+    }
+    if (template === 'UNDER_7_MARKET') {
+        return { barrier: '7', tradeType: 'DIGITUNDER' as TradeType };
+    }
+    return null;
+};
 
 const clampAiFabPosition = (left: number, top: number): AiFabPosition => {
     if (typeof window === 'undefined') return { left, top };
@@ -857,6 +865,8 @@ export const isPercentageSignalReady = (trade_type: TradeType, state: MarketStat
 };
 
 interface MarketState {
+    alertActive: boolean;
+    alertMessage: string;
     consecutive: number;
     trading: boolean;
     isRecovering: boolean;
@@ -881,6 +891,9 @@ interface MarketState {
     percentageBackfilled: boolean;
     percentageBackfillInFlight: boolean;
     lossCooldownLeft: number;
+    qualifyingWinningDigits: number[];
+    specialEntryReady: boolean;
+    trailingTriggerCount: number;
 }
 
 interface MarketDisplay extends MarketState {
@@ -891,6 +904,8 @@ interface MarketDisplay extends MarketState {
 }
 
 const createMarketState = (prev?: Partial<MarketState>): MarketState => ({
+    alertActive: prev?.alertActive ?? false,
+    alertMessage: prev?.alertMessage ?? '',
     consecutive: 0,
     trading: false,
     isRecovering: false,
@@ -915,6 +930,9 @@ const createMarketState = (prev?: Partial<MarketState>): MarketState => ({
     percentageBackfilled: prev?.percentageBackfilled ?? false,
     percentageBackfillInFlight: prev?.percentageBackfillInFlight ?? false,
     lossCooldownLeft: prev?.lossCooldownLeft ?? 0,
+    qualifyingWinningDigits: prev?.qualifyingWinningDigits ?? [],
+    specialEntryReady: prev?.specialEntryReady ?? false,
+    trailingTriggerCount: prev?.trailingTriggerCount ?? 0,
 });
 
 const getDirectionSamplesFromQuotes = (quotes: number[]): Direction[] =>
@@ -1030,6 +1048,10 @@ const AutoTrades = observer(() => {
     const [tradeType, setTradeType] = useState<TradeType>(() => {
         const v = loadSaved('tradeType', 'DIGITOVER');
         return VALID_TRADE_TYPES.includes(v as TradeType) ? (v as TradeType) : 'DIGITOVER';
+    });
+    const [strategyTemplate, setStrategyTemplate] = useState<StrategyTemplate>(() => {
+        const saved = loadSaved('strategyTemplate', 'STANDARD');
+        return STRATEGY_TEMPLATE_IDS.includes(saved as StrategyTemplate) ? (saved as StrategyTemplate) : 'STANDARD';
     });
     const [barrier, setBarrier] = useState(() => loadSavedNum('barrier', '4', 0, 9));
     const [predictionBeforeLoss, setPredictionBeforeLoss] = useState(() =>
@@ -1169,6 +1191,7 @@ const AutoTrades = observer(() => {
         consecutiveLossThreshold: 2,
     });
     const tradeTypeRef = useRef<TradeType>('DIGITOVER');
+    const strategyTemplateRef = useRef<StrategyTemplate>('STANDARD');
     const barrierRef = useRef(4);
     const predictionBeforeLossRef = useRef(4);
     const predictionAfterLossRef = useRef(5);
@@ -1316,6 +1339,22 @@ const AutoTrades = observer(() => {
             // Ignore localStorage write failures.
         }
     }, [tradeType]);
+    useEffect(() => {
+        strategyTemplateRef.current = strategyTemplate;
+        try {
+            localStorage.setItem('auto_trades_strategyTemplate', strategyTemplate);
+        } catch {
+            // Ignore localStorage write failures.
+        }
+
+        const templateConfig = getTemplateTradeConfig(strategyTemplate);
+        if (!templateConfig) return;
+
+        setTradeType(templateConfig.tradeType);
+        setBarrier(templateConfig.barrier);
+        setAnalysisTicks('1');
+        setInverseMode(false);
+    }, [strategyTemplate]);
     useEffect(() => {
         barrierRef.current = getDigitNumber(barrier, 4);
         try {
@@ -1845,7 +1884,10 @@ const AutoTrades = observer(() => {
             const lastResult = previousContractResultRef.current;
             const consecutiveLosses = consecutiveLossRef.current;
 
-            if (strategyModeRef.current === 'PERCENTAGE' && !modeTransitionLockRef.current) {
+            if (
+                (strategyModeRef.current === 'PERCENTAGE' || strategyTemplateRef.current !== 'STANDARD') &&
+                !modeTransitionLockRef.current
+            ) {
                 const state = marketStatesRef.current[symbol];
                 return state
                     ? isPercentageSignalReady(ct, state, getActiveDigitBarrier(ct, lastResult, consecutiveLosses))
@@ -1953,7 +1995,10 @@ const AutoTrades = observer(() => {
                 clearDataRecoveryLoading();
             }
 
-            if (strategyModeRef.current === 'PERCENTAGE' && !modeTransitionLockRef.current) {
+            if (
+                (strategyModeRef.current === 'PERCENTAGE' || strategyTemplateRef.current !== 'STANDARD') &&
+                !modeTransitionLockRef.current
+            ) {
                 const epoch = Number(tick.epoch);
                 appendPercentageQuote(symbol, state, quote, Number.isFinite(epoch) ? epoch : null, ct);
             }
@@ -1995,6 +2040,27 @@ const AutoTrades = observer(() => {
             const requiresCandle = isCandleConfirmedTradeType(ct);
             const lastPredictionResult = previousContractResultRef.current;
             const activeBarrier = getActiveDigitBarrier(ct, lastPredictionResult, consecutiveLossRef.current);
+            const activeStrategyTemplate = strategyTemplateRef.current;
+            const specialStrategyEvaluation =
+                activeStrategyTemplate !== 'STANDARD'
+                    ? evaluateDigitStrategy(activeStrategyTemplate, state.digitPercentages, state.lastDigits)
+                    : null;
+
+            if (specialStrategyEvaluation) {
+                state.alertActive = specialStrategyEvaluation.isQualified;
+                state.specialEntryReady = specialStrategyEvaluation.entryReady;
+                state.trailingTriggerCount = specialStrategyEvaluation.trailingTriggerCount;
+                state.qualifyingWinningDigits = specialStrategyEvaluation.qualifyingWinningDigits;
+                state.alertMessage = specialStrategyEvaluation.isQualified
+                    ? `${specialStrategyEvaluation.alertLabel} ready to watch. Winning digits >= 10.5%: ${specialStrategyEvaluation.qualifyingWinningDigits.join(', ')}`
+                    : `${specialStrategyEvaluation.alertLabel} waiting for qualifying percentages.`;
+            } else {
+                state.alertActive = false;
+                state.specialEntryReady = false;
+                state.trailingTriggerCount = 0;
+                state.qualifyingWinningDigits = [];
+                state.alertMessage = '';
+            }
             const riskFilteredDigitStreakReady =
                 !usesLossPrediction(ct) ||
                 hasRequiredDigitStreak({
@@ -2004,24 +2070,28 @@ const AutoTrades = observer(() => {
                     inverse: inverseModeRef.current,
                     streak: targetLen,
                 });
-            const signalReady =
-                strategyModeRef.current === 'PERCENTAGE' && !modeTransitionLockRef.current
-                    ? isPercentageSignalReady(
-                          ct,
-                          state,
-                          activeBarrier
-                      ) &&
-                      (!requiresCandle || candleMatch)
-                    : state.consecutive >= targetLen && riskFilteredDigitStreakReady && (!requiresCandle || candleMatch);
+            const signalReady = specialStrategyEvaluation
+                ? specialStrategyEvaluation.entryReady
+                : strategyModeRef.current === 'PERCENTAGE' && !modeTransitionLockRef.current
+                  ? isPercentageSignalReady(
+                        ct,
+                        state,
+                        activeBarrier
+                    ) &&
+                    (!requiresCandle || candleMatch)
+                  : state.consecutive >= targetLen && riskFilteredDigitStreakReady && (!requiresCandle || candleMatch);
 
-            if (runningRef.current) {
+            if (runningRef.current || specialStrategyEvaluation) {
                 const ct = tradeTypeRef.current;
                 const bar = activeBarrier;
                 const mkt = AUTO_MARKET_LOOKUP.get(symbol);
                 const inv = inverseModeRef.current;
                 let condStr = '';
                 let digitsStr = '';
-                if (IS_DIRECTION_TYPE[ct]) {
+                if (specialStrategyEvaluation) {
+                    digitsStr = `[${state.lastDigits.slice(-4).join(', ')}]`;
+                    condStr = state.alertMessage;
+                } else if (IS_DIRECTION_TYPE[ct]) {
                     const dirs = state.directionHistory.slice(-targetLen);
                     digitsStr = `[${dirs.map(d => (d === 1 ? '↑' : d === -1 ? '↓' : '—')).join(', ')}]`;
                     if (inv) {
@@ -2057,8 +2127,8 @@ const AutoTrades = observer(() => {
                     market: mkt?.label ?? symbol,
                     condition: condStr,
                     digits: digitsStr,
-                    result: signalReady,
-                    source: 'auto',
+                    result: specialStrategyEvaluation ? specialStrategyEvaluation.isQualified : signalReady,
+                    source: specialStrategyEvaluation ? 'strategy-alert' : 'auto',
                     timestamp: Date.now(),
                 });
             }
@@ -2086,7 +2156,7 @@ const AutoTrades = observer(() => {
                 !state ||
                 state.percentageBackfilled ||
                 state.percentageBackfillInFlight ||
-                strategyModeRef.current !== 'PERCENTAGE'
+                (strategyModeRef.current !== 'PERCENTAGE' && strategyTemplateRef.current === 'STANDARD')
             ) {
                 return;
             }
@@ -2179,7 +2249,7 @@ const AutoTrades = observer(() => {
         setDataRecoveryLoading('Loading selected market data...');
 
         for (const market of selectedMarketsRef.current) {
-            if (strategyModeRef.current === 'PERCENTAGE') {
+            if (strategyModeRef.current === 'PERCENTAGE' || strategyTemplateRef.current !== 'STANDARD') {
                 backfillPercentageTicks(market);
             }
 
@@ -2462,7 +2532,7 @@ const AutoTrades = observer(() => {
     useEffect(() => {
         if (!show_auto || !api_base.api) return;
         startSubscriptions();
-    }, [selectedMarketSymbols, show_auto, startSubscriptions, strategyMode]);
+    }, [selectedMarketSymbols, show_auto, startSubscriptions, strategyMode, strategyTemplate]);
 
     const dataSilenceIntervalRef = useRef<number | null>(null);
 
@@ -2554,6 +2624,8 @@ const AutoTrades = observer(() => {
         trade_type: tradeType,
         configured_streak: Number(streak) || 4,
     });
+    const usingSpecialStrategy = strategyTemplate !== 'STANDARD';
+    const activeSpecialStrategy = usingSpecialStrategy ? DIGIT_STRATEGIES[strategyTemplate as DigitStrategyId] : null;
     const isDirection = IS_DIRECTION_TYPE[tradeType];
     const previousContractResult = previousContractResultRef.current;
     const lossPredictionActive =
@@ -2585,6 +2657,9 @@ const AutoTrades = observer(() => {
     })();
 
     const resolvedSubtitleTxt = (() => {
+        if (activeSpecialStrategy) {
+            return `${activeSpecialStrategy.alertLabel}: ${activeSpecialStrategy.triggerLabel}, then ${activeSpecialStrategy.entryLabel}`;
+        }
         if (!usesLossPrediction(tradeType)) return subtitleTxt;
 
         const inv = inverseModeRef.current;
@@ -2682,6 +2757,27 @@ const AutoTrades = observer(() => {
                             <div className='auto-trades-card'>
                                 <h2 className='auto-trades-card__title'>Settings</h2>
 
+                                <div className='auto-trades-config__group'>
+                                    <div className='auto-trades-strategy-selector'>
+                                        <label>Strategy template</label>
+                                        <select
+                                            className='auto-trades-strategy-selector__select'
+                                            value={strategyTemplate}
+                                            onChange={e => setStrategyTemplate(e.target.value as StrategyTemplate)}
+                                            disabled={isRunning}
+                                        >
+                                            <option value='STANDARD'>Standard builder</option>
+                                            <option value='OVER_2_MARKET'>Over 2 Market</option>
+                                            <option value='UNDER_7_MARKET'>Under 7 Market</option>
+                                        </select>
+                                    </div>
+                                    <p className='auto-trades-inverse__hint'>
+                                        {usingSpecialStrategy
+                                            ? 'Scans every selected market for the percentage alert first, then auto-buys only when the entry digit confirms.'
+                                            : 'Use the standard contract builder to configure your own auto-trade rule.'}
+                                    </p>
+                                </div>
+
                                 {/* Contract Type + Barrier + Streak */}
                                 <div className='auto-trades-config__group'>
                                     <p className='auto-trades-config__group-label'>Contract Type</p>
@@ -2689,13 +2785,13 @@ const AutoTrades = observer(() => {
                                     {/* Trade type row */}
                                     <div className='auto-trades-config__trade-row'>
                                         <div className='auto-trades-config__field auto-trades-config__field--type'>
-                                            <label>Type</label>
-                                            <select
-                                                className='auto-trades-config__select'
-                                                value={tradeType}
-                                                onChange={e => handleTradeTypeChange(e.target.value as TradeType)}
-                                                disabled={isRunning}
-                                            >
+                                                <label>Type</label>
+                                                <select
+                                                    className='auto-trades-config__select'
+                                                    value={tradeType}
+                                                    onChange={e => handleTradeTypeChange(e.target.value as TradeType)}
+                                                    disabled={isRunning || usingSpecialStrategy}
+                                                >
                                                 <optgroup label='Digits'>
                                                     <option value='DIGITOVER'>Digit Over</option>
                                                     <option value='DIGITUNDER'>Digit Under</option>
@@ -2731,7 +2827,7 @@ const AutoTrades = observer(() => {
                                                             className='auto-trades-config__select auto-trades-config__select--compact'
                                                             value={predictionBeforeLoss}
                                                             onChange={e => setPredictionBeforeLoss(e.target.value)}
-                                                            disabled={isRunning}
+                                                            disabled={isRunning || usingSpecialStrategy}
                                                             title='Prediction used after a Win'
                                                         >
                                                             {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => (
@@ -2750,7 +2846,7 @@ const AutoTrades = observer(() => {
                                                             className='auto-trades-config__select auto-trades-config__select--compact'
                                                             value={predictionAfterLoss}
                                                             onChange={e => setPredictionAfterLoss(e.target.value)}
-                                                            disabled={isRunning}
+                                                            disabled={isRunning || usingSpecialStrategy}
                                                             title='Prediction used after a Loss'
                                                         >
                                                             {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => (
@@ -2775,7 +2871,7 @@ const AutoTrades = observer(() => {
                                                     className='auto-trades-config__select'
                                                     value={barrier}
                                                     onChange={e => setBarrier(e.target.value)}
-                                                    disabled={isRunning}
+                                                    disabled={isRunning || usingSpecialStrategy}
                                                 >
                                                     {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => (
                                                         <option key={d} value={String(d)}>
@@ -2792,7 +2888,7 @@ const AutoTrades = observer(() => {
                                                 className='auto-trades-config__select'
                                                 value={analysisTicks}
                                                 onChange={e => setAnalysisTicks(e.target.value)}
-                                                disabled={isRunning}
+                                                disabled={isRunning || usingSpecialStrategy}
                                             >
                                                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(d => (
                                                     <option key={d} value={String(d)}>
@@ -2818,7 +2914,7 @@ const AutoTrades = observer(() => {
                                                 step='1'
                                                 value={streak}
                                                 onChange={e => setStreak(e.target.value)}
-                                                disabled={isRunning}
+                                                disabled={isRunning || usingSpecialStrategy}
                                             />
                                             <span className='auto-trades-config__streak-value'>{streak}</span>
                                         </div>
@@ -2833,7 +2929,7 @@ const AutoTrades = observer(() => {
                                             className='auto-trades-strategy-selector__select'
                                             value={strategyMode}
                                             onChange={e => setStrategyMode(e.target.value as StrategyMode)}
-                                            disabled={isRunning}
+                                            disabled={isRunning || usingSpecialStrategy}
                                         >
                                             <option value='STANDARD'>Standard</option>
                                             <option value='INVERSE'>Inverse</option>
@@ -2850,7 +2946,7 @@ const AutoTrades = observer(() => {
                                 </div>
 
                                 {/* Inverse Toggle for Standard/Inverse modes */}
-                                {strategyMode !== 'PERCENTAGE' && (
+                                {strategyMode !== 'PERCENTAGE' && !usingSpecialStrategy && (
                                     <div className='auto-trades-config__group'>
                                         <button
                                             type='button'
@@ -2859,7 +2955,7 @@ const AutoTrades = observer(() => {
                                                 inverseMode && 'auto-trades-strategy-btn--active'
                                             )}
                                             onClick={() => setInverseMode(prev => !prev)}
-                                            disabled={isRunning}
+                                            disabled={isRunning || usingSpecialStrategy}
                                         >
                                             <span className='auto-trades-strategy-btn__badge'>
                                                 {inverseMode ? 'Inverse' : 'Direct'}
@@ -3091,7 +3187,10 @@ const AutoTrades = observer(() => {
                                             ? isInverseCandleMatch(tradeType, m.candleDirection)
                                             : isCandleMatch(tradeType, m.candleDirection));
                                     const isReady =
-                                        ((m.consecutive >= streakNum && candleReady) || m.trading) && !marketInCooldown;
+                                        (((usingSpecialStrategy ? m.specialEntryReady : m.consecutive >= streakNum) &&
+                                            candleReady) ||
+                                            m.trading) &&
+                                        !marketInCooldown;
                                     return (
                                         <div
                                             key={m.symbol}
@@ -3160,6 +3259,14 @@ const AutoTrades = observer(() => {
                                                             AUTO_MARKET_LOOKUP.get(m.symbol)?.pip ?? 2
                                                         )
                                                     )}
+                                                </div>
+                                            )}
+
+                                            {usingSpecialStrategy && (
+                                                <div className='auto-trades-market__confidence'>
+                                                    {m.alertActive
+                                                        ? `${m.alertMessage} Trigger streak ${m.trailingTriggerCount}/3.`
+                                                        : m.alertMessage || 'Waiting for percentage alert.'}
                                                 </div>
                                             )}
 

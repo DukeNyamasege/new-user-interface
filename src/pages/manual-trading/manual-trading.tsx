@@ -5,6 +5,7 @@ import { observer } from 'mobx-react-lite';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { api_base } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
+import { DIGIT_STRATEGIES, evaluateDigitStrategy, SUPPORTED_VOLATILITY_MARKETS, type DigitStrategyId } from '@/utils/digit-strategy';
 import { getLastDigitFromQuote, isExpectedStreamInterruption } from '@/utils/market-data';
 import { buyContractForUi, streamContractUntilSettled } from '@/utils/trade-purchase';
 import { safeSubscribe } from '@/utils/websocket-handler';
@@ -47,21 +48,7 @@ const DEFAULT_DURATION = '1';
 const DEFAULT_RUN_COUNT = '1';
 const LIVE_TICK_STALE_MS = 4500;
 
-const MANUAL_MARKETS: TManualMarket[] = [
-    { label: 'Volatility 10 (1s) Index', symbol: '1HZ10V' },
-    { label: 'Volatility 15 (1s) Index', symbol: '1HZ15V' },
-    { label: 'Volatility 25 (1s) Index', symbol: '1HZ25V' },
-    { label: 'Volatility 30 (1s) Index', symbol: '1HZ30V' },
-    { label: 'Volatility 50 (1s) Index', symbol: '1HZ50V' },
-    { label: 'Volatility 75 (1s) Index', symbol: '1HZ75V' },
-    { label: 'Volatility 90 (1s) Index', symbol: '1HZ90V' },
-    { label: 'Volatility 100 (1s) Index', symbol: '1HZ100V' },
-    { label: 'Volatility 10 Index', symbol: 'R_10' },
-    { label: 'Volatility 25 Index', symbol: 'R_25' },
-    { label: 'Volatility 50 Index', symbol: 'R_50' },
-    { label: 'Volatility 75 Index', symbol: 'R_75' },
-    { label: 'Volatility 100 Index', symbol: 'R_100' },
-];
+const MANUAL_MARKETS: TManualMarket[] = SUPPORTED_VOLATILITY_MARKETS.map(({ label, symbol }) => ({ label, symbol }));
 
 const TRADE_GROUPS: { label: string; value: TDigitTradeGroup }[] = [
     { label: 'Even / Odd', value: 'even_odd' },
@@ -269,6 +256,7 @@ const ManualTrading = observer(() => {
     const [proposalPreviews, setProposalPreviews] = useState<Record<string, TProposalPreview>>({});
     const [isProposalLoading, setIsProposalLoading] = useState(false);
     const [proposalRefreshKey, setProposalRefreshKey] = useState(0);
+    const [guidedStrategy, setGuidedStrategy] = useState<DigitStrategyId>('OVER_2_MARKET');
     const subscriptionRef = useRef<{ unsubscribe?: () => void } | null>(null);
     const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const proposalRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -276,12 +264,17 @@ const ManualTrading = observer(() => {
     const lastLiveTickAtRef = useRef(0);
     const requestVersionRef = useRef(0);
     const proposalVersionRef = useRef(0);
+    const stopRequestedRef = useRef(false);
 
     const showManualTrading = active_tab === DBOT_TABS.MANUAL_TRADING;
     const selectedMarket = MANUAL_MARKETS.find(market => market.symbol === selectedSymbol) ?? MANUAL_MARKETS[0];
     const latestTick = ticks[ticks.length - 1] ?? null;
     const latestDigit = latestTick ? getLastDigitFromQuote(latestTick.quote, selectedSymbol) : null;
     const digitStats = useMemo(() => calculateDigitStats(ticks, selectedSymbol), [selectedSymbol, ticks]);
+    const digitPercentages = useMemo(
+        () => Object.fromEntries(digitStats.map(stat => [stat.digit, stat.percent])),
+        [digitStats]
+    );
     const specialDigitColorMap = useMemo(() => getSpecialDigitColorMap(digitStats, ticks.length > 0), [digitStats, ticks.length]);
     const needsBarrier = BARRIER_TRADE_GROUPS.has(tradeGroup);
     const activeActions = TRADE_ACTIONS[tradeGroup];
@@ -294,6 +287,15 @@ const ManualTrading = observer(() => {
             return previews;
         }, {});
     }, [activeActions, currency, selectedBarrier, stakeInput]);
+    const strategyAssessment = useMemo(
+        () =>
+            evaluateDigitStrategy(
+                guidedStrategy,
+                digitPercentages,
+                ticks.map(tick => getLastDigitFromQuote(tick.quote, selectedSymbol))
+            ),
+        [digitPercentages, guidedStrategy, selectedSymbol, ticks]
+    );
 
     const clearRetryTimer = useCallback(() => {
         if (retryTimerRef.current) {
@@ -649,6 +651,7 @@ const ManualTrading = observer(() => {
         setTradeError('');
         setTradeMessage(`Buying ${action.label} contract 1 of ${runCount}...`);
         setIsPurchasing(true);
+        stopRequestedRef.current = false;
 
         const parameters = buildTradeParameters(action.contractType);
 
@@ -656,6 +659,9 @@ const ManualTrading = observer(() => {
             let totalProfit = 0;
 
             for (let runIndex = 1; runIndex <= runCount; runIndex++) {
+                if (stopRequestedRef.current) {
+                    break;
+                }
                 setTradeMessage(`Buying ${action.label} contract ${runIndex} of ${runCount}...`);
                 const tradeStartTime = Math.floor(Date.now() / 1000);
                 const verificationId = `manual_${selectedSymbol}_${tradeStartTime}_${runIndex}_${Math.random()
@@ -689,14 +695,22 @@ const ManualTrading = observer(() => {
                 });
                 const profit = Number(settledContract.profit ?? 0);
                 totalProfit = Number((totalProfit + profit).toFixed(8));
+                if (stopRequestedRef.current && runIndex < runCount) {
+                    setTradeMessage(
+                        `${action.label} stopped after run ${runIndex}. Total P/L: ${totalProfit.toFixed(2)} ${currency}`
+                    );
+                    break;
+                }
                 setTradeMessage(
                     `${action.label} run ${runIndex} of ${runCount} closed ${profit >= 0 ? 'with profit' : 'with loss'}: ${profit.toFixed(2)} ${currency}`
                 );
             }
 
-            setTradeMessage(
-                `${action.label} ${runCount} run${runCount === 1 ? '' : 's'} complete. Total P/L: ${totalProfit.toFixed(2)} ${currency}`
-            );
+            if (!stopRequestedRef.current) {
+                setTradeMessage(
+                    `${action.label} ${runCount} run${runCount === 1 ? '' : 's'} complete. Total P/L: ${totalProfit.toFixed(2)} ${currency}`
+                );
+            }
         } catch (purchaseError) {
             setTradeMessage('');
             setTradeError(
@@ -704,7 +718,19 @@ const ManualTrading = observer(() => {
             );
         } finally {
             setIsPurchasing(false);
+            stopRequestedRef.current = false;
         }
+    };
+
+    const handleStopRuns = () => {
+        stopRequestedRef.current = true;
+        setTradeMessage('Manual stop requested. The current contract will finish, then remaining runs will halt.');
+    };
+
+    const applyGuidedStrategy = () => {
+        const strategy = DIGIT_STRATEGIES[guidedStrategy];
+        setTradeGroup('over_under');
+        setSelectedBarrier(strategy.winBarrier);
     };
 
     if (!showManualTrading) return null;
@@ -791,6 +817,37 @@ const ManualTrading = observer(() => {
                 <div className='manual-trading-ticket__header'>
                     <h2>Digit trade type</h2>
                     <span>{selectedMarket.label}</span>
+                </div>
+
+                <div className='manual-trading-ticket__message'>
+                    <strong>Strategy assistant</strong>
+                    <div className='manual-trading-trade-types' style={{ marginTop: '0.8rem' }}>
+                        {(Object.keys(DIGIT_STRATEGIES) as DigitStrategyId[]).map(strategyId => (
+                            <button
+                                className={classNames('manual-trading-trade-types__button', {
+                                    'manual-trading-trade-types__button--active': guidedStrategy === strategyId,
+                                })}
+                                key={strategyId}
+                                type='button'
+                                onClick={() => setGuidedStrategy(strategyId)}
+                            >
+                                {DIGIT_STRATEGIES[strategyId].alertLabel}
+                            </button>
+                        ))}
+                    </div>
+                    <p style={{ marginTop: '0.8rem' }}>
+                        {strategyAssessment.isQualified
+                            ? `${strategyAssessment.alertLabel} alert active. Winning digits at or above 10.5%: ${strategyAssessment.qualifyingWinningDigits.join(', ')}.`
+                            : `${strategyAssessment.alertLabel} is still waiting for the percentage setup to qualify.`}
+                    </p>
+                    <p style={{ marginTop: '0.4rem' }}>
+                        {strategyAssessment.entryReady
+                            ? 'Entry rule is ready now: trigger streak plus a winning-side digit just printed.'
+                            : `Trailing trigger streak: ${strategyAssessment.trailingTriggerCount}/3.`}
+                    </p>
+                    <button className='manual-trading-toolbar__apply' type='button' onClick={applyGuidedStrategy}>
+                        Apply {DIGIT_STRATEGIES[guidedStrategy].contractType === 'DIGITOVER' ? 'Over 2' : 'Under 7'}
+                    </button>
                 </div>
 
                 <div className='manual-trading-trade-types'>
@@ -891,6 +948,12 @@ const ManualTrading = observer(() => {
                         );
                     })}
                 </div>
+
+                {isPurchasing && (
+                    <button className='manual-trading-toolbar__apply' type='button' onClick={handleStopRuns}>
+                        Stop remaining runs
+                    </button>
+                )}
 
                 {(tradeMessage || tradeError) && (
                     <div

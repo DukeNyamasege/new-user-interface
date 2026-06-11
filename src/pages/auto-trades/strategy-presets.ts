@@ -52,21 +52,7 @@ export type AutoTradeStrategyFamily = {
     presetIds: string[];
 };
 
-export const AUTO_TRADE_PRESET_ALL_MARKETS = [
-    '1HZ10V',
-    '1HZ15V',
-    '1HZ25V',
-    '1HZ30V',
-    '1HZ50V',
-    '1HZ75V',
-    '1HZ90V',
-    '1HZ100V',
-    'R_10',
-    'R_25',
-    'R_50',
-    'R_75',
-    'R_100',
-];
+export const AUTO_TRADE_PRESET_ALL_MARKETS = SUPPORTED_VOLATILITY_MARKETS.map(({ symbol }) => symbol);
 
 const TRADE_BLUEPRINTS: Array<{ tradeType: AutoTradePresetTradeType; label: string; baseBarrier: string }> = [
     { tradeType: 'DIGITOVER', label: 'Over', baseBarrier: '2' },
@@ -359,3 +345,4 @@ export const AUTO_TRADE_STRATEGY_PRESET_LOOKUP = new Map(
 
 export const AUTO_TRADE_STRATEGY_PRESET_COUNT = AUTO_TRADE_STRATEGY_PRESETS.length;
 export const AUTO_TRADE_STRATEGY_FAMILY_COUNT = AUTO_TRADE_STRATEGY_FAMILIES.length;
+import { SUPPORTED_VOLATILITY_MARKETS } from '@/utils/digit-strategy';
