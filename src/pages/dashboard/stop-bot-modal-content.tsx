@@ -1,5 +1,5 @@
 import React from 'react';
-import { standalone_routes } from '@/components/shared';
+import { standalone_routes } from '@/components/shared/utils/routes/routes';
 import Dialog from '@/components/shared_ui/dialog';
 import StaticUrl from '@/components/shared_ui/static-url';
 import Text from '@/components/shared_ui/text';

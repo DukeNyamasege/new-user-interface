@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { standalone_routes } from '@/components/shared';
+import { standalone_routes } from '@/components/shared/utils/routes/routes';
 import { LegacyHomeNewIcon as TradershubLogo } from '@deriv/quill-icons/Legacy';
 import {
     DerivProductBrandLightDerivBotLogoWordmarkIcon as DerivBotLogo,

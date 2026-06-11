@@ -1,6 +1,6 @@
 import React from 'react';
 import classNames from 'classnames';
-import { standalone_routes } from '@/components/shared';
+import { standalone_routes } from '@/components/shared/utils/routes/routes';
 import { Button, useDevice } from '@deriv-com/ui';
 import ButtonLink from '../button-link/button-link';
 import DesktopWrapper from '../shared_ui/desktop-wrapper';
