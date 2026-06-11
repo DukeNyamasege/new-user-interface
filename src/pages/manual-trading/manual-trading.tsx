@@ -389,16 +389,6 @@ const ManualTrading = observer(() => {
         signalTradingActiveRef.current = isSignalTradingActive;
     }, [isSignalTradingActive]);
 
-    useEffect(() => {
-        const nextQualifiedSignalKey = actionableSignal ? `${actionableSignal.symbol}:${actionableSignal.strategyId}` : null;
-
-        if (nextQualifiedSignalKey && previousQualifiedSignalKeyRef.current !== nextQualifiedSignalKey) {
-            setIsSignalLauncherVisible(true);
-        }
-
-        previousQualifiedSignalKeyRef.current = nextQualifiedSignalKey;
-    }, [actionableSignal]);
-
     const clearRetryTimer = useCallback(() => {
         if (retryTimerRef.current) {
             clearTimeout(retryTimerRef.current);
@@ -452,7 +442,9 @@ const ManualTrading = observer(() => {
 
                     if (!prior.isQualified && snapshot.isQualified) {
                         playStrategyMonitorSound();
+                        setIsSignalLauncherVisible(true);
                         setFocusedSignalKey(key);
+                        previousQualifiedSignalKeyRef.current = key;
                         setMonitorStatusMessage(
                             `${market.label} matched ${snapshot.alertLabel}. Load market to prepare entry.`
                         );
@@ -661,7 +653,9 @@ const ManualTrading = observer(() => {
         clearStrategyMonitorSubscriptions();
         setMarketStrategyStates({});
         setFocusedSignalKey(null);
+        setIsSignalLauncherVisible(false);
         setMonitorStatusMessage('Watching all volatility and 1s markets for Over 2 and Under 7 signals.');
+        previousQualifiedSignalKeyRef.current = null;
         let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
         const startMonitoringStreams = () => {
