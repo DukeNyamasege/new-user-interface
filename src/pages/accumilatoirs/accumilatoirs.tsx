@@ -199,6 +199,30 @@ const buildHistoryMoves = (ticks: TTickSnapshot[], tickSizeBarrier: unknown, gro
         .slice(-MAX_HISTORY_MOVES);
 };
 
+const getProposalTicksStayedIn = (proposal: any) => {
+    const ticksStayedIn = proposal?.contract_details?.ticks_stayed_in;
+    if (!Array.isArray(ticksStayedIn)) return [];
+
+    return ticksStayedIn
+        .flat()
+        .map(value => Number(value))
+        .filter(value => Number.isFinite(value) && value >= 0)
+        .reverse();
+};
+
+const buildProposalHistoryMoves = (ticksStayedIn: number[], growthRateValue: unknown) =>
+    ticksStayedIn
+        .slice(0, MAX_HISTORY_MOVES)
+        .map(tickCount => {
+            const value = getAccumulatorReturnPercent(tickCount, growthRateValue);
+            return {
+                className: classifyMove(value),
+                value: formatPercent(value),
+            };
+        });
+
+const getProposalSignature = (ticksStayedIn: number[]) => ticksStayedIn.slice(0, MAX_HISTORY_MOVES).join('|');
+
 const Accumilatoirs = observer(() => {
     const { client, dashboard, run_panel, summary_card, transactions, ui } = useStore();
     const { active_tab } = dashboard;
@@ -222,6 +246,8 @@ const Accumilatoirs = observer(() => {
     const [latestTick, setLatestTick] = useState<TTickSnapshot | null>(null);
     const [tickHistory, setTickHistory] = useState<TTickSnapshot[]>([]);
     const [marketSurvivedTicks, setMarketSurvivedTicks] = useState(0);
+    const [proposalSurvivedTicks, setProposalSurvivedTicks] = useState<number | null>(null);
+    const [proposalHistoryMoves, setProposalHistoryMoves] = useState<THistoryMove[]>([]);
     const [isLive, setIsLive] = useState(false);
     const [isMarketLoading, setIsMarketLoading] = useState(false);
     const [isPurchasing, setIsPurchasing] = useState(false);
@@ -235,6 +261,9 @@ const Accumilatoirs = observer(() => {
     const [error, setError] = useState('');
 
     const tickSubscriptionRef = useRef<{ unsubscribe?: () => void } | null>(null);
+    const proposalSubscriptionRef = useRef<{ unsubscribe?: () => void } | null>(null);
+    const proposalSubscriptionIdRef = useRef<string | null>(null);
+    const proposalStatsSignatureRef = useRef('');
     const contractAbortRef = useRef<AbortController | null>(null);
     const openContractRef = useRef<Record<string, any> | null>(null);
     const cashoutInFlightRef = useRef(false);
@@ -269,12 +298,14 @@ const Accumilatoirs = observer(() => {
         () =>
             outcomeHistory.length
                 ? outcomeHistory.slice(-MAX_HISTORY_MOVES)
-                : buildHistoryMoves(tickHistory, proposalPreview.tickSizeBarrier, growthRate),
-        [growthRate, outcomeHistory, proposalPreview.tickSizeBarrier, tickHistory]
+                : proposalHistoryMoves.length
+                  ? proposalHistoryMoves
+                  : buildHistoryMoves(tickHistory, proposalPreview.tickSizeBarrier, growthRate),
+        [growthRate, outcomeHistory, proposalHistoryMoves, proposalPreview.tickSizeBarrier, tickHistory]
     );
     const marketReturnPercent = useMemo(
-        () => getAccumulatorReturnPercent(marketSurvivedTicks, growthRate),
-        [growthRate, marketSurvivedTicks]
+        () => getAccumulatorReturnPercent(proposalSurvivedTicks ?? marketSurvivedTicks, growthRate),
+        [growthRate, marketSurvivedTicks, proposalSurvivedTicks]
     );
     const contractReturnPercent =
         buyPrice > 0 && cashoutValue > 0
@@ -591,6 +622,43 @@ const Accumilatoirs = observer(() => {
     useEffect(() => {
         if (!showAccumilatoirs) return undefined;
 
+        let isMounted = true;
+
+        const applyProposal = (proposal: any, subscriptionId?: string) => {
+            if (!isMounted || !proposal) return;
+            if (subscriptionId) proposalSubscriptionIdRef.current = subscriptionId;
+
+            const ticksStayedIn = getProposalTicksStayedIn(proposal);
+            const proposalSignature = getProposalSignature(ticksStayedIn);
+
+            if (ticksStayedIn.length) {
+                setProposalHistoryMoves(buildProposalHistoryMoves(ticksStayedIn, growthRate));
+                setProposalSurvivedTicks(ticksStayedIn[0]);
+
+                if (
+                    proposalStatsSignatureRef.current &&
+                    proposalStatsSignatureRef.current !== proposalSignature &&
+                    !hasOpenContractRef.current &&
+                    roundStatusRef.current === 'running'
+                ) {
+                    recordFlewAway(getAccumulatorReturnPercent(ticksStayedIn[0], growthRate), true);
+                }
+
+                proposalStatsSignatureRef.current = proposalSignature;
+            }
+
+            setProposalPreview({
+                askPrice: Number(proposal?.ask_price ?? stake),
+                currency,
+                maxPayout: Number(proposal?.validation_params?.max_payout) || undefined,
+                maxTicks: Number(proposal?.validation_params?.max_ticks) || undefined,
+                message: proposal?.longcode || 'Accumulator is ready to buy.',
+                minStake: Number(proposal?.contract_details?.minimum_stake) || undefined,
+                status: 'ready',
+                tickSizeBarrier: getProposalTickSizeBarrier(proposal),
+            });
+        };
+
         const proposalVersion = window.setTimeout(async () => {
             if (!Number.isFinite(stake) || stake <= 0) {
                 setProposalPreview({
@@ -619,9 +687,21 @@ const Accumilatoirs = observer(() => {
             }));
 
             try {
+                proposalSubscriptionRef.current?.unsubscribe?.();
+                proposalSubscriptionRef.current = safeSubscribe((api_base.api as any)?.onMessage?.(), (message: any) => {
+                    const data = message?.data ?? message;
+                    if (data?.msg_type !== 'proposal') return;
+
+                    const echoRequest = data?.echo_req ?? {};
+                    const requestSymbol = echoRequest.underlying_symbol ?? echoRequest.symbol;
+                    if (echoRequest.contract_type !== 'ACCU' || requestSymbol !== selectedSymbol) return;
+
+                    applyProposal(data?.proposal, data?.subscription?.id);
+                });
+
                 const response = await (api_base.api as any).send({
                     proposal: 1,
-                    subscribe: 0,
+                    subscribe: 1,
                     ...normalizeTradeParameters(buildAccumulatorParameters()),
                 });
 
@@ -629,17 +709,7 @@ const Accumilatoirs = observer(() => {
                     throw new Error(response.error.message || 'Accumulator proposal failed.');
                 }
 
-                const proposal = response?.proposal;
-                setProposalPreview({
-                    askPrice: Number(proposal?.ask_price ?? stake),
-                    currency,
-                    maxPayout: Number(proposal?.validation_params?.max_payout) || undefined,
-                    maxTicks: Number(proposal?.validation_params?.max_ticks) || undefined,
-                    message: proposal?.longcode || 'Accumulator is ready to buy.',
-                    minStake: Number(proposal?.contract_details?.minimum_stake) || undefined,
-                    status: 'ready',
-                    tickSizeBarrier: getProposalTickSizeBarrier(proposal),
-                });
+                applyProposal(response?.proposal, response?.subscription?.id);
             } catch (proposalError) {
                 setProposalPreview({
                     askPrice: stake,
@@ -650,8 +720,22 @@ const Accumilatoirs = observer(() => {
             }
         }, PROPOSAL_REFRESH_MS);
 
-        return () => window.clearTimeout(proposalVersion);
-    }, [buildAccumulatorParameters, currency, showAccumilatoirs, stake]);
+        return () => {
+            isMounted = false;
+            window.clearTimeout(proposalVersion);
+            try {
+                proposalSubscriptionRef.current?.unsubscribe?.();
+            } catch {
+                // Ignore stale accumulator proposal subscriptions.
+            }
+            proposalSubscriptionRef.current = null;
+            const subscriptionId = proposalSubscriptionIdRef.current;
+            proposalSubscriptionIdRef.current = null;
+            if (subscriptionId) {
+                void (api_base.api as any)?.send?.({ forget: subscriptionId });
+            }
+        };
+    }, [buildAccumulatorParameters, currency, growthRate, recordFlewAway, selectedSymbol, showAccumilatoirs, stake]);
 
     useEffect(
         () => () => {
@@ -845,6 +929,9 @@ const Accumilatoirs = observer(() => {
         setLatestTick(null);
         setTickHistory([]);
         setOutcomeHistory([]);
+        setProposalHistoryMoves([]);
+        setProposalSurvivedTicks(null);
+        proposalStatsSignatureRef.current = '';
         setMarketSurvivedTicks(0);
         marketEntryQuoteRef.current = null;
         marketSurvivedTicksRef.current = 0;
@@ -879,9 +966,9 @@ const Accumilatoirs = observer(() => {
                                     ))
                                 ) : (
                                     <span className='history-value history-low'>
-                                        {proposalPreview.tickSizeBarrier
-                                            ? 'Waiting for barrier breakout...'
-                                            : 'Waiting for Deriv barrier data...'}
+                                        {proposalPreview.status === 'loading'
+                                            ? 'Connecting to Deriv accumulator stream...'
+                                            : 'Waiting for first accumulator breakout...'}
                                     </span>
                                 )}
                             </div>
