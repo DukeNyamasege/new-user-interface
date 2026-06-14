@@ -75,14 +75,14 @@ describe('DOMAIN_CONFIG', () => {
         }
     );
 
-    it('returns OAuth2-only auth and bot folder settings for www.mrzetuzetu.site', () => {
+    it('returns OAuth2 auth and bot folder settings for www.mrzetuzetu.site', () => {
         expect(getDomainConfigForHost('www.mrzetuzetu.site')).toMatchObject({
             clientId: '33vlry53HSLhXICBcUURu',
-            appId: '',
+            appId: '80364',
             redirectUri: 'https://www.mrzetuzetu.site/',
             botsFolder: 'www.mrzetuzetu.site',
             canonicalHost: 'www.mrzetuzetu.site',
-            includeLegacyAppIdInOAuth: false,
+            includeLegacyAppIdInOAuth: true,
             useLegacyOAuthLogin: false,
             ui: {
                 brandName: 'Mrzetuzetu',
@@ -160,7 +160,7 @@ describe('DOMAIN_CONFIG', () => {
     });
 
     it.each([
-        ['www.mrzetuzetu.site', '', '33vlry53HSLhXICBcUURu'],
+        ['www.mrzetuzetu.site', '80364', '33vlry53HSLhXICBcUURu'],
         ['masterhunter.site', '96223', '33y9R1zDsuaYKXK2RaEH9'],
         ['tradinghubs.site', '122208', '33hi7ev9NiDjWY640JuSw'],
         ['mafiahub.site', '120589', '331bCUS8izRudblAnSACt'],

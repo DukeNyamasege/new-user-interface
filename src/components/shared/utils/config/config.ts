@@ -213,9 +213,9 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
     ...createHostedDomainEntries({
         primaryDomain: 'www.mrzetuzetu.site',
         clientId: '33vlry53HSLhXICBcUURu',
-        appId: '',
+        appId: '80364',
         redirectUri: 'https://www.mrzetuzetu.site/',
-        includeLegacyAppIdInOAuth: false,
+        includeLegacyAppIdInOAuth: true,
         features: {
             autoTrades: true,
             manualTrading: true,
