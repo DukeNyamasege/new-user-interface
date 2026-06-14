@@ -30,6 +30,7 @@ type DomainFeatureFlags = {
     manualTrading: boolean;
     scanner: boolean;
     chart: boolean;
+    tradingView: boolean;
 };
 
 type MartingaleConfig = {
@@ -102,6 +103,7 @@ const DEFAULT_DOMAIN_FEATURES: DomainFeatureFlags = {
     manualTrading: true,
     scanner: true,
     chart: true,
+    tradingView: true,
 };
 
 const DEFAULT_MARTINGALE_CONFIG: MartingaleConfig = {
@@ -189,7 +191,9 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
         includeLegacyAppIdInOAuth: true,
         features: {
             autoTrades: true,
+            chart: false,
             manualTrading: true,
+            tradingView: false,
         },
         ui: {
             brandName: 'Risk Managers',
@@ -275,6 +279,22 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
         },
     }),
     ...createHostedDomainEntries({
+        primaryDomain: 'kicktrade.site',
+        aliases: ['www.kicktrade.site'],
+        clientId: '33v1ry53HSLhXICBCUURU',
+        appId: '',
+        redirectUri: 'https://www.kicktrade.site/',
+        botsFolder: 'kicktrade.site',
+        includeLegacyAppIdInOAuth: false,
+        features: {
+            autoTrades: true,
+            manualTrading: true,
+        },
+        ui: {
+            brandName: 'Kicktrade',
+        },
+    }),
+    ...createHostedDomainEntries({
         primaryDomain: 'dollarsigns.site',
         aliases: ['www.dollarsigns.site'],
         clientId: '33uLmMotAXYx94pf0CLe6',
@@ -292,16 +312,19 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
     }),
 };
 
-export const getDomainConfigForHost = (hostname: string): DomainConfig | undefined => DOMAIN_CONFIG[hostname];
-export const getCanonicalHostForHost = (hostname: string): string | undefined => DOMAIN_CONFIG[hostname]?.canonicalHost;
+const normalizeHostname = (hostname: string) => hostname.split(':')[0].toLowerCase();
+
+export const getDomainConfigForHost = (hostname: string): DomainConfig | undefined => DOMAIN_CONFIG[normalizeHostname(hostname)];
+export const getCanonicalHostForHost = (hostname: string): string | undefined =>
+    DOMAIN_CONFIG[normalizeHostname(hostname)]?.canonicalHost;
 
 /**
  * Returns the DomainConfig for the current hostname.
  * Falls back to env vars (for local / Replit dev) when the hostname is not
  * listed in DOMAIN_CONFIG.
  */
-export const getDomainConfig = (): DomainConfig => {
-    const hostname = window.location.hostname;
+export const getDomainConfig = (activeHostname = window.location.hostname): DomainConfig => {
+    const hostname = normalizeHostname(activeHostname);
     const domain_config = getDomainConfigForHost(hostname);
     if (domain_config) {
         return domain_config;

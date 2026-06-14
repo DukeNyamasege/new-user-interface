@@ -22,6 +22,7 @@ const isDomainAllowed = (domain_name: string) => {
         'masterhunter.site',
         'tradinghubs.site',
         'mafiahub.site',
+        'kicktrade.site',
         'dollarsigns.site',
     ];
 

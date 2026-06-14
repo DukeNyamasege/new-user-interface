@@ -437,6 +437,7 @@ const BOTS_BY_FOLDER: Record<string, TBot[]> = {
     'masterhunter.site': [],
     'tradinghubs.site': [],
     'mafiahub.site': [],
+    'kicktrade.site': [],
     'dollarsigns.site': DOLLARSIGNS_BOTS,
 };
 

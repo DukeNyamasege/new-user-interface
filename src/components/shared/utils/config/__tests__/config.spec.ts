@@ -1,5 +1,5 @@
 import { TextEncoder } from 'util';
-import { buildBestBotsFileUrl, generateOAuthURL, getDomainConfigForHost } from '../config';
+import { buildBestBotsFileUrl, generateOAuthURL, getDomainConfig, getDomainConfigForHost } from '../config';
 
 describe('DOMAIN_CONFIG', () => {
     it('returns the configured TermicaFX auth and bot folder settings', () => {
@@ -22,9 +22,11 @@ describe('DOMAIN_CONFIG', () => {
     it('keeps Bot Ideas enabled on Risk Managers', () => {
         expect(getDomainConfigForHost('riskmanagers.site')?.features).toMatchObject({
             botIdeas: true,
+            chart: false,
             printPopups: true,
             autoTrades: true,
             manualTrading: true,
+            tradingView: false,
         });
         expect(getDomainConfigForHost('riskmanagers.site')?.ui.brandName).toBe('Risk Managers');
         expect(getDomainConfigForHost('riskmanagers.site')).toMatchObject({
@@ -74,6 +76,76 @@ describe('DOMAIN_CONFIG', () => {
         });
         }
     );
+
+    it('returns OAuth2-only auth and bot folder settings for Kicktrade', () => {
+        expect(getDomainConfigForHost('kicktrade.site')).toMatchObject({
+            clientId: '33v1ry53HSLhXICBCUURU',
+            appId: '',
+            redirectUri: 'https://www.kicktrade.site/',
+            botsFolder: 'kicktrade.site',
+            canonicalHost: 'kicktrade.site',
+            includeLegacyAppIdInOAuth: false,
+            useLegacyOAuthLogin: false,
+            ui: {
+                brandName: 'Kicktrade',
+            },
+            features: {
+                chart: true,
+                tradingView: true,
+                autoTrades: true,
+                manualTrading: true,
+            },
+        });
+        expect(getDomainConfigForHost('www.kicktrade.site')).toMatchObject({
+            clientId: '33v1ry53HSLhXICBCUURU',
+            appId: '',
+            redirectUri: 'https://www.kicktrade.site/',
+            botsFolder: 'kicktrade.site',
+            canonicalHost: 'kicktrade.site',
+            includeLegacyAppIdInOAuth: false,
+            useLegacyOAuthLogin: false,
+        });
+    });
+
+    it('uses Kicktrade auth settings from the active browser hostname', async () => {
+        const originalAppEnv = process.env.APP_ENV;
+        const cryptoMock = {
+            getRandomValues: (array: Uint8Array) => array.fill(1),
+            subtle: {
+                digest: jest.fn().mockResolvedValue(new Uint8Array(32).fill(2).buffer),
+            },
+        };
+
+        Object.defineProperty(globalThis, 'crypto', {
+            configurable: true,
+            value: cryptoMock,
+        });
+        Object.defineProperty(globalThis, 'TextEncoder', {
+            configurable: true,
+            value: TextEncoder,
+        });
+        process.env.APP_ENV = 'production';
+
+        const domainConfig = getDomainConfig('www.kicktrade.site');
+
+        expect(domainConfig).toMatchObject({
+            clientId: '33v1ry53HSLhXICBCUURU',
+            appId: '',
+            redirectUri: 'https://www.kicktrade.site/',
+            includeLegacyAppIdInOAuth: false,
+        });
+
+        const oauthUrl = await generateOAuthURL(undefined, domainConfig);
+        const url = new URL(oauthUrl);
+
+        expect(url.origin + url.pathname).toBe('https://auth.deriv.com/oauth2/auth');
+        expect(url.searchParams.get('client_id')).toBe('33v1ry53HSLhXICBCUURU');
+        expect(url.searchParams.get('app_id')).toBeNull();
+        expect(url.searchParams.get('redirect_uri')).toBe('https://www.kicktrade.site/');
+        expect(url.searchParams.get('redirect_uri')).not.toBe('https://riskmanagers.site/');
+
+        process.env.APP_ENV = originalAppEnv;
+    });
 
     it('returns OAuth2 auth and bot folder settings for Mrzetuzetu', () => {
         expect(getDomainConfigForHost('mrzetuzetu.site')).toMatchObject({
@@ -173,6 +245,8 @@ describe('DOMAIN_CONFIG', () => {
         ['masterhunter.site', '96223', '33y9R1zDsuaYKXK2RaEH9', 'https://masterhunter.site/'],
         ['tradinghubs.site', '122208', '33hi7ev9NiDjWY640JuSw', 'https://tradinghubs.site/'],
         ['mafiahub.site', '120589', '331bCUS8izRudblAnSACt', 'https://mafiahub.site/'],
+        ['kicktrade.site', '', '33v1ry53HSLhXICBCUURU', 'https://www.kicktrade.site/'],
+        ['www.kicktrade.site', '', '33v1ry53HSLhXICBCUURU', 'https://www.kicktrade.site/'],
     ])('uses the working OAuth2 PKCE login wiring for %s', async (host, appId, clientId, expectedRedirectUri) => {
         const originalAppEnv = process.env.APP_ENV;
         const cryptoMock = {
