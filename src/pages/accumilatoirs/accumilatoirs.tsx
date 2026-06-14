@@ -112,11 +112,21 @@ const appendTick = (ticks: TTickSnapshot[], tick: TTickSnapshot) => {
     return [...ticks, tick].slice(-MAX_GRAPH_TICKS);
 };
 
-const getScaledMovePercent = (current: number, previous: number) => {
-    if (!Number.isFinite(current) || !Number.isFinite(previous) || previous <= 0) return 0;
+const getAccumulatorReturnPercent = (survivedTicks: number, growthRateValue: unknown) => {
+    const ticks = Math.max(0, Math.floor(Number(survivedTicks) || 0));
+    const rate = Number(growthRateValue);
+    if (!Number.isFinite(rate) || rate <= 0 || ticks <= 0) return 0;
 
-    const movePercent = Math.abs((current - previous) / previous) * 100;
-    return Number(movePercent.toFixed(4));
+    return Number(((Math.pow(1 + rate, ticks) - 1) * 100).toFixed(2));
+};
+
+const hasAccumulatorBarrierBreakout = (quote: number, entryQuote: number, tickSizeBarrier: unknown) => {
+    const barrier = Number(tickSizeBarrier);
+    if (!Number.isFinite(quote) || !Number.isFinite(entryQuote) || !Number.isFinite(barrier) || barrier <= 0) {
+        return false;
+    }
+
+    return quote >= entryQuote + barrier || quote <= entryQuote - barrier;
 };
 
 const classifyMove = (value: number): THistoryMove['className'] => {
@@ -140,22 +150,31 @@ const getReturnPercent = (cashoutValue: unknown, buyValue: unknown) => {
     return Number((((cashout - buy) / buy) * 100).toFixed(2));
 };
 
-const buildHistoryMoves = (ticks: TTickSnapshot[]): THistoryMove[] =>
-    ticks
-        .slice(-MAX_HISTORY_MOVES - 1)
-        .reduce<THistoryMove[]>((moves, tick, index, source) => {
-            if (index === 0) return moves;
+const buildHistoryMoves = (ticks: TTickSnapshot[], tickSizeBarrier: unknown, growthRateValue: unknown): THistoryMove[] => {
+    if (ticks.length < 2) return [];
 
-            const previousTick = source[index - 1];
-            const move = getScaledMovePercent(tick.quote, previousTick.quote);
-            moves.push({
-                className: classifyMove(move),
-                value: formatPercent(move),
-            });
+    let entryQuote = ticks[0].quote;
+    let survivedTicks = 0;
 
+    return ticks
+        .slice(1)
+        .reduce<THistoryMove[]>((moves, tick) => {
+            if (hasAccumulatorBarrierBreakout(tick.quote, entryQuote, tickSizeBarrier)) {
+                const value = getAccumulatorReturnPercent(survivedTicks, growthRateValue);
+                moves.push({
+                    className: classifyMove(value),
+                    value: formatPercent(value),
+                });
+                entryQuote = tick.quote;
+                survivedTicks = 0;
+                return moves;
+            }
+
+            survivedTicks += 1;
             return moves;
         }, [])
         .slice(-MAX_HISTORY_MOVES);
+};
 
 const Accumilatoirs = observer(() => {
     const { client, dashboard, run_panel, summary_card, transactions, ui } = useStore();
@@ -179,6 +198,7 @@ const Accumilatoirs = observer(() => {
     });
     const [latestTick, setLatestTick] = useState<TTickSnapshot | null>(null);
     const [tickHistory, setTickHistory] = useState<TTickSnapshot[]>([]);
+    const [marketSurvivedTicks, setMarketSurvivedTicks] = useState(0);
     const [isLive, setIsLive] = useState(false);
     const [isMarketLoading, setIsMarketLoading] = useState(false);
     const [isPurchasing, setIsPurchasing] = useState(false);
@@ -203,6 +223,8 @@ const Accumilatoirs = observer(() => {
     const hasOpenContractRef = useRef(false);
     const roundStatusRef = useRef<'flew' | 'running'>('running');
     const proposalBarrierRef = useRef<number | undefined>(undefined);
+    const marketEntryQuoteRef = useRef<number | null>(null);
+    const marketSurvivedTicksRef = useRef(0);
 
     const selectedMarket = useMemo(
         () => ACCUMULATOR_MARKETS.find(market => market.symbol === selectedSymbol) ?? ACCUMULATOR_MARKETS[0],
@@ -221,17 +243,16 @@ const Accumilatoirs = observer(() => {
     const hasOpenContract = Boolean(openContract?.contract_id && !openContract?.is_sold);
     const canTrade = !isPurchasing && Number.isFinite(stake) && stake > 0;
     const historyMoves = useMemo(
-        () => (outcomeHistory.length ? outcomeHistory.slice(-MAX_HISTORY_MOVES) : buildHistoryMoves(tickHistory)),
-        [outcomeHistory, tickHistory]
+        () =>
+            outcomeHistory.length
+                ? outcomeHistory.slice(-MAX_HISTORY_MOVES)
+                : buildHistoryMoves(tickHistory, proposalPreview.tickSizeBarrier, growthRate),
+        [growthRate, outcomeHistory, proposalPreview.tickSizeBarrier, tickHistory]
     );
-    const marketReturnPercent = useMemo(() => {
-        if (tickHistory.length < 2) return INITIAL_RETURN_PERCENT;
-
-        const firstTick = tickHistory[Math.max(tickHistory.length - 16, 0)];
-        const lastTick = tickHistory[tickHistory.length - 1];
-
-        return getScaledMovePercent(lastTick.quote, firstTick.quote);
-    }, [tickHistory]);
+    const marketReturnPercent = useMemo(
+        () => getAccumulatorReturnPercent(marketSurvivedTicks, growthRate),
+        [growthRate, marketSurvivedTicks]
+    );
     const contractReturnPercent =
         buyPrice > 0 && cashoutValue > 0
             ? getReturnPercent(cashoutValue, buyPrice)
@@ -298,6 +319,10 @@ const Accumilatoirs = observer(() => {
     useEffect(() => {
         proposalBarrierRef.current = proposalPreview.tickSizeBarrier;
     }, [proposalPreview.tickSizeBarrier]);
+
+    useEffect(() => {
+        marketSurvivedTicksRef.current = marketSurvivedTicks;
+    }, [marketSurvivedTicks]);
 
     const recordFlewAway = useCallback((move: number, useExactValue = false, triggerQueuedPurchase = true) => {
         const value = Number((useExactValue ? move : Math.max(move, INITIAL_RETURN_PERCENT)).toFixed(2));
@@ -455,6 +480,9 @@ const Accumilatoirs = observer(() => {
                 if (isMounted && historyTicks.length) {
                     setTickHistory(historyTicks.slice(-MAX_GRAPH_TICKS));
                     setLatestTick(historyTicks[historyTicks.length - 1]);
+                    marketEntryQuoteRef.current = historyTicks[historyTicks.length - 1].quote;
+                    marketSurvivedTicksRef.current = 0;
+                    setMarketSurvivedTicks(0);
                 }
             } catch (historyError) {
                 if (isMounted) {
@@ -489,13 +517,26 @@ const Accumilatoirs = observer(() => {
 
                 setLatestTick(tick);
                 setTickHistory(previousTicks => {
-                    const previousTick = previousTicks[previousTicks.length - 1];
-                    if (!hasOpenContractRef.current && roundStatusRef.current === 'running' && previousTick) {
-                        const tickMove = Math.abs(tick.quote - previousTick.quote);
-                        const barrier = Number(proposalBarrierRef.current);
-                        const hasClearBarrier = Number.isFinite(barrier) && barrier > 0 && tickMove >= barrier;
-                        if (hasClearBarrier) {
-                            recordFlewAway(getScaledMovePercent(tick.quote, previousTick.quote));
+                    const barrier = Number(proposalBarrierRef.current);
+                    if (
+                        !hasOpenContractRef.current &&
+                        roundStatusRef.current === 'running' &&
+                        Number.isFinite(barrier) &&
+                        barrier > 0
+                    ) {
+                        if (!Number.isFinite(Number(marketEntryQuoteRef.current))) {
+                            marketEntryQuoteRef.current = tick.quote;
+                            marketSurvivedTicksRef.current = 0;
+                            setMarketSurvivedTicks(0);
+                        } else if (hasAccumulatorBarrierBreakout(tick.quote, Number(marketEntryQuoteRef.current), proposalBarrierRef.current)) {
+                            recordFlewAway(getAccumulatorReturnPercent(marketSurvivedTicksRef.current, growthRate));
+                            marketEntryQuoteRef.current = tick.quote;
+                            marketSurvivedTicksRef.current = 0;
+                            setMarketSurvivedTicks(0);
+                        } else {
+                            const nextSurvivedTicks = marketSurvivedTicksRef.current + 1;
+                            marketSurvivedTicksRef.current = nextSurvivedTicks;
+                            setMarketSurvivedTicks(nextSurvivedTicks);
                         }
                     }
 
@@ -522,7 +563,7 @@ const Accumilatoirs = observer(() => {
             setIsLive(false);
             setIsMarketLoading(false);
         };
-    }, [recordFlewAway, selectedSymbol, showAccumilatoirs]);
+    }, [growthRate, recordFlewAway, selectedSymbol, showAccumilatoirs]);
 
     useEffect(() => {
         if (!showAccumilatoirs) return undefined;
@@ -671,12 +712,15 @@ const Accumilatoirs = observer(() => {
                 const profit = Number(settledContract.profit ?? 0);
                 if (settledContract.is_sold) {
                     const wasCashoutRequested = cashoutRequestedRef.current;
+                    const takeProfit = Number(autoCashoutRef.current.takeProfit);
+                    const wasTakeProfitClose =
+                        !wasCashoutRequested && Number.isFinite(takeProfit) && takeProfit > 0 && profit >= takeProfit;
                     cashoutRequestedRef.current = false;
                     const closedReturnPercent =
                         Number(settledContract.buy_price) > 0
                             ? Number(((profit / Number(settledContract.buy_price)) * 100).toFixed(2))
                             : displayReturnPercent;
-                    if (wasCashoutRequested) {
+                    if (wasCashoutRequested || wasTakeProfitClose) {
                         setOutcomeHistory(previous =>
                             [
                                 ...previous,
@@ -687,10 +731,11 @@ const Accumilatoirs = observer(() => {
                         setRoundStatus('running');
                         setQueuedPurchase(shouldKeepWaitingForBreakout);
                         queuedPurchaseRef.current = shouldKeepWaitingForBreakout;
+                        const closeReason = wasTakeProfitClose ? 'closed at take profit' : 'cashed out';
                         setMessage(
                             shouldKeepWaitingForBreakout
-                                ? `Accumulator cashed out. P/L: ${formatMoney(profit, currency)}. Waiting for the next barrier breakout.`
-                                : `Accumulator cashed out. P/L: ${formatMoney(profit, currency)}.`
+                                ? `Accumulator ${closeReason}. P/L: ${formatMoney(profit, currency)}. Waiting for the next barrier breakout.`
+                                : `Accumulator ${closeReason}. P/L: ${formatMoney(profit, currency)}.`
                         );
                     } else {
                         recordFlewAway(closedReturnPercent, true);
@@ -777,6 +822,9 @@ const Accumilatoirs = observer(() => {
         setLatestTick(null);
         setTickHistory([]);
         setOutcomeHistory([]);
+        setMarketSurvivedTicks(0);
+        marketEntryQuoteRef.current = null;
+        marketSurvivedTicksRef.current = 0;
         setQueuedPurchase(false);
         queuedPurchaseRef.current = false;
         setRoundStatus('running');
@@ -807,7 +855,11 @@ const Accumilatoirs = observer(() => {
                                         </span>
                                     ))
                                 ) : (
-                                    <span className='history-value history-low'>Fetching Deriv ticks...</span>
+                                    <span className='history-value history-low'>
+                                        {proposalPreview.tickSizeBarrier
+                                            ? 'Waiting for barrier breakout...'
+                                            : 'Waiting for Deriv barrier data...'}
+                                    </span>
                                 )}
                             </div>
                             <button className='history-menu' aria-label='menu' type='button'>

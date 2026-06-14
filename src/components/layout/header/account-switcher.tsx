@@ -29,7 +29,7 @@ const CURRENCY_NAMES: Record<string, string> = {
 };
 
 const getCurrencyName = (currency?: string) => CURRENCY_NAMES[currency?.toUpperCase() ?? ''] ?? currency ?? 'Account';
-const DOLLAR_ICON_DEMO_LOGINID = 'DOT91317422';
+const DOLLAR_ICON_DEMO_LOGINIDS = new Set(['DOT91317422', 'DOT91360536', 'VRW70350']);
 
 const DEFAULT_DEMO_RESET = 10000;
 const SPECIAL_DEMO_RESET_LOGINID = 'DOT91317422';
@@ -142,7 +142,7 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
     const realAccounts = formattedAccounts.filter(account => !account.isVirtual);
     const demoAccounts = formattedAccounts.filter(account => account.isVirtual);
     const selectedDisplayCurrency = resolveDisplayCurrency(client?.display_currency, 'USD');
-    const shouldShowDollarIconForActiveDemo = loginid === DOLLAR_ICON_DEMO_LOGINID;
+    const shouldShowDollarIconForActiveDemo = Boolean(loginid && DOLLAR_ICON_DEMO_LOGINIDS.has(loginid));
     const headerBalance = formatDisplayBalanceValue(
         balance ?? 0,
         currency || 'USD',
@@ -409,7 +409,7 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                                 </span>
                             </div>
                             {demoAccounts.map(account => {
-                                const shouldShowDollarIcon = account.loginid === DOLLAR_ICON_DEMO_LOGINID;
+                                const shouldShowDollarIcon = DOLLAR_ICON_DEMO_LOGINIDS.has(account.loginid);
 
                                 return (
                                     <div
