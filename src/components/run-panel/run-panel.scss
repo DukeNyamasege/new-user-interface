@@ -20,6 +20,18 @@
             z-index: var(--zindex-drawer);
             height: calc(100% - env(safe-area-inset-bottom, 0));
             padding-bottom: env(safe-area-inset-bottom, 0);
+            background: var(--general-main-1);
+
+            .dc-drawer,
+            .dc-drawer__container,
+            .dc-drawer__content,
+            .run-panel__content,
+            .run-panel-tab__content--mobile,
+            .transactions,
+            .summary,
+            .journal {
+                background-color: var(--general-main-1);
+            }
 
             &-closed {
                 position: unset;
