@@ -1,5 +1,5 @@
 import { TextEncoder } from 'util';
-import { buildBestBotsFileUrl, generateOAuthURL, getCanonicalHostForHost, getDomainConfigForHost } from '../config';
+import { buildBestBotsFileUrl, generateOAuthURL, getDomainConfigForHost } from '../config';
 
 describe('DOMAIN_CONFIG', () => {
     it('returns the configured TermicaFX auth and bot folder settings', () => {
@@ -35,8 +35,6 @@ describe('DOMAIN_CONFIG', () => {
     });
 
     it.each([
-        ['mrzetuzetu.site', '33vlry53HSLhXICBcUURu', '80364', 'Mrzetuzetu', false, 'optimumtraders.site'],
-        ['masterhunter.site', '33g5WCS5YOFHD3aWLZZjj', '96223', 'Master Hunter', false],
         ['tradinghubs.site', '33hi7ev9NiDjWY640JuSw', '122208', 'Trading Hubs', false],
         ['mafiahub.site', '331bCUS8izRudblAnSACt', '120589', 'Mafia Hub', false],
     ])(
@@ -77,17 +75,6 @@ describe('DOMAIN_CONFIG', () => {
         }
     );
 
-    it('maps mrzertuzetu aliases back to the canonical mrzetuzetu host', () => {
-        expect(getDomainConfigForHost('mrzertuzetu.site')).toMatchObject({
-            redirectUri: 'https://mrzetuzetu.site/',
-            botsFolder: 'optimumtraders.site',
-            canonicalHost: 'mrzetuzetu.site',
-        });
-        expect(getCanonicalHostForHost('mrzertuzetu.site')).toBe('mrzetuzetu.site');
-        expect(getCanonicalHostForHost('www.mrzetuzetu.site')).toBe('mrzetuzetu.site');
-        expect(getCanonicalHostForHost('www.mrzertuzetu.site')).toBe('mrzetuzetu.site');
-    });
-
     it('returns OAuth2-only auth and bot folder settings for Dollarsign', () => {
         expect(getDomainConfigForHost('dollarsigns.site')).toMatchObject({
             clientId: '33uLmMotAXYx94pf0CLe6',
@@ -114,6 +101,34 @@ describe('DOMAIN_CONFIG', () => {
         });
     });
 
+    it('returns OAuth2-only auth and bot folder settings for Master Hunter', () => {
+        expect(getDomainConfigForHost('masterhunter.site')).toMatchObject({
+            clientId: '33y9R1zDsuaYKXK2RaEH9',
+            appId: '',
+            redirectUri: 'https://masterhunter.site/',
+            botsFolder: 'masterhunter.site',
+            canonicalHost: 'masterhunter.site',
+            includeLegacyAppIdInOAuth: false,
+            useLegacyOAuthLogin: false,
+            ui: {
+                brandName: 'Master Hunter',
+            },
+            features: {
+                autoTrades: true,
+                manualTrading: true,
+            },
+        });
+        expect(getDomainConfigForHost('www.masterhunter.site')).toMatchObject({
+            clientId: '33y9R1zDsuaYKXK2RaEH9',
+            appId: '',
+            redirectUri: 'https://masterhunter.site/',
+            botsFolder: 'masterhunter.site',
+            canonicalHost: 'masterhunter.site',
+            includeLegacyAppIdInOAuth: false,
+            useLegacyOAuthLogin: false,
+        });
+    });
+
     it('removes old hosted domain entries that should no longer process login directly', () => {
         expect(getDomainConfigForHost('optimumtraders.site')).toBeUndefined();
         expect(getDomainConfigForHost('www.optimumtraders.site')).toBeUndefined();
@@ -125,8 +140,6 @@ describe('DOMAIN_CONFIG', () => {
     });
 
     it.each([
-        ['mrzetuzetu.site', '80364', '33vlry53HSLhXICBcUURu'],
-        ['masterhunter.site', '96223', '33g5WCS5YOFHD3aWLZZjj'],
         ['tradinghubs.site', '122208', '33hi7ev9NiDjWY640JuSw'],
         ['mafiahub.site', '120589', '331bCUS8izRudblAnSACt'],
     ])('uses the working OAuth2 PKCE login wiring for %s', async (host, appId, clientId) => {
