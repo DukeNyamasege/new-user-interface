@@ -270,7 +270,7 @@ const RunPanel = observer(() => {
     const { statistics } = transactions;
     const { active_tour, active_tab } = dashboard;
     const { total_payout, total_profit, total_stake, won_contracts, lost_contracts, number_of_runs } = statistics;
-    const { ACCUMILATOIRS, BOT_BUILDER } = DBOT_TABS;
+    const { BOT_BUILDER } = DBOT_TABS;
 
     React.useEffect(() => {
         onMount();
@@ -315,8 +315,7 @@ const RunPanel = observer(() => {
 
     // Show run panel on all tabs on desktop, but only on BOT_BUILDER on mobile.
     const show_run_panel = isDesktop || active_tab === BOT_BUILDER || active_tour;
-    const is_accumulator_mobile = !isDesktop && active_tab === ACCUMILATOIRS;
-    if (is_accumulator_mobile || (!show_run_panel && isDesktop) || active_tour === 'bot_builder') return null;
+    if ((!show_run_panel && isDesktop) || active_tour === 'bot_builder') return null;
 
     return (
         <>
