@@ -34,6 +34,7 @@ type TProposalPreview = {
     message: string;
     minStake?: number;
     status: 'idle' | 'loading' | 'ready' | 'error';
+    tickSizeBarrier?: number;
 };
 
 type TAutoCashoutSettings = {
@@ -115,12 +116,12 @@ const getScaledMovePercent = (current: number, previous: number) => {
     if (!Number.isFinite(current) || !Number.isFinite(previous) || previous <= 0) return 0;
 
     const movePercent = Math.abs((current - previous) / previous) * 100;
-    return Number(Math.min(movePercent * 100, 500).toFixed(2));
+    return Number(movePercent.toFixed(4));
 };
 
 const classifyMove = (value: number): THistoryMove['className'] => {
-    if (value >= 100) return 'high';
-    if (value >= 30) return 'medium';
+    if (value >= 1) return 'high';
+    if (value >= 0.25) return 'medium';
     return 'low';
 };
 
@@ -179,13 +180,13 @@ const Accumilatoirs = observer(() => {
     const [latestTick, setLatestTick] = useState<TTickSnapshot | null>(null);
     const [tickHistory, setTickHistory] = useState<TTickSnapshot[]>([]);
     const [isLive, setIsLive] = useState(false);
+    const [isMarketLoading, setIsMarketLoading] = useState(false);
     const [isPurchasing, setIsPurchasing] = useState(false);
     const [isCashingOut, setIsCashingOut] = useState(false);
     const [openContract, setOpenContract] = useState<Record<string, any> | null>(null);
     const [queuedPurchase, setQueuedPurchase] = useState(false);
     const [autoTradeEnabled, setAutoTradeEnabled] = useState(false);
     const [roundStatus, setRoundStatus] = useState<'flew' | 'running'>('running');
-    const [visualReturnPercent, setVisualReturnPercent] = useState(INITIAL_RETURN_PERCENT);
     const [outcomeHistory, setOutcomeHistory] = useState<THistoryMove[]>([]);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -199,7 +200,9 @@ const Accumilatoirs = observer(() => {
     const queuedPurchaseRef = useRef(false);
     const autoTradeEnabledRef = useRef(false);
     const executePurchaseRef = useRef<(() => void) | null>(null);
-    const visualReturnPercentRef = useRef(INITIAL_RETURN_PERCENT);
+    const hasOpenContractRef = useRef(false);
+    const roundStatusRef = useRef<'flew' | 'running'>('running');
+    const proposalBarrierRef = useRef<number | undefined>(undefined);
 
     const selectedMarket = useMemo(
         () => ACCUMULATOR_MARKETS.find(market => market.symbol === selectedSymbol) ?? ACCUMULATOR_MARKETS[0],
@@ -235,12 +238,14 @@ const Accumilatoirs = observer(() => {
             : buyPrice > 0
               ? Number(((currentProfit / buyPrice) * 100).toFixed(2))
               : null;
-    const displayReturnPercent = contractReturnPercent ?? Math.max(marketReturnPercent, visualReturnPercent);
+    const displayReturnPercent = contractReturnPercent ?? marketReturnPercent;
     const graphTicks = useMemo(() => tickHistory.slice(-36), [tickHistory]);
     const graphPosition = useMemo(() => {
         const width = 1000;
         const height = 500;
-        const progress = Math.max(0.02, Math.min(Math.max(displayReturnPercent, 0) / 200, 1));
+        const progress = hasOpenContract
+            ? Math.max(0.02, Math.min(Math.max(displayReturnPercent, 0) / 200, 1))
+            : Math.max(0.08, Math.min(graphTicks.length / 36, 1));
         const hasGraphTicks = graphTicks.length >= 2;
         const quotes = graphTicks.map(tick => tick.quote);
         const minQuote = Math.min(...quotes);
@@ -271,6 +276,10 @@ const Accumilatoirs = observer(() => {
     }, [openContract]);
 
     useEffect(() => {
+        hasOpenContractRef.current = hasOpenContract;
+    }, [hasOpenContract]);
+
+    useEffect(() => {
         autoCashoutRef.current = autoCashout;
     }, [autoCashout]);
 
@@ -283,30 +292,19 @@ const Accumilatoirs = observer(() => {
     }, [autoTradeEnabled]);
 
     useEffect(() => {
-        visualReturnPercentRef.current = visualReturnPercent;
-    }, [visualReturnPercent]);
+        roundStatusRef.current = roundStatus;
+    }, [roundStatus]);
 
     useEffect(() => {
-        if (!showAccumilatoirs || hasOpenContract || roundStatus === 'flew') return undefined;
-
-        const intervalId = window.setInterval(() => {
-            setVisualReturnPercent(previous =>
-                Number(Math.min(previous + Math.max(Number(growthRate) * 100, 1), 500).toFixed(2))
-            );
-        }, 120);
-
-        return () => window.clearInterval(intervalId);
-    }, [growthRate, hasOpenContract, roundStatus, showAccumilatoirs]);
+        proposalBarrierRef.current = proposalPreview.tickSizeBarrier;
+    }, [proposalPreview.tickSizeBarrier]);
 
     const recordFlewAway = useCallback((move: number, useExactValue = false, triggerQueuedPurchase = true) => {
-        const value = Number(
-            (useExactValue ? move : Math.max(move, visualReturnPercentRef.current, INITIAL_RETURN_PERCENT)).toFixed(2)
-        );
+        const value = Number((useExactValue ? move : Math.max(move, INITIAL_RETURN_PERCENT)).toFixed(2));
         setOutcomeHistory(previous =>
             [...previous, { className: classifyMove(value), value: formatPercent(value) }].slice(-MAX_HISTORY_MOVES)
         );
         setRoundStatus('flew');
-        setVisualReturnPercent(INITIAL_RETURN_PERCENT);
 
         window.setTimeout(() => {
             if (triggerQueuedPurchase && (queuedPurchaseRef.current || autoTradeEnabledRef.current) && executePurchaseRef.current) {
@@ -433,6 +431,7 @@ const Accumilatoirs = observer(() => {
         if (!showAccumilatoirs) return undefined;
 
         let isMounted = true;
+        setIsMarketLoading(true);
 
         const requestTickHistory = async () => {
             try {
@@ -461,6 +460,10 @@ const Accumilatoirs = observer(() => {
                 if (isMounted) {
                     console.warn('[Accumilatoirs] Tick history is not available yet.', historyError);
                 }
+            } finally {
+                if (isMounted) {
+                    setIsMarketLoading(false);
+                }
             }
         };
 
@@ -487,8 +490,13 @@ const Accumilatoirs = observer(() => {
                 setLatestTick(tick);
                 setTickHistory(previousTicks => {
                     const previousTick = previousTicks[previousTicks.length - 1];
-                    if (!hasOpenContract && roundStatus === 'running' && previousTick && tick.quote < previousTick.quote) {
-                        recordFlewAway(getScaledMovePercent(tick.quote, previousTick.quote));
+                    if (!hasOpenContractRef.current && roundStatusRef.current === 'running' && previousTick) {
+                        const tickMove = Math.abs(tick.quote - previousTick.quote);
+                        const barrier = Number(proposalBarrierRef.current);
+                        const hasClearBarrier = Number.isFinite(barrier) && barrier > 0 && tickMove >= barrier;
+                        if (hasClearBarrier) {
+                            recordFlewAway(getScaledMovePercent(tick.quote, previousTick.quote));
+                        }
                     }
 
                     return appendTick(previousTicks, tick);
@@ -512,8 +520,9 @@ const Accumilatoirs = observer(() => {
             }
             tickSubscriptionRef.current = null;
             setIsLive(false);
+            setIsMarketLoading(false);
         };
-    }, [hasOpenContract, recordFlewAway, roundStatus, selectedSymbol, showAccumilatoirs]);
+    }, [recordFlewAway, selectedSymbol, showAccumilatoirs]);
 
     useEffect(() => {
         if (!showAccumilatoirs) return undefined;
@@ -565,6 +574,7 @@ const Accumilatoirs = observer(() => {
                     message: proposal?.longcode || 'Accumulator is ready to buy.',
                     minStake: Number(proposal?.contract_details?.minimum_stake) || undefined,
                     status: 'ready',
+                    tickSizeBarrier: Number(proposal?.contract_details?.tick_size_barrier) || undefined,
                 });
             } catch (proposalError) {
                 setProposalPreview({
@@ -666,12 +676,24 @@ const Accumilatoirs = observer(() => {
                         Number(settledContract.buy_price) > 0
                             ? Number(((profit / Number(settledContract.buy_price)) * 100).toFixed(2))
                             : displayReturnPercent;
-                    recordFlewAway(closedReturnPercent, true, !wasCashoutRequested);
-                    if (wasCashoutRequested && autoTradeEnabledRef.current) {
-                        setQueuedPurchase(true);
-                        queuedPurchaseRef.current = true;
-                        setMessage(`Accumulator cashed out. P/L: ${formatMoney(profit, currency)}. Waiting for the next breakout.`);
+                    if (wasCashoutRequested) {
+                        setOutcomeHistory(previous =>
+                            [
+                                ...previous,
+                                { className: classifyMove(closedReturnPercent), value: formatPercent(closedReturnPercent) },
+                            ].slice(-MAX_HISTORY_MOVES)
+                        );
+                        const shouldKeepWaitingForBreakout = autoTradeEnabledRef.current;
+                        setRoundStatus('running');
+                        setQueuedPurchase(shouldKeepWaitingForBreakout);
+                        queuedPurchaseRef.current = shouldKeepWaitingForBreakout;
+                        setMessage(
+                            shouldKeepWaitingForBreakout
+                                ? `Accumulator cashed out. P/L: ${formatMoney(profit, currency)}. Waiting for the next barrier breakout.`
+                                : `Accumulator cashed out. P/L: ${formatMoney(profit, currency)}.`
+                        );
                     } else {
+                        recordFlewAway(closedReturnPercent, true);
                         setMessage(`Accumulator closed. P/L: ${formatMoney(profit, currency)}.`);
                     }
                     dashboard.setActiveTradingModule(null);
@@ -758,7 +780,6 @@ const Accumilatoirs = observer(() => {
         setQueuedPurchase(false);
         queuedPurchaseRef.current = false;
         setRoundStatus('running');
-        setVisualReturnPercent(INITIAL_RETURN_PERCENT);
         setMessage('');
         setError('');
     };
@@ -948,7 +969,7 @@ const Accumilatoirs = observer(() => {
                             <div className='accumilatoirs-ticket__header'>
                                 <h2>Trade setup</h2>
                                 <span className={classNames({ 'accumilatoirs-live': isLive })}>
-                                    {isLive ? 'LIVE' : 'CONNECTING'} / {currency}
+                                    {isMarketLoading ? 'Loading' : isLive ? 'LIVE' : 'Waiting'} / {currency}
                                 </span>
                             </div>
 
@@ -1022,7 +1043,11 @@ const Accumilatoirs = observer(() => {
                                     </div>
                                 </label>
 
-                                <label className='accumilatoirs-check accumilatoirs-check--auto'>
+                                <label
+                                    className={classNames('accumilatoirs-check accumilatoirs-check--auto', {
+                                        'accumilatoirs-check--auto-active': autoTradeEnabled,
+                                    })}
+                                >
                                     <input
                                         checked={autoTradeEnabled}
                                         type='checkbox'

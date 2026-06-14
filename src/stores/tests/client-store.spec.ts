@@ -3,12 +3,29 @@ import ClientStore from '../client-store';
 describe('ClientStore.resetDemoBalance', () => {
     beforeEach(() => {
         localStorage.clear();
+        jest.resetModules();
     });
 
-    it('should persist override, update accounts and account_list, and return true', () => {
+    it('applies the Deriv reset balance to accounts and account_list', async () => {
+        jest.doMock('@/services/oauth-token-exchange.service', () => ({
+            OAuthTokenExchangeService: {
+                getAccessToken: () => 'oauth-token',
+            },
+        }));
+        jest.doMock('@/services/derivws-accounts.service', () => ({
+            DerivWSAccountsService: {
+                resetDemoBalance: jest.fn(() =>
+                    Promise.resolve({
+                        account_id: 'VRTC456',
+                        balance: 10000,
+                        currency: 'USD',
+                    })
+                ),
+            },
+        }));
+
         const store: any = new ClientStore({} as any);
 
-        // Prepare server balances and accounts
         store.server_balances = { VRTC456: 1000 };
         store.accounts = {
             VRTC456: {
@@ -27,23 +44,22 @@ describe('ClientStore.resetDemoBalance', () => {
             },
         ];
 
-        const result = store.resetDemoBalance('VRTC456', 2500, 'USD');
+        const result = await store.resetDemoBalance('VRTC456', 2500, 'USD');
 
-        expect(result).toBe(true);
-
-        const raw = localStorage.getItem('demo_balance_overrides');
-        expect(raw).not.toBeNull();
-        const parsed = JSON.parse(raw as string);
-        expect(parsed['VRTC456']).toBeDefined();
-        expect(parsed['VRTC456'].custom_balance).toBe(2500);
-
-        expect(store.accounts['VRTC456'].balance).toBe(2500);
+        expect(result).toEqual({
+            balance: 10000,
+            currency: 'USD',
+            loginid: 'VRTC456',
+            success: true,
+        });
+        expect(localStorage.getItem('demo_balance_overrides')).toBeNull();
+        expect(store.accounts['VRTC456'].balance).toBe(10000);
         const listAcc = store.account_list.find((a: any) => a.loginid === 'VRTC456');
         expect(listAcc).toBeDefined();
-        expect(listAcc.balance).toBe(2500);
+        expect(listAcc.balance).toBe(10000);
     });
 
-    it('getDemoBalanceOverride should hydrate from localStorage and return override', () => {
+    it('does not hydrate local demo balance overrides', () => {
         const store: any = new ClientStore({} as any);
 
         const override = {
@@ -55,7 +71,6 @@ describe('ClientStore.resetDemoBalance', () => {
         localStorage.setItem('demo_balance_overrides', JSON.stringify({ VRTC789: override }));
 
         const got = store.getDemoBalanceOverride('VRTC789');
-        expect(got).toBeDefined();
-        expect(got.custom_balance).toBe(3000);
+        expect(got).toBeUndefined();
     });
 });

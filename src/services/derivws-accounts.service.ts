@@ -1,4 +1,5 @@
 import { isProduction } from '@/components/shared';
+import { getDomainConfig } from '@/components/shared/utils/config/config';
 import brandConfig from '../../brand.config.json';
 
 /**
@@ -18,6 +19,16 @@ export interface DerivAccount {
  */
 interface AccountsResponse {
     data: DerivAccount[];
+}
+
+interface ResetDemoBalanceResponse {
+    data: {
+        account_id: string;
+        account_type: 'demo' | 'real';
+        balance: number;
+        currency: string;
+        status: string;
+    };
 }
 
 /**
@@ -170,6 +181,65 @@ export class DerivWSAccountsService {
         })();
 
         return this.accountsFetchPromise;
+    }
+
+    /**
+     * Resets a DerivWS Options demo account balance on Deriv's server.
+     * This is account-id scoped, so every device sees the same refreshed demo
+     * balance after Deriv processes the reset.
+     */
+    static async resetDemoBalance(accessToken: string, accountId: string): Promise<ResetDemoBalanceResponse['data']> {
+        if (!accountId) {
+            throw new Error('Demo account id is required.');
+        }
+
+        const baseURL = this.getDerivWSBaseURL();
+        const optionsDir = brandConfig.platform.derivws.directories.options;
+        const endpoint = `${baseURL}${optionsDir}accounts/${encodeURIComponent(accountId)}/reset-demo-balance`;
+        const { appId } = getDomainConfig();
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                ...(appId ? { 'Deriv-App-ID': appId } : {}),
+            },
+        });
+
+        if (!response.ok) {
+            let message = `Failed to reset demo balance: ${response.status} ${response.statusText}`;
+            try {
+                const data = await response.json();
+                message = data?.error?.message || data?.message || message;
+            } catch {
+                // Keep the HTTP status message when the body is not JSON.
+            }
+            throw new Error(message);
+        }
+
+        const data: ResetDemoBalanceResponse = await response.json();
+        if (!data?.data?.account_id) {
+            throw new Error('Deriv did not return the reset demo account.');
+        }
+
+        this.clearCache();
+        const storedAccounts = this.getStoredAccounts();
+        if (storedAccounts?.length) {
+            this.storeAccounts(
+                storedAccounts.map(account =>
+                    account.account_id === data.data.account_id
+                        ? {
+                              ...account,
+                              balance: String(data.data.balance),
+                              currency: data.data.currency || account.currency,
+                              status: data.data.status || account.status,
+                          }
+                        : account
+                )
+            );
+        }
+
+        return data.data;
     }
 
     /**

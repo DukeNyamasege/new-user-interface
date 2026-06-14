@@ -338,10 +338,62 @@ export default class ClientStore {
         return this.getDisplayBalanceAmount(resolvedLoginId) + 1e-9 >= normalizedRequiredAmount;
     };
 
-    resetDemoBalance = (_loginid: string, _custom_balance: number, _currency?: string) => {
+    resetDemoBalance = async (loginid: string, _custom_balance: number, currency?: string) => {
         localStorage.removeItem(DEMO_BALANCE_OVERRIDES_KEY);
         this.demo_balance_overrides = {};
-        return false;
+
+        const resolvedLoginId = loginid || this.loginid || getAccountId() || '';
+        if (!resolvedLoginId || !isDemoAccount(resolvedLoginId)) return false;
+
+        try {
+            const { OAuthTokenExchangeService } = await import('@/services/oauth-token-exchange.service');
+            const accessToken = OAuthTokenExchangeService.getAccessToken();
+
+            if (accessToken) {
+                const { DerivWSAccountsService } = await import('@/services/derivws-accounts.service');
+                const resetAccount = await DerivWSAccountsService.resetDemoBalance(accessToken, resolvedLoginId);
+                this.applyBalanceUpdate(
+                    resetAccount.account_id,
+                    resetAccount.currency || currency || this.getAccountCurrency(resolvedLoginId),
+                    Number(resetAccount.balance)
+                );
+                return {
+                    balance: Number(resetAccount.balance),
+                    currency: resetAccount.currency || currency || this.getAccountCurrency(resolvedLoginId),
+                    loginid: resetAccount.account_id,
+                    success: true,
+                };
+            }
+
+            const response = await (api_base.api as any)?.send?.({
+                topup_virtual: 1,
+                loginid: resolvedLoginId,
+            });
+
+            if (response?.error) {
+                throw new Error(response.error.message || 'Failed to reset demo balance.');
+            }
+
+            const balanceResponse = await (api_base.api as any)?.send?.({
+                balance: 1,
+                account: resolvedLoginId,
+                subscribe: 0,
+            });
+            const balanceData = balanceResponse?.balance;
+            const serverBalance = Number(balanceData?.balance ?? this.server_balances[resolvedLoginId] ?? this.getDisplayBalanceAmount(resolvedLoginId));
+            const accountCurrency = balanceData?.currency || currency || this.getAccountCurrency(resolvedLoginId);
+            this.applyBalanceUpdate(resolvedLoginId, accountCurrency, serverBalance);
+
+            return {
+                balance: serverBalance,
+                currency: accountCurrency,
+                loginid: resolvedLoginId,
+                success: true,
+            };
+        } catch (error) {
+            console.error('[ClientStore] Failed to reset demo balance:', error);
+            return false;
+        }
     };
 
     applyBalanceUpdate = (loginid: string, currency: string, server_balance: number) => {

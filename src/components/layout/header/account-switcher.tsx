@@ -184,19 +184,35 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                 demoAccounts.find(a => a.loginid === currentActiveLogin)?.currency || client?.getAccountCurrency?.(currentActiveLogin) || 'USD';
 
             try {
+                const getResetSuccessMessage = (resetResult: unknown) => {
+                    const resultData =
+                        resetResult && typeof resetResult === 'object'
+                            ? (resetResult as { balance?: number; currency?: string; success?: boolean })
+                            : null;
+                    const resetBalance = Number(resultData?.balance ?? amount);
+                    const resetCurrency = resultData?.currency || accountCurrency;
+
+                    return `Demo balance reset to ${Number(resetBalance).toFixed(2)} ${resetCurrency}`;
+                };
+
                 const result = client?.resetDemoBalance?.(currentActiveLogin, amount, accountCurrency);
                 // resetDemoBalance may return boolean or promise; handle both
                 if (result && typeof (result as Promise<boolean>).then === 'function') {
-                    (result as Promise<boolean>).then(success => {
-                        if (success) {
-                            setResetMessage(`Demo balance reset to ${Number(amount).toFixed(2)} ${accountCurrency}`);
-                            setResetAmount('');
-                        } else {
+                    (result as Promise<unknown>)
+                        .then(success => {
+                            if (success) {
+                                setResetMessage(getResetSuccessMessage(success));
+                                setResetAmount('');
+                            } else {
+                                setResetError('Failed to reset demo balance.');
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Demo reset failed', err);
                             setResetError('Failed to reset demo balance.');
-                        }
-                    });
+                        });
                 } else if (result) {
-                    setResetMessage(`Demo balance reset to ${Number(amount).toFixed(2)} ${accountCurrency}`);
+                    setResetMessage(getResetSuccessMessage(result));
                     setResetAmount('');
                 } else {
                     setResetError('Failed to reset demo balance.');
