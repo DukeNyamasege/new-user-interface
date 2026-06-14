@@ -194,6 +194,7 @@ const Accumilatoirs = observer(() => {
     const contractAbortRef = useRef<AbortController | null>(null);
     const openContractRef = useRef<Record<string, any> | null>(null);
     const cashoutInFlightRef = useRef(false);
+    const cashoutRequestedRef = useRef(false);
     const autoCashoutRef = useRef(autoCashout);
     const queuedPurchaseRef = useRef(false);
     const autoTradeEnabledRef = useRef(false);
@@ -297,7 +298,7 @@ const Accumilatoirs = observer(() => {
         return () => window.clearInterval(intervalId);
     }, [growthRate, hasOpenContract, roundStatus, showAccumilatoirs]);
 
-    const recordFlewAway = useCallback((move: number, useExactValue = false) => {
+    const recordFlewAway = useCallback((move: number, useExactValue = false, triggerQueuedPurchase = true) => {
         const value = Number(
             (useExactValue ? move : Math.max(move, visualReturnPercentRef.current, INITIAL_RETURN_PERCENT)).toFixed(2)
         );
@@ -308,7 +309,7 @@ const Accumilatoirs = observer(() => {
         setVisualReturnPercent(INITIAL_RETURN_PERCENT);
 
         window.setTimeout(() => {
-            if ((queuedPurchaseRef.current || autoTradeEnabledRef.current) && executePurchaseRef.current) {
+            if (triggerQueuedPurchase && (queuedPurchaseRef.current || autoTradeEnabledRef.current) && executePurchaseRef.current) {
                 executePurchaseRef.current();
                 return;
             }
@@ -356,6 +357,7 @@ const Accumilatoirs = observer(() => {
 
             cashoutInFlightRef.current = true;
             setIsCashingOut(true);
+            cashoutRequestedRef.current = true;
             setError('');
             setMessage(`${reason} requested...`);
 
@@ -399,6 +401,10 @@ const Accumilatoirs = observer(() => {
     }, []);
 
     const stopAccumulator = useCallback(async () => {
+        setAutoTradeEnabled(false);
+        setQueuedPurchase(false);
+        autoTradeEnabledRef.current = false;
+        queuedPurchaseRef.current = false;
         if (openContractRef.current?.contract_id && !openContractRef.current?.is_sold) {
             await cashoutContract('Navigation cashout');
         }
@@ -654,12 +660,20 @@ const Accumilatoirs = observer(() => {
                 pushContract(settledContract);
                 const profit = Number(settledContract.profit ?? 0);
                 if (settledContract.is_sold) {
+                    const wasCashoutRequested = cashoutRequestedRef.current;
+                    cashoutRequestedRef.current = false;
                     const closedReturnPercent =
                         Number(settledContract.buy_price) > 0
                             ? Number(((profit / Number(settledContract.buy_price)) * 100).toFixed(2))
                             : displayReturnPercent;
-                    recordFlewAway(closedReturnPercent, true);
-                    setMessage(`Accumulator closed. P/L: ${formatMoney(profit, currency)}.`);
+                    recordFlewAway(closedReturnPercent, true, !wasCashoutRequested);
+                    if (wasCashoutRequested && autoTradeEnabledRef.current) {
+                        setQueuedPurchase(true);
+                        queuedPurchaseRef.current = true;
+                        setMessage(`Accumulator cashed out. P/L: ${formatMoney(profit, currency)}. Waiting for the next breakout.`);
+                    } else {
+                        setMessage(`Accumulator closed. P/L: ${formatMoney(profit, currency)}.`);
+                    }
                     dashboard.setActiveTradingModule(null);
                     run_panel.setHasOpenContract?.(false);
                     run_panel.setContractStage?.(contract_stages.CONTRACT_CLOSED);
@@ -714,12 +728,35 @@ const Accumilatoirs = observer(() => {
         void executePurchase();
     }, [cashoutContract, executePurchase, hasOpenContract, roundStatus]);
 
+    const handleStopAllTrades = useCallback(async () => {
+        setAutoTradeEnabled(false);
+        setQueuedPurchase(false);
+        autoTradeEnabledRef.current = false;
+        queuedPurchaseRef.current = false;
+        setError('');
+
+        if (hasOpenContract) {
+            await cashoutContract('Stop all trades cashout');
+            setMessage('Stop all trades requested. Auto trading is off.');
+            return;
+        }
+
+        cleanupContractStream();
+        setOpenContract(null);
+        dashboard.setActiveTradingModule(null);
+        run_panel.setIsRunning(false);
+        run_panel.setHasOpenContract?.(false);
+        run_panel.setContractStage?.(contract_stages.NOT_RUNNING);
+        setMessage('All accumulator auto trading has been stopped.');
+    }, [cashoutContract, cleanupContractStream, dashboard, hasOpenContract, run_panel]);
+
     const handleMarketChange = (symbol: string) => {
         setSelectedSymbol(symbol);
         setLatestTick(null);
         setTickHistory([]);
         setOutcomeHistory([]);
         setQueuedPurchase(false);
+        queuedPurchaseRef.current = false;
         setRoundStatus('running');
         setVisualReturnPercent(INITIAL_RETURN_PERCENT);
         setMessage('');
@@ -1024,6 +1061,14 @@ const Accumilatoirs = observer(() => {
                                           : isPurchasing
                                             ? 'Buying...'
                                             : `Buy accumulator at ${growthRatePercent.toFixed(0)}%`}
+                                </button>
+                                <button
+                                    className='accumilatoirs-stop'
+                                    disabled={!hasOpenContract && !queuedPurchase && !autoTradeEnabled && !isPurchasing}
+                                    type='button'
+                                    onClick={() => void handleStopAllTrades()}
+                                >
+                                    Stop all trades
                                 </button>
                                 <div className='accumilatoirs-ticket__status'>
                                     {hasOpenContract

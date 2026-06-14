@@ -360,7 +360,7 @@
     display: grid;
     grid-template-columns:
         minmax(230px, 1.2fr) minmax(250px, 1fr) minmax(190px, 0.8fr) minmax(230px, 0.9fr)
-        minmax(290px, 1.2fr);
+        minmax(270px, 1.1fr) minmax(170px, 0.7fr);
     align-items: end;
     gap: 14px;
 }
@@ -466,6 +466,23 @@
 
 .accumilatoirs-primary--waiting {
     background: #b07800;
+}
+
+.accumilatoirs-stop {
+    width: 100%;
+    height: 58px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    background: #3a1016;
+    color: #ffccd4;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+    }
 }
 
 .accumilatoirs-ticket__status {
