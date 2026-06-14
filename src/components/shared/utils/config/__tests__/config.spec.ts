@@ -75,13 +75,13 @@ describe('DOMAIN_CONFIG', () => {
         }
     );
 
-    it('returns OAuth2 auth and bot folder settings for www.mrzetuzetu.site', () => {
-        expect(getDomainConfigForHost('www.mrzetuzetu.site')).toMatchObject({
+    it('returns OAuth2 auth and bot folder settings for Mrzetuzetu', () => {
+        expect(getDomainConfigForHost('mrzetuzetu.site')).toMatchObject({
             clientId: '33vlry53HSLhXICBcUURu',
             appId: '80364',
-            redirectUri: 'https://www.mrzetuzetu.site/',
-            botsFolder: 'www.mrzetuzetu.site',
-            canonicalHost: 'www.mrzetuzetu.site',
+            redirectUri: 'https://mrzetuzetu.site/',
+            botsFolder: 'mrzetuzetu.site',
+            canonicalHost: 'mrzetuzetu.site',
             includeLegacyAppIdInOAuth: true,
             useLegacyOAuthLogin: false,
             ui: {
@@ -92,7 +92,15 @@ describe('DOMAIN_CONFIG', () => {
                 manualTrading: true,
             },
         });
-        expect(getDomainConfigForHost('mrzetuzetu.site')).toBeUndefined();
+        expect(getDomainConfigForHost('www.mrzetuzetu.site')).toMatchObject({
+            clientId: '33vlry53HSLhXICBcUURu',
+            appId: '80364',
+            redirectUri: 'https://mrzetuzetu.site/',
+            botsFolder: 'mrzetuzetu.site',
+            canonicalHost: 'mrzetuzetu.site',
+            includeLegacyAppIdInOAuth: true,
+            useLegacyOAuthLogin: false,
+        });
     });
 
     it('returns OAuth2-only auth and bot folder settings for Dollarsign', () => {
@@ -160,11 +168,12 @@ describe('DOMAIN_CONFIG', () => {
     });
 
     it.each([
-        ['www.mrzetuzetu.site', '80364', '33vlry53HSLhXICBcUURu'],
-        ['masterhunter.site', '96223', '33y9R1zDsuaYKXK2RaEH9'],
-        ['tradinghubs.site', '122208', '33hi7ev9NiDjWY640JuSw'],
-        ['mafiahub.site', '120589', '331bCUS8izRudblAnSACt'],
-    ])('uses the working OAuth2 PKCE login wiring for %s', async (host, appId, clientId) => {
+        ['mrzetuzetu.site', '80364', '33vlry53HSLhXICBcUURu', 'https://mrzetuzetu.site/'],
+        ['www.mrzetuzetu.site', '80364', '33vlry53HSLhXICBcUURu', 'https://mrzetuzetu.site/'],
+        ['masterhunter.site', '96223', '33y9R1zDsuaYKXK2RaEH9', 'https://masterhunter.site/'],
+        ['tradinghubs.site', '122208', '33hi7ev9NiDjWY640JuSw', 'https://tradinghubs.site/'],
+        ['mafiahub.site', '120589', '331bCUS8izRudblAnSACt', 'https://mafiahub.site/'],
+    ])('uses the working OAuth2 PKCE login wiring for %s', async (host, appId, clientId, expectedRedirectUri) => {
         const originalAppEnv = process.env.APP_ENV;
         const cryptoMock = {
             getRandomValues: (array: Uint8Array) => array.fill(1),
@@ -191,7 +200,7 @@ describe('DOMAIN_CONFIG', () => {
         expect(url.origin + url.pathname).toBe('https://auth.deriv.com/oauth2/auth');
         expect(url.searchParams.get('client_id')).toBe(clientId);
         expect(url.searchParams.get('app_id')).toBe(appId || null);
-        expect(url.searchParams.get('redirect_uri')).toBe(`https://${host}/`);
+        expect(url.searchParams.get('redirect_uri')).toBe(expectedRedirectUri || `https://${host}/`);
         expect(url.searchParams.get('response_type')).toBe('code');
         expect(url.searchParams.get('code_challenge_method')).toBe('S256');
 
