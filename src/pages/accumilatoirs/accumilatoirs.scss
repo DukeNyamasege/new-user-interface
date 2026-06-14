@@ -358,7 +358,9 @@
 
 .accumilatoirs-ticket__content {
     display: grid;
-    grid-template-columns: minmax(240px, 1.25fr) minmax(260px, 1fr) minmax(220px, 0.8fr) minmax(320px, 1.3fr);
+    grid-template-columns:
+        minmax(230px, 1.2fr) minmax(250px, 1fr) minmax(190px, 0.8fr) minmax(230px, 0.9fr)
+        minmax(290px, 1.2fr);
     align-items: end;
     gap: 14px;
 }
@@ -413,6 +415,31 @@
         font-size: 11px;
         font-weight: 900;
     }
+}
+
+.accumilatoirs-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 0 12px;
+    border: 1px solid #2c3138;
+    border-radius: 10px;
+    background: #111417;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 900;
+
+    input {
+        width: 15px;
+        height: 15px;
+        accent-color: #20b800;
+    }
+}
+
+.accumilatoirs-check--auto {
+    align-self: end;
 }
 
 .accumilatoirs-primary {

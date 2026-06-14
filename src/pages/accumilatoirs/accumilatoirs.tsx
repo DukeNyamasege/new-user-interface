@@ -58,7 +58,7 @@ const GROWTH_RATES = [
 const DEFAULT_STAKE = '1';
 const DEFAULT_TAKE_PROFIT = '1';
 const PROPOSAL_REFRESH_MS = 500;
-const INITIAL_MULTIPLIER = 1;
+const INITIAL_RETURN_PERCENT = 0;
 const MAX_GRAPH_TICKS = 60;
 const MAX_HISTORY_MOVES = 28;
 
@@ -111,17 +111,32 @@ const appendTick = (ticks: TTickSnapshot[], tick: TTickSnapshot) => {
     return [...ticks, tick].slice(-MAX_GRAPH_TICKS);
 };
 
-const getScaledMoveMultiplier = (current: number, previous: number) => {
-    if (!Number.isFinite(current) || !Number.isFinite(previous) || previous <= 0) return INITIAL_MULTIPLIER;
+const getScaledMovePercent = (current: number, previous: number) => {
+    if (!Number.isFinite(current) || !Number.isFinite(previous) || previous <= 0) return 0;
 
     const movePercent = Math.abs((current - previous) / previous) * 100;
-    return Number((INITIAL_MULTIPLIER + Math.min(movePercent * 80, 25)).toFixed(2));
+    return Number(Math.min(movePercent * 100, 500).toFixed(2));
 };
 
 const classifyMove = (value: number): THistoryMove['className'] => {
-    if (value >= 5) return 'high';
-    if (value >= 2) return 'medium';
+    if (value >= 100) return 'high';
+    if (value >= 30) return 'medium';
     return 'low';
+};
+
+const formatPercent = (value: unknown) => {
+    const percent = Number(value);
+    if (!Number.isFinite(percent)) return '0.00%';
+
+    return `${percent.toFixed(2)}%`;
+};
+
+const getReturnPercent = (cashoutValue: unknown, buyValue: unknown) => {
+    const cashout = Number(cashoutValue);
+    const buy = Number(buyValue);
+    if (!Number.isFinite(cashout) || !Number.isFinite(buy) || buy <= 0) return 0;
+
+    return Number((((cashout - buy) / buy) * 100).toFixed(2));
 };
 
 const buildHistoryMoves = (ticks: TTickSnapshot[]): THistoryMove[] =>
@@ -131,10 +146,10 @@ const buildHistoryMoves = (ticks: TTickSnapshot[]): THistoryMove[] =>
             if (index === 0) return moves;
 
             const previousTick = source[index - 1];
-            const move = getScaledMoveMultiplier(tick.quote, previousTick.quote);
+            const move = getScaledMovePercent(tick.quote, previousTick.quote);
             moves.push({
                 className: classifyMove(move),
-                value: `${move.toFixed(2)}x`,
+                value: formatPercent(move),
             });
 
             return moves;
@@ -168,8 +183,9 @@ const Accumilatoirs = observer(() => {
     const [isCashingOut, setIsCashingOut] = useState(false);
     const [openContract, setOpenContract] = useState<Record<string, any> | null>(null);
     const [queuedPurchase, setQueuedPurchase] = useState(false);
+    const [autoTradeEnabled, setAutoTradeEnabled] = useState(false);
     const [roundStatus, setRoundStatus] = useState<'flew' | 'running'>('running');
-    const [visualMultiplier, setVisualMultiplier] = useState(INITIAL_MULTIPLIER);
+    const [visualReturnPercent, setVisualReturnPercent] = useState(INITIAL_RETURN_PERCENT);
     const [outcomeHistory, setOutcomeHistory] = useState<THistoryMove[]>([]);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -180,8 +196,9 @@ const Accumilatoirs = observer(() => {
     const cashoutInFlightRef = useRef(false);
     const autoCashoutRef = useRef(autoCashout);
     const queuedPurchaseRef = useRef(false);
+    const autoTradeEnabledRef = useRef(false);
     const executePurchaseRef = useRef<(() => void) | null>(null);
-    const visualMultiplierRef = useRef(INITIAL_MULTIPLIER);
+    const visualReturnPercentRef = useRef(INITIAL_RETURN_PERCENT);
 
     const selectedMarket = useMemo(
         () => ACCUMULATOR_MARKETS.find(market => market.symbol === selectedSymbol) ?? ACCUMULATOR_MARKETS[0],
@@ -192,6 +209,7 @@ const Accumilatoirs = observer(() => {
     const currentProfit = Number(openContract?.profit ?? 0);
     const bidPrice = Number(openContract?.bid_price ?? openContract?.sell_price ?? 0);
     const buyPrice = Number(openContract?.buy_price ?? 0);
+    const cashoutValue = Number(openContract?.bid_price ?? openContract?.sell_price ?? openContract?.payout ?? 0);
     const contractStatus = String(openContract?.status || '').toLowerCase();
     const hasClosedContract = Boolean(openContract?.is_sold) || ['sold', 'won', 'lost'].includes(contractStatus);
     const hasCrashed = hasClosedContract && (contractStatus === 'lost' || currentProfit < 0);
@@ -202,21 +220,26 @@ const Accumilatoirs = observer(() => {
         () => (outcomeHistory.length ? outcomeHistory.slice(-MAX_HISTORY_MOVES) : buildHistoryMoves(tickHistory)),
         [outcomeHistory, tickHistory]
     );
-    const marketMultiplier = useMemo(() => {
-        if (tickHistory.length < 2) return INITIAL_MULTIPLIER;
+    const marketReturnPercent = useMemo(() => {
+        if (tickHistory.length < 2) return INITIAL_RETURN_PERCENT;
 
         const firstTick = tickHistory[Math.max(tickHistory.length - 16, 0)];
         const lastTick = tickHistory[tickHistory.length - 1];
 
-        return getScaledMoveMultiplier(lastTick.quote, firstTick.quote);
+        return getScaledMovePercent(lastTick.quote, firstTick.quote);
     }, [tickHistory]);
-    const contractMultiplier = buyPrice > 0 && bidPrice > 0 ? Number((bidPrice / buyPrice).toFixed(2)) : null;
-    const displayMultiplier = Math.max(contractMultiplier ?? marketMultiplier, visualMultiplier);
+    const contractReturnPercent =
+        buyPrice > 0 && cashoutValue > 0
+            ? getReturnPercent(cashoutValue, buyPrice)
+            : buyPrice > 0
+              ? Number(((currentProfit / buyPrice) * 100).toFixed(2))
+              : null;
+    const displayReturnPercent = contractReturnPercent ?? Math.max(marketReturnPercent, visualReturnPercent);
     const graphTicks = useMemo(() => tickHistory.slice(-36), [tickHistory]);
     const graphPosition = useMemo(() => {
         const width = 1000;
         const height = 500;
-        const progress = Math.max(0.02, Math.min((displayMultiplier - 1) / 9, 1));
+        const progress = Math.max(0.02, Math.min(Math.max(displayReturnPercent, 0) / 200, 1));
         const hasGraphTicks = graphTicks.length >= 2;
         const quotes = graphTicks.map(tick => tick.quote);
         const minQuote = Math.min(...quotes);
@@ -240,7 +263,7 @@ const Accumilatoirs = observer(() => {
             planeX: endX,
             planeY: endY,
         };
-    }, [displayMultiplier, graphTicks, hasOpenContract]);
+    }, [displayReturnPercent, graphTicks, hasOpenContract]);
 
     useEffect(() => {
         openContractRef.current = openContract;
@@ -255,27 +278,37 @@ const Accumilatoirs = observer(() => {
     }, [queuedPurchase]);
 
     useEffect(() => {
-        visualMultiplierRef.current = visualMultiplier;
-    }, [visualMultiplier]);
+        autoTradeEnabledRef.current = autoTradeEnabled;
+    }, [autoTradeEnabled]);
 
     useEffect(() => {
-        if (!showAccumilatoirs || roundStatus === 'flew') return undefined;
+        visualReturnPercentRef.current = visualReturnPercent;
+    }, [visualReturnPercent]);
+
+    useEffect(() => {
+        if (!showAccumilatoirs || hasOpenContract || roundStatus === 'flew') return undefined;
 
         const intervalId = window.setInterval(() => {
-            setVisualMultiplier(previous => Number(Math.min(previous + 0.03 + Number(growthRate) * 6, 26).toFixed(2)));
+            setVisualReturnPercent(previous =>
+                Number(Math.min(previous + Math.max(Number(growthRate) * 100, 1), 500).toFixed(2))
+            );
         }, 120);
 
         return () => window.clearInterval(intervalId);
-    }, [growthRate, roundStatus, showAccumilatoirs]);
+    }, [growthRate, hasOpenContract, roundStatus, showAccumilatoirs]);
 
-    const recordFlewAway = useCallback((move: number) => {
-        const value = Number(Math.max(move, visualMultiplierRef.current, INITIAL_MULTIPLIER).toFixed(2));
-        setOutcomeHistory(previous => [...previous, { className: classifyMove(value), value: `${value.toFixed(2)}x` }].slice(-MAX_HISTORY_MOVES));
+    const recordFlewAway = useCallback((move: number, useExactValue = false) => {
+        const value = Number(
+            (useExactValue ? move : Math.max(move, visualReturnPercentRef.current, INITIAL_RETURN_PERCENT)).toFixed(2)
+        );
+        setOutcomeHistory(previous =>
+            [...previous, { className: classifyMove(value), value: formatPercent(value) }].slice(-MAX_HISTORY_MOVES)
+        );
         setRoundStatus('flew');
-        setVisualMultiplier(INITIAL_MULTIPLIER);
+        setVisualReturnPercent(INITIAL_RETURN_PERCENT);
 
         window.setTimeout(() => {
-            if (queuedPurchaseRef.current && executePurchaseRef.current) {
+            if ((queuedPurchaseRef.current || autoTradeEnabledRef.current) && executePurchaseRef.current) {
                 executePurchaseRef.current();
                 return;
             }
@@ -449,7 +482,7 @@ const Accumilatoirs = observer(() => {
                 setTickHistory(previousTicks => {
                     const previousTick = previousTicks[previousTicks.length - 1];
                     if (!hasOpenContract && roundStatus === 'running' && previousTick && tick.quote < previousTick.quote) {
-                        recordFlewAway(getScaledMoveMultiplier(tick.quote, previousTick.quote));
+                        recordFlewAway(getScaledMovePercent(tick.quote, previousTick.quote));
                     }
 
                     return appendTick(previousTicks, tick);
@@ -621,11 +654,11 @@ const Accumilatoirs = observer(() => {
                 pushContract(settledContract);
                 const profit = Number(settledContract.profit ?? 0);
                 if (settledContract.is_sold) {
-                    const closedMultiplier =
-                        Number(settledContract.buy_price) > 0 && Number(settledContract.bid_price ?? settledContract.sell_price) > 0
-                            ? Number(((settledContract.bid_price ?? settledContract.sell_price) / settledContract.buy_price).toFixed(2))
-                            : displayMultiplier;
-                    recordFlewAway(closedMultiplier);
+                    const closedReturnPercent =
+                        Number(settledContract.buy_price) > 0
+                            ? Number(((profit / Number(settledContract.buy_price)) * 100).toFixed(2))
+                            : displayReturnPercent;
+                    recordFlewAway(closedReturnPercent, true);
                     setMessage(`Accumulator closed. P/L: ${formatMoney(profit, currency)}.`);
                     dashboard.setActiveTradingModule(null);
                     run_panel.setHasOpenContract?.(false);
@@ -654,7 +687,7 @@ const Accumilatoirs = observer(() => {
         selectedMarket?.label,
         selectedSymbol,
         stake,
-        displayMultiplier,
+        displayReturnPercent,
         recordFlewAway,
     ]);
 
@@ -674,7 +707,7 @@ const Accumilatoirs = observer(() => {
             setQueuedPurchase(true);
             queuedPurchaseRef.current = true;
             setError('');
-            setMessage('Waiting for flew away. Next accumulator will buy after the break.');
+            setMessage('Waiting for breakout/flew away. Next accumulator will buy after the break.');
             return;
         }
 
@@ -688,7 +721,7 @@ const Accumilatoirs = observer(() => {
         setOutcomeHistory([]);
         setQueuedPurchase(false);
         setRoundStatus('running');
-        setVisualMultiplier(INITIAL_MULTIPLIER);
+        setVisualReturnPercent(INITIAL_RETURN_PERCENT);
         setMessage('');
         setError('');
     };
@@ -841,7 +874,7 @@ const Accumilatoirs = observer(() => {
                                 <div className='result-display'>
                                     <span>
                                         {hasCrashed || roundStatus === 'flew'
-                                            ? 'FLEW AWAY!'
+                                            ? 'BREAKOUT / FLEW AWAY'
                                             : hasWon
                                               ? 'CASHED OUT'
                                               : hasOpenContract
@@ -854,7 +887,7 @@ const Accumilatoirs = observer(() => {
                                             'result-display__value--won': hasWon,
                                         })}
                                     >
-                                        {displayMultiplier.toFixed(2)}x
+                                        {formatPercent(displayReturnPercent)}
                                     </strong>
                                 </div>
 
@@ -952,6 +985,27 @@ const Accumilatoirs = observer(() => {
                                     </div>
                                 </label>
 
+                                <label className='accumilatoirs-check accumilatoirs-check--auto'>
+                                    <input
+                                        checked={autoTradeEnabled}
+                                        type='checkbox'
+                                        onChange={event => {
+                                            const enabled = event.target.checked;
+                                            setAutoTradeEnabled(enabled);
+                                            if (enabled && !hasOpenContract) {
+                                                setQueuedPurchase(true);
+                                                queuedPurchaseRef.current = true;
+                                                setMessage('Auto trade enabled. Waiting for breakout/flew away.');
+                                            } else if (!enabled) {
+                                                setQueuedPurchase(false);
+                                                queuedPurchaseRef.current = false;
+                                                setMessage('');
+                                            }
+                                        }}
+                                    />
+                                    <span>Auto trade after breakout</span>
+                                </label>
+
                                 <button
                                     className={classNames('accumilatoirs-primary', {
                                         'accumilatoirs-primary--cashout': hasOpenContract,
@@ -966,16 +1020,16 @@ const Accumilatoirs = observer(() => {
                                             ? 'Cashing out...'
                                             : `Cash out ${formatMoney(bidPrice, currency)}`
                                         : queuedPurchase
-                                          ? 'Waiting for flew away...'
+                                          ? 'Waiting for breakout...'
                                           : isPurchasing
                                             ? 'Buying...'
                                             : `Buy accumulator at ${growthRatePercent.toFixed(0)}%`}
                                 </button>
                                 <div className='accumilatoirs-ticket__status'>
                                     {hasOpenContract
-                                        ? `Live profit ${formatMoney(currentProfit, currency)}`
+                                        ? `Live return ${formatPercent(displayReturnPercent)} (${formatMoney(currentProfit, currency)})`
                                         : queuedPurchase
-                                          ? 'Purchase queued for the next flew away.'
+                                          ? 'Purchase queued for the next breakout/flew away.'
                                           : proposalPreview.status === 'loading'
                                             ? 'Preparing Deriv quote...'
                                             : proposalPreview.message}
