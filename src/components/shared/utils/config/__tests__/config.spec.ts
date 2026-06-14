@@ -1,5 +1,5 @@
 import { TextEncoder } from 'util';
-import { buildBestBotsFileUrl, generateOAuthURL, getCanonicalHostForHost, getDomainConfigForHost } from '../config';
+import { buildBestBotsFileUrl, generateOAuthURL, getDomainConfigForHost } from '../config';
 
 describe('DOMAIN_CONFIG', () => {
     it('returns the configured TermicaFX auth and bot folder settings', () => {
@@ -35,7 +35,6 @@ describe('DOMAIN_CONFIG', () => {
     });
 
     it.each([
-        ['mrzetuzetu.site', '33vlry53HSLhXICBcUURu', '80364', 'Mrzetuzetu', false],
         ['tradinghubs.site', '33hi7ev9NiDjWY640JuSw', '122208', 'Trading Hubs', false],
         ['mafiahub.site', '331bCUS8izRudblAnSACt', '120589', 'Mafia Hub', false],
     ])(
@@ -75,12 +74,6 @@ describe('DOMAIN_CONFIG', () => {
         });
         }
     );
-
-    it('does not map the misspelled mrzertuzetu host', () => {
-        expect(getDomainConfigForHost('mrzertuzetu.site')).toBeUndefined();
-        expect(getCanonicalHostForHost('www.mrzetuzetu.site')).toBe('mrzetuzetu.site');
-        expect(getCanonicalHostForHost('www.mrzertuzetu.site')).toBeUndefined();
-    });
 
     it('returns OAuth2-only auth and bot folder settings for Dollarsign', () => {
         expect(getDomainConfigForHost('dollarsigns.site')).toMatchObject({
@@ -147,7 +140,6 @@ describe('DOMAIN_CONFIG', () => {
     });
 
     it.each([
-        ['mrzetuzetu.site', '80364', '33vlry53HSLhXICBcUURu'],
         ['masterhunter.site', '96223', '33y9R1zDsuaYKXK2RaEH9'],
         ['tradinghubs.site', '122208', '33hi7ev9NiDjWY640JuSw'],
         ['mafiahub.site', '120589', '331bCUS8izRudblAnSACt'],

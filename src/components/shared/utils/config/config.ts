@@ -211,22 +211,6 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
     }),
     // Dedicated branded domains wired with the same OAuth2 flow as the working domains.
     ...createHostedDomainEntries({
-        primaryDomain: 'mrzetuzetu.site',
-        aliases: ['www.mrzetuzetu.site'],
-        clientId: '33vlry53HSLhXICBcUURu',
-        appId: '80364',
-        redirectUri: 'https://mrzetuzetu.site/',
-        botsFolder: 'mrzetuzetu.site',
-        includeLegacyAppIdInOAuth: true,
-        features: {
-            autoTrades: true,
-            manualTrading: true,
-        },
-        ui: {
-            brandName: 'Mrzetuzetu',
-        },
-    }),
-    ...createHostedDomainEntries({
         primaryDomain: 'masterhunter.site',
         aliases: ['www.masterhunter.site'],
         clientId: '33y9R1zDsuaYKXK2RaEH9',
