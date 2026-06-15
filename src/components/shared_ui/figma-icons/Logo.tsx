@@ -1,4 +1,5 @@
 import { createBadgeIcon } from './icon-base';
+export { PaymentMethodDerivDemoBrandDarkIcon } from '@deriv/quill-icons/Logo';
 
 export const DerivProductBrandLightDerivBotLogoWordmarkIcon = createBadgeIcon({
     label: 'BOT',
@@ -16,12 +17,6 @@ export const PartnersProductBrandLightSmarttraderLogoWordmarkIcon = createBadgeI
     label: 'SMT',
     accent: '#2563eb',
     background: '#eff6ff',
-});
-
-export const PaymentMethodDerivDemoBrandDarkIcon = createBadgeIcon({
-    label: 'DEMO',
-    accent: '#c2410c',
-    background: '#fff7ed',
 });
 
 export const PaymentMethodTetherUsdtBrandIcon = createBadgeIcon({
