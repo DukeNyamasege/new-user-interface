@@ -1,4 +1,5 @@
 import { createBadgeIcon } from './icon-base';
+export { CurrencyDemoIcon, CurrencyUsdIcon } from '@deriv/quill-icons/Currencies';
 
 const currencyIcon = (label: string, accent?: string, background?: string) =>
     createBadgeIcon({ label, accent, background });
@@ -17,10 +18,8 @@ export const CurrencyLtcIcon = currencyIcon('LTC', '#475569', '#f8fafc');
 export const CurrencyPaxIcon = currencyIcon('PAX', '#065f46', '#ecfdf5');
 export const CurrencyTusdIcon = currencyIcon('TUSD', '#0f766e', '#f0fdfa');
 export const CurrencyUsdtIcon = currencyIcon('USDT', '#166534', '#ecfdf5');
-export const CurrencyUsdIcon = currencyIcon('USD', '#0f766e', '#ecfeff');
 export const CurrencyUsdcIcon = currencyIcon('USDC', '#1d4ed8', '#eff6ff');
 export const CurrencyUsdkIcon = currencyIcon('USDK', '#1d4ed8', '#eff6ff');
-export const CurrencyDemoIcon = currencyIcon('VRT', '#c2410c', '#fff7ed');
 export const CurrencyXrpIcon = currencyIcon('XRP', '#374151', '#f9fafb');
 export const CurrencyAlgoIcon = currencyIcon('ALGO', '#111827', '#f3f4f6');
 export const CurrencyAvaxIcon = currencyIcon('AVAX', '#b91c1c', '#fef2f2');
