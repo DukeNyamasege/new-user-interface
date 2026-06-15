@@ -257,9 +257,16 @@
         inset-inline-end: 1.6rem;
         top: 1.6rem;
         z-index: 2;
+        width: min(33.6rem, calc(100vw - 43rem));
+        max-width: calc(100vw - 43rem);
 
         @include desktop-screen {
             position: absolute;
+        }
+
+        @media (width <= 1400px) {
+            width: min(29.6rem, calc(100vw - 41rem));
+            max-width: calc(100vw - 41rem);
         }
 
         .animation {
@@ -320,46 +327,6 @@
             &__stop-button {
                 background-color: var(--button-primary-default);
             }
-        }
-    }
-}
-
-.toolbar {
-    &__section {
-        &--execution {
-            display: flex;
-            flex-direction: column;
-            gap: 0.8rem;
-            align-items: stretch;
-        }
-    }
-
-    &__execution-mode {
-        background: var(--general-main-1);
-        border: 1px solid var(--border-normal);
-        border-radius: 0.8rem;
-        padding: 0.8rem;
-        box-shadow: 0 4px 12px rgb(0 0 0 / 8%);
-    }
-
-    &__execution-mode-label {
-        color: var(--text-prominent);
-        display: block;
-        margin-bottom: 0.8rem;
-    }
-
-    &__execution-mode-buttons {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.8rem;
-    }
-
-    &__execution-mode-button {
-        width: 100%;
-
-        &--active {
-            border-color: var(--button-primary-default) !important;
-            background: rgb(255 68 79 / 10%);
         }
     }
 }

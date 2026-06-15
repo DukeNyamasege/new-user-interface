@@ -11,10 +11,12 @@ import { useDevice } from '@deriv-com/ui';
 /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
 /* [/AI] */
 import Button from '../shared_ui/button';
+import ToggleSwitch from '../shared_ui/toggle-switch';
 import Tooltip from '../shared_ui/tooltip/tooltip';
 import CircularWrapper from './circular-wrapper';
 import ContractStageText from './contract-stage-text';
 import './run-panel-tooltip.scss';
+import './trade-animation.scss';
 
 type TTradeAnimation = {
     className?: string;
@@ -28,8 +30,15 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
     const { isMobile } = useDevice();
 
     const { is_contract_completed, profit } = summary_card;
-    const { contract_stage, is_stop_button_visible, is_stop_button_disabled, onRunButtonClick, onStopBotClick } =
-        run_panel;
+    const {
+        contract_stage,
+        execution_mode,
+        is_stop_button_visible,
+        is_stop_button_disabled,
+        onRunButtonClick,
+        onStopBotClick,
+        setExecutionMode,
+    } = run_panel;
     const [shouldDisable, setShouldDisable] = React.useState(false);
     const is_unavailable_for_payment_agent = false;
 
@@ -131,10 +140,6 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
     }, [is_stop_button_visible, is_stop_button_disabled]);
     const show_overlay = should_show_overlay && is_contract_completed;
 
-    // Fix TypeScript error by ensuring active_tab is a number
-    // Use a fallback to dashboard if active_tab is undefined
-    const safeActiveTab = typeof active_tab === 'number' ? active_tab : DBOT_TABS.DASHBOARD;
-
     // Function to determine tooltip alignment based on run panel position
     const determineTooltipAlignment = (): string => {
         // Force tooltip to always appear on top for mobile devices
@@ -223,8 +228,28 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
                     'animation--disabled': is_disabled,
                 })}
             >
+                {!is_stop_button_visible && (
+                    <div className='animation__execution-mode'>
+                        <span className='animation__execution-mode-label'>{localize('Execution')}</span>
+                        <span className='animation__execution-mode-value'>
+                            {execution_mode === 'fast' ? localize('FAST') : localize('SLOW')}
+                        </span>
+                        <ToggleSwitch
+                            id='db-animation__execution-toggle'
+                            name='execution_mode'
+                            is_enabled={execution_mode === 'fast'}
+                            handleToggle={() => setExecutionMode(execution_mode === 'fast' ? 'slow' : 'fast')}
+                            classNameLabel='animation__execution-mode-toggle'
+                            classNameButton='animation__execution-mode-toggle-button'
+                        />
+                    </div>
+                )}
                 {show_overlay && <ContractResultOverlay profit={profit} />}
-                <span className='animation__text'>
+                <span
+                    className={classNames('animation__text', {
+                        'animation__text--with-execution': !is_stop_button_visible,
+                    })}
+                >
                     <ContractStageText contract_stage={contract_stage} />
                 </span>
                 <div className='animation__progress'>
