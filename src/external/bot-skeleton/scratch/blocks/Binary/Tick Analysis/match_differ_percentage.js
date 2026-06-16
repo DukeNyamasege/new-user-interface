@@ -1,0 +1,79 @@
+import { localize } from '@deriv-com/translations';
+import { modifyContextMenu } from '../../../utils';
+
+window.Blockly.Blocks.match_differ_percentage = {
+    init() {
+        this.jsonInit(this.definition());
+    },
+    definition() {
+        return {
+            message0: localize('{{ mode }} %% for digit {{ digit }} in last {{ count }} ticks', {
+                mode: '%1',
+                digit: '%2',
+                count: '%3',
+            }),
+            args0: [
+                {
+                    type: 'field_dropdown',
+                    name: 'MODE',
+                    options: [
+                        [localize('Match'), 'match'],
+                        [localize('Differ'), 'differ'],
+                    ],
+                },
+                {
+                    type: 'input_value',
+                    name: 'DIGIT',
+                    check: 'Number',
+                },
+                {
+                    type: 'input_value',
+                    name: 'COUNT',
+                    check: 'Number',
+                },
+            ],
+            output: 'Number',
+            outputShape: window.Blockly.OUTPUT_SHAPE_ROUND,
+            colour: window.Blockly.Colours.Base.colour,
+            colourSecondary: window.Blockly.Colours.Base.colourSecondary,
+            colourTertiary: window.Blockly.Colours.Base.colourTertiary,
+            tooltip: localize('Returns the percentage of digits matching or differing from the selected value'),
+            category: window.Blockly.Categories.Tick_Analysis,
+        };
+    },
+    meta() {
+        return {
+            display_name: localize('Match/Differ Analysis'),
+            description: localize('Returns the percentage of digits matching or differing from the specified value in the last N ticks.'),
+        };
+    },
+    customContextMenu(menu) {
+        modifyContextMenu(menu);
+    },
+};
+
+window.Blockly.JavaScript.javascriptGenerator.forBlock.match_differ_percentage = block => {
+    const digit =
+        window.Blockly.JavaScript.javascriptGenerator.valueToCode(
+            block,
+            'DIGIT',
+            window.Blockly.JavaScript.javascriptGenerator.ORDER_NONE
+        ) || 5;
+    const count =
+        window.Blockly.JavaScript.javascriptGenerator.valueToCode(
+            block,
+            'COUNT',
+            window.Blockly.JavaScript.javascriptGenerator.ORDER_NONE
+        ) || 1000;
+    const mode = block.getFieldValue('MODE');
+    const operator = mode === 'differ' ? '!==' : '===';
+
+    return [
+        `(() => {
+            const digits = Bot.getLastDigitList().slice(-Math.max(1, Number(${count}) || 1));
+            const target = Number(${digit});
+            return digits.length ? (digits.filter(value => Number(value) ${operator} target).length / digits.length) * 100 : 0;
+        })()`,
+        window.Blockly.JavaScript.javascriptGenerator.ORDER_FUNCTION_CALL,
+    ];
+};

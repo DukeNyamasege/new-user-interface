@@ -1,0 +1,70 @@
+import { localize } from '@deriv-com/translations';
+import { modifyContextMenu } from '../../../utils';
+
+window.Blockly.Blocks.digit_frequency_analysis = {
+    init() {
+        this.jsonInit(this.definition());
+    },
+    definition() {
+        return {
+            message0: localize('{{ rank }} frequent digit from last {{ count }} digits', {
+                rank: '%1',
+                count: '%2',
+            }),
+            args0: [
+                {
+                    type: 'field_dropdown',
+                    name: 'RANK',
+                    options: [
+                        [localize('Most'), 'most'],
+                        [localize('Least'), 'least'],
+                    ],
+                },
+                {
+                    type: 'input_value',
+                    name: 'COUNT',
+                    check: 'Number',
+                },
+            ],
+            output: 'Number',
+            outputShape: window.Blockly.OUTPUT_SHAPE_ROUND,
+            colour: window.Blockly.Colours.Base.colour,
+            colourSecondary: window.Blockly.Colours.Base.colourSecondary,
+            colourTertiary: window.Blockly.Colours.Base.colourTertiary,
+            tooltip: localize('Finds frequency patterns in the last N digits and returns the selected ranking'),
+            category: window.Blockly.Categories.Tick_Analysis,
+        };
+    },
+    meta() {
+        return {
+            display_name: localize('Digit Frequency Analysis'),
+            description: localize('Finds frequency patterns in the last N digits and returns the selected ranking.'),
+        };
+    },
+    customContextMenu(menu) {
+        modifyContextMenu(menu);
+    },
+};
+
+window.Blockly.JavaScript.javascriptGenerator.forBlock.digit_frequency_analysis = block => {
+    const count =
+        window.Blockly.JavaScript.javascriptGenerator.valueToCode(
+            block,
+            'COUNT',
+            window.Blockly.JavaScript.javascriptGenerator.ORDER_NONE
+        ) || 1000;
+    const rank = block.getFieldValue('RANK');
+    const order = rank === 'least' ? 'a.count - b.count || a.digit - b.digit' : 'b.count - a.count || a.digit - b.digit';
+
+    return [
+        `(() => {
+            const digits = Bot.getLastDigitList().slice(-Math.max(1, Number(${count}) || 1));
+            const frequency = Array.from({ length: 10 }, (_, digit) => ({
+                digit,
+                count: digits.filter(value => Number(value) === digit).length,
+            })).sort((a, b) => ${order});
+            return frequency[0]?.digit ?? 0;
+        })()`,
+        window.Blockly.JavaScript.javascriptGenerator.ORDER_FUNCTION_CALL,
+    ];
+};

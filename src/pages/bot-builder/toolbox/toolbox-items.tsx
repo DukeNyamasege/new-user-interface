@@ -379,6 +379,85 @@ export const ToolboxItems = () =>
                     <Block type='tick_analysis' />
                     <Block type='tick' />
                     <Block type='last_digit' />
+                    <Block type='second_last_digit' />
+                    <Block type='nth_last_digit'>
+                        <Value name='INDEX'>
+                            <Shadow type='math_number'>
+                                <Field name='NUM'>3</Field>
+                            </Shadow>
+                        </Value>
+                    </Block>
+                    <Block type='last_digits_condition'>
+                        <Field name='CONDITION'>lt</Field>
+                        <Value name='COUNT'>
+                            <Shadow type='math_number'>
+                                <Field name='NUM'>3</Field>
+                            </Shadow>
+                        </Value>
+                        <Value name='DIGIT'>
+                            <Shadow type='math_number'>
+                                <Field name='NUM'>4</Field>
+                            </Shadow>
+                        </Value>
+                    </Block>
+                    <Block type='digit_frequency_analysis'>
+                        <Field name='RANK'>most</Field>
+                        <Value name='COUNT'>
+                            <Shadow type='math_number'>
+                                <Field name='NUM'>1000</Field>
+                            </Shadow>
+                        </Value>
+                    </Block>
+                    <Block type='even_odd_percentage'>
+                        <Field name='PARITY'>even</Field>
+                        <Value name='COUNT'>
+                            <Shadow type='math_number'>
+                                <Field name='NUM'>1000</Field>
+                            </Shadow>
+                        </Value>
+                    </Block>
+                    <Block type='over_under_percentage'>
+                        <Field name='CONDITION'>over</Field>
+                        <Value name='DIGIT'>
+                            <Shadow type='math_number'>
+                                <Field name='NUM'>4</Field>
+                            </Shadow>
+                        </Value>
+                        <Value name='COUNT'>
+                            <Shadow type='math_number'>
+                                <Field name='NUM'>1000</Field>
+                            </Shadow>
+                        </Value>
+                    </Block>
+                    <Block type='match_differ_percentage'>
+                        <Field name='MODE'>match</Field>
+                        <Value name='DIGIT'>
+                            <Shadow type='math_number'>
+                                <Field name='NUM'>5</Field>
+                            </Shadow>
+                        </Value>
+                        <Value name='COUNT'>
+                            <Shadow type='math_number'>
+                                <Field name='NUM'>1000</Field>
+                            </Shadow>
+                        </Value>
+                    </Block>
+                    <Block type='last_n_ticks_direction'>
+                        <Field name='DIRECTION'>rise</Field>
+                        <Value name='COUNT'>
+                            <Shadow type='math_number'>
+                                <Field name='NUM'>5</Field>
+                            </Shadow>
+                        </Value>
+                    </Block>
+                    <Block type='rise_fall_percentage'>
+                        <Field name='DIRECTION'>rise</Field>
+                        <Value name='COUNT'>
+                            <Shadow type='math_number'>
+                                <Field name='NUM'>1000</Field>
+                            </Shadow>
+                        </Value>
+                    </Block>
                     <Block type='stat' />
                     <Block type='stat_list' />
                     <Block type='ticks' />
