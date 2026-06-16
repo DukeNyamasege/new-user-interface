@@ -1,7 +1,7 @@
 import { action, computed, makeObservable, observable, reaction, when } from 'mobx';
 import { v4 as uuidv4 } from 'uuid';
 /* [AI] - Analytics removed - utility functions moved to @/utils/account-helpers */
-import { isVirtualAccount } from '@/utils/account-helpers';
+import { getJournalAccountLabel } from '@/utils/account-helpers';
 /* [/AI] */
 import { formatDate } from '@/components/shared';
 import { run_panel } from '@/constants/run-panel';
@@ -265,9 +265,7 @@ export default class JournalStore {
 
         if (loginid) {
             const current_account = account_list?.find(account => account?.loginid === loginid);
-            // Use centralized utility to determine if demo account
-            const isVirtual = isVirtualAccount(loginid);
-            extra.current_currency = isVirtual ? 'Demo' : current_account?.currency;
+            extra.current_currency = getJournalAccountLabel(loginid, current_account?.currency);
         } else if (message === LogTypes.WELCOME) {
             return;
         }

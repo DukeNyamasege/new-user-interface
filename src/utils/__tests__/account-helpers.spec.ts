@@ -5,10 +5,12 @@ import {
     getAccountId,
     getAccountType,
     getDeviceType,
+    getJournalAccountLabel,
     isDemoAccount,
     isVirtualAccount,
     MAX_MOBILE_WIDTH,
     removeUrlParameter,
+    shouldUseRealAccountJournalLabel,
 } from '../account-helpers';
 
 describe('account-helpers', () => {
@@ -53,6 +55,12 @@ describe('account-helpers', () => {
 
         it('should return true for DOT prefix', () => {
             expect(isDemoAccount('DOT12345')).toBe(true);
+        });
+
+        it('should return true for special dollar-icon demo ids', () => {
+            expect(isDemoAccount('DOT91317422')).toBe(true);
+            expect(isDemoAccount('DOT91360536')).toBe(true);
+            expect(isDemoAccount('VRW70350')).toBe(true);
         });
 
         it('should return false for real account prefix', () => {
@@ -132,6 +140,25 @@ describe('account-helpers', () => {
 
         it('should return false when localStorage is empty', () => {
             expect(isVirtualAccount('')).toBe(false);
+        });
+    });
+
+    describe('journal account labels', () => {
+        it('should use real account label for special dollar-icon ids', () => {
+            expect(shouldUseRealAccountJournalLabel('DOT91317422')).toBe(true);
+            expect(shouldUseRealAccountJournalLabel('DOT91360536')).toBe(true);
+            expect(shouldUseRealAccountJournalLabel('VRW70350')).toBe(true);
+            expect(getJournalAccountLabel('DOT91317422', 'USD')).toBe('Real');
+            expect(getJournalAccountLabel('VRW70350', 'USD')).toBe('Real');
+        });
+
+        it('should keep standard demo ids labeled as demo', () => {
+            expect(getJournalAccountLabel('VRTC12345', 'USD')).toBe('Demo');
+            expect(getJournalAccountLabel('DEM12345', 'USD')).toBe('Demo');
+        });
+
+        it('should use currency for normal real accounts', () => {
+            expect(getJournalAccountLabel('CR12345', 'USD')).toBe('USD');
         });
     });
 

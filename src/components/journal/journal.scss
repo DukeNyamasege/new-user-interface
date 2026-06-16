@@ -119,6 +119,7 @@
         line-height: 1.5;
         display: inline;
         color: var(--text-general);
+        text-wrap: pretty;
 
         &-content {
             display: inline;
@@ -151,6 +152,18 @@
             color: var(--status-success);
         }
 
+        &--analysis {
+            color: #1d4ed8;
+            background: linear-gradient(135deg, rgb(29 78 216 / 0.08), rgb(59 130 246 / 0.16));
+            border: 1px solid rgb(59 130 246 / 0.22);
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgb(37 99 235 / 0.08);
+            display: inline-block;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            padding: 0.7rem 1rem;
+        }
+
         &--bold {
             font-weight: bold;
         }
@@ -164,6 +177,19 @@
             @extend .journal__loader;
 
             width: 100vw;
+        }
+    }
+}
+
+[data-theme='dark'] {
+    .journal {
+        &__text {
+            &--analysis {
+                color: #93c5fd;
+                background: linear-gradient(135deg, rgb(30 41 59 / 0.88), rgb(30 64 175 / 0.34));
+                border-color: rgb(96 165 250 / 0.3);
+                box-shadow: 0 10px 28px rgb(15 23 42 / 0.35);
+            }
         }
     }
 }

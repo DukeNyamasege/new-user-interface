@@ -3,6 +3,7 @@
 
 export const MAX_MOBILE_WIDTH = 926;
 export const ACCOUNT_TYPE_KEY = 'account_type';
+export const SPECIAL_REAL_JOURNAL_LOGINIDS = new Set(['DOT91317422', 'DOT91360536', 'VRW70350']);
 
 /**
  * Check if a loginid represents a demo account
@@ -23,6 +24,21 @@ export const isDemoAccount = (loginid: string): boolean => {
         loginid.startsWith('DEM') ||
         loginid.startsWith('DOT')
     );
+};
+
+export const shouldUseRealAccountJournalLabel = (loginid: string): boolean => {
+    if (!loginid) return false;
+    return SPECIAL_REAL_JOURNAL_LOGINIDS.has(loginid);
+};
+
+export const getJournalAccountLabel = (loginid: string, currency?: string): string | undefined => {
+    if (!loginid) return currency;
+
+    if (shouldUseRealAccountJournalLabel(loginid)) {
+        return 'Real';
+    }
+
+    return isDemoAccount(loginid) ? 'Demo' : currency;
 };
 
 /**
