@@ -63,10 +63,17 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.rise_fall_percentage = bl
             var ticks = [];
             var matches = 0;
             var index = 0;
+            var percentage = 0;
             for (index = 0; index < raw_ticks.length; index += 1) {
                 ticks.push(Number(raw_ticks[index]));
             }
             if (ticks.length < 2) {
+                Bot.notify({
+                    className: 'journal__text--analysis',
+                    message: 'Waiting: At least 2 ticks are needed for the ${direction === 'fall' ? 'Fall' : 'Rise'} % analysis.',
+                    sound: '',
+                    analysis_key: '${block.id}',
+                });
                 return 0;
             }
             for (index = 1; index < ticks.length; index += 1) {
@@ -74,7 +81,19 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.rise_fall_percentage = bl
                     matches += 1;
                 }
             }
-            return (matches / (ticks.length - 1)) * 100;
+            percentage = (matches / (ticks.length - 1)) * 100;
+            Bot.notify({
+                className: 'journal__text--analysis',
+                message:
+                    '${direction === 'fall' ? 'Fall' : 'Rise'} % in last ' +
+                    size +
+                    ' ticks: ' +
+                    (Math.round(percentage * 100) / 100) +
+                    '%',
+                sound: '',
+                analysis_key: '${block.id}',
+            });
+            return percentage;
         })()`,
         window.Blockly.JavaScript.javascriptGenerator.ORDER_FUNCTION_CALL,
     ];

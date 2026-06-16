@@ -16,6 +16,7 @@ import { TAccountList } from './client-store';
 import RootStore from './root-store';
 
 type TExtra = {
+    analysis_key?: string;
     current_currency?: string;
     currency?: string;
     profit?: number;
@@ -40,6 +41,7 @@ type TMessageItem = {
 } & TMessage;
 
 type TNotifyData = {
+    analysis_key?: string;
     sound: string;
     block_id?: string;
     variable_name?: string;
@@ -209,7 +211,7 @@ export default class JournalStore {
     onNotify(data: TNotifyData) {
         const { run_panel, dbot, quick_strategy } = this.root_store;
 
-        const { message, className, message_type, sound, block_id, variable_name } = data;
+        const { message, className, message_type, sound, block_id, variable_name, analysis_key } = data;
         const selected_quick_strategy = quick_strategy.selected_strategy_for_notofy;
 
         // Special handling for stat notifications by block_id
@@ -242,6 +244,12 @@ export default class JournalStore {
             this.playAudio(sound);
             return;
         }
+
+        if (analysis_key && typeof message === 'string') {
+            this.updateAnalysisMessage(message, className, analysis_key);
+            return;
+        }
+
         this.pushMessage(message, message_type || MessageTypes.NOTIFY, className);
         this.playAudio(sound);
     }
@@ -250,7 +258,7 @@ export default class JournalStore {
         message: Error | string,
         message_type: string,
         className?: string,
-        extra: { current_currency?: string; currency?: string } = {}
+        extra: { analysis_key?: string; current_currency?: string; currency?: string } = {}
     ) {
         const { client } = this.core;
         const { loginid, account_list } = client as RootStore['client'];
@@ -270,6 +278,26 @@ export default class JournalStore {
 
         this.unfiltered_messages.unshift({ date, time, message, message_type, className, unique_id, extra });
         this.unfiltered_messages = this.unfiltered_messages.slice(); // force array update
+    }
+
+    updateAnalysisMessage(message: string, className: string | undefined, analysis_key: string) {
+        const existing_index = this.unfiltered_messages.findIndex(
+            entry => entry.extra?.analysis_key === analysis_key && entry.message_type === MessageTypes.NOTIFY
+        );
+
+        if (existing_index >= 0) {
+            const existing_message = this.unfiltered_messages[existing_index];
+            this.unfiltered_messages[existing_index] = {
+                ...existing_message,
+                className,
+                message,
+                time: formatDate(this.getServerTime(), 'HH:mm:ss [GMT]'),
+            };
+            this.unfiltered_messages = this.unfiltered_messages.slice();
+            return;
+        }
+
+        this.pushMessage(message, MessageTypes.NOTIFY, className, { analysis_key });
     }
 
     // Method to update the existing stat message instead of creating a new one

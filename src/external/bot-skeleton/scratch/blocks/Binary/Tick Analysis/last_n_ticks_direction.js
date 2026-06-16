@@ -62,18 +62,34 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.last_n_ticks_direction = 
             var raw_ticks = Bot.getTicks(false).slice(-size);
             var ticks = [];
             var index = 0;
+            var result = true;
             for (index = 0; index < raw_ticks.length; index += 1) {
                 ticks.push(Number(raw_ticks[index]));
             }
             if (ticks.length < size) {
+                Bot.notify({
+                    className: 'journal__text--analysis',
+                    message: 'Waiting: Last ' + size + ' ticks are not available yet.',
+                    sound: '',
+                    analysis_key: '${block.id}',
+                });
                 return false;
             }
             for (index = 1; index < ticks.length; index += 1) {
                 if (!(ticks[index] ${operator} ticks[index - 1])) {
-                    return false;
+                    result = false;
+                    break;
                 }
             }
-            return true;
+            Bot.notify({
+                className: 'journal__text--analysis',
+                message: result
+                    ? 'Condition met: Last ' + size + ' ticks direction is ${direction === 'fall' ? 'Fall' : 'Rise'}. Purchasing contract.'
+                    : 'Waiting: Last ' + size + ' ticks direction is not yet ${direction === 'fall' ? 'Fall' : 'Rise'}.',
+                sound: '',
+                analysis_key: '${block.id}',
+            });
+            return result;
         })()`,
         window.Blockly.JavaScript.javascriptGenerator.ORDER_FUNCTION_CALL,
     ];

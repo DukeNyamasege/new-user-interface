@@ -81,15 +81,31 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.last_digits_condition = b
             var digits = Bot.getLastDigitList().slice(-Math.max(1, Number(${count}) || 1));
             var target = Number(${digit});
             var index = 0;
+            var result = true;
             if (!digits.length) {
+                Bot.notify({
+                    className: 'journal__text--analysis',
+                    message: 'Waiting: Last ' + Number(${count}) + ' digits are not available yet.',
+                    sound: '',
+                    analysis_key: '${block.id}',
+                });
                 return false;
             }
             for (index = 0; index < digits.length; index += 1) {
                 if (!(Number(digits[index]) ${operator} target)) {
-                    return false;
+                    result = false;
+                    break;
                 }
             }
-            return true;
+            Bot.notify({
+                className: 'journal__text--analysis',
+                message: result
+                    ? 'Condition met: Last ' + Number(${count}) + ' digits satisfy the selected rule for digit ' + target + '. Purchasing contract.'
+                    : 'Waiting: Last ' + Number(${count}) + ' digits have not yet satisfied the selected rule for digit ' + target + '.',
+                sound: '',
+                analysis_key: '${block.id}',
+            });
+            return result;
         })()`,
         window.Blockly.JavaScript.javascriptGenerator.ORDER_FUNCTION_CALL,
     ];

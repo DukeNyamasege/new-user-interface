@@ -63,6 +63,7 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.digit_frequency_analysis 
             var current_digit = 0;
             var index = 0;
             var matches = 0;
+            var result = 0;
             for (current_digit = 0; current_digit < 10; current_digit += 1) {
                 matches = 0;
                 for (index = 0; index < digits.length; index += 1) {
@@ -78,7 +79,18 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.digit_frequency_analysis 
             frequency.sort(function (a, b) {
                 return ${order};
             });
-            return frequency.length ? frequency[0].digit : 0;
+            result = frequency.length ? frequency[0].digit : 0;
+            Bot.notify({
+                className: 'journal__text--analysis',
+                message:
+                    '${rank === 'least' ? 'Least' : 'Most'} frequent digit from last ' +
+                    Number(${count}) +
+                    ' digits: ' +
+                    result,
+                sound: '',
+                analysis_key: '${block.id}',
+            });
+            return result;
         })()`,
         window.Blockly.JavaScript.javascriptGenerator.ORDER_FUNCTION_CALL,
     ];

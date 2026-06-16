@@ -70,12 +70,27 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.over_under_percentage = b
         var digits = Bot.getLastDigitList().slice(-Number(${count}));
         var matches = 0;
         var index = 0;
+        var percentage = 0;
         for (index = 0; index < digits.length; index += 1) {
             if (Number(digits[index]) ${condition} Number(${digit})) {
                 matches += 1;
             }
         }
-        return digits.length ? (matches / digits.length) * 100 : 0;
+        percentage = digits.length ? (matches / digits.length) * 100 : 0;
+        Bot.notify({
+            className: 'journal__text--analysis',
+            message:
+                '${block.getFieldValue('CONDITION') === 'under' ? 'Under' : 'Over'} % for digit ' +
+                Number(${digit}) +
+                ' in last ' +
+                Number(${count}) +
+                ' ticks: ' +
+                (Math.round(percentage * 100) / 100) +
+                '%',
+            sound: '',
+            analysis_key: '${block.id}',
+        });
+        return percentage;
     })()`;
 
     return [code, window.Blockly.JavaScript.javascriptGenerator.ORDER_FUNCTION_CALL];

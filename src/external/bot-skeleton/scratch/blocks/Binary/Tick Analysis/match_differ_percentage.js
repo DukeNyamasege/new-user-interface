@@ -74,12 +74,27 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.match_differ_percentage =
             var target = Number(${digit});
             var matches = 0;
             var index = 0;
+            var percentage = 0;
             for (index = 0; index < digits.length; index += 1) {
                 if (Number(digits[index]) ${operator} target) {
                     matches += 1;
                 }
             }
-            return digits.length ? (matches / digits.length) * 100 : 0;
+            percentage = digits.length ? (matches / digits.length) * 100 : 0;
+            Bot.notify({
+                className: 'journal__text--analysis',
+                message:
+                    '${mode === 'differ' ? 'Differ' : 'Match'} % for digit ' +
+                    target +
+                    ' in last ' +
+                    Number(${count}) +
+                    ' ticks: ' +
+                    (Math.round(percentage * 100) / 100) +
+                    '%',
+                sound: '',
+                analysis_key: '${block.id}',
+            });
+            return percentage;
         })()`,
         window.Blockly.JavaScript.javascriptGenerator.ORDER_FUNCTION_CALL,
     ];
