@@ -44,9 +44,9 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.nth_last_digit = block =>
         ) || 1;
 
     return [
-        `(() => {
-            const digits = Bot.getLastDigitList();
-            const offset = Math.max(1, Number(${index}) || 1);
+        `(function () {
+            var digits = Bot.getLastDigitList();
+            var offset = Math.max(1, Number(${index}) || 1);
             return digits.length >= offset ? Number(digits[digits.length - offset]) : 0;
         })()`,
         window.Blockly.JavaScript.javascriptGenerator.ORDER_FUNCTION_CALL,

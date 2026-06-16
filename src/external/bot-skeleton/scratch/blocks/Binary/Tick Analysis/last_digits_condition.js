@@ -77,10 +77,19 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.last_digits_condition = b
     const operator = operator_map[condition] || '<';
 
     return [
-        `(() => {
-            const digits = Bot.getLastDigitList().slice(-Math.max(1, Number(${count}) || 1));
-            const target = Number(${digit});
-            return digits.length > 0 && digits.every(value => Number(value) ${operator} target);
+        `(function () {
+            var digits = Bot.getLastDigitList().slice(-Math.max(1, Number(${count}) || 1));
+            var target = Number(${digit});
+            var index = 0;
+            if (!digits.length) {
+                return false;
+            }
+            for (index = 0; index < digits.length; index += 1) {
+                if (!(Number(digits[index]) ${operator} target)) {
+                    return false;
+                }
+            }
+            return true;
         })()`,
         window.Blockly.JavaScript.javascriptGenerator.ORDER_FUNCTION_CALL,
     ];

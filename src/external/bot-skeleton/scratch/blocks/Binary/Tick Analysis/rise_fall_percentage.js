@@ -57,13 +57,22 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.rise_fall_percentage = bl
     const operator = direction === 'fall' ? '<' : '>';
 
     return [
-        `(() => {
-            const size = Math.max(2, Number(${count}) || 2);
-            const ticks = Bot.getTicks(false).slice(-size).map(Number);
-            if (ticks.length < 2) return 0;
-            let matches = 0;
-            for (let index = 1; index < ticks.length; index += 1) {
-                if (ticks[index] ${operator} ticks[index - 1]) matches += 1;
+        `(function () {
+            var size = Math.max(2, Number(${count}) || 2);
+            var raw_ticks = Bot.getTicks(false).slice(-size);
+            var ticks = [];
+            var matches = 0;
+            var index = 0;
+            for (index = 0; index < raw_ticks.length; index += 1) {
+                ticks.push(Number(raw_ticks[index]));
+            }
+            if (ticks.length < 2) {
+                return 0;
+            }
+            for (index = 1; index < ticks.length; index += 1) {
+                if (ticks[index] ${operator} ticks[index - 1]) {
+                    matches += 1;
+                }
             }
             return (matches / (ticks.length - 1)) * 100;
         })()`,

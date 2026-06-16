@@ -57,12 +57,21 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.last_n_ticks_direction = 
     const operator = direction === 'fall' ? '<' : '>';
 
     return [
-        `(() => {
-            const size = Math.max(2, Number(${count}) || 2);
-            const ticks = Bot.getTicks(false).slice(-size).map(Number);
-            if (ticks.length < size) return false;
-            for (let index = 1; index < ticks.length; index += 1) {
-                if (!(ticks[index] ${operator} ticks[index - 1])) return false;
+        `(function () {
+            var size = Math.max(2, Number(${count}) || 2);
+            var raw_ticks = Bot.getTicks(false).slice(-size);
+            var ticks = [];
+            var index = 0;
+            for (index = 0; index < raw_ticks.length; index += 1) {
+                ticks.push(Number(raw_ticks[index]));
+            }
+            if (ticks.length < size) {
+                return false;
+            }
+            for (index = 1; index < ticks.length; index += 1) {
+                if (!(ticks[index] ${operator} ticks[index - 1])) {
+                    return false;
+                }
             }
             return true;
         })()`,

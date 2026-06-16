@@ -57,13 +57,28 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.digit_frequency_analysis 
     const order = rank === 'least' ? 'a.count - b.count || a.digit - b.digit' : 'b.count - a.count || a.digit - b.digit';
 
     return [
-        `(() => {
-            const digits = Bot.getLastDigitList().slice(-Math.max(1, Number(${count}) || 1));
-            const frequency = Array.from({ length: 10 }, (_, digit) => ({
-                digit,
-                count: digits.filter(value => Number(value) === digit).length,
-            })).sort((a, b) => ${order});
-            return frequency[0]?.digit ?? 0;
+        `(function () {
+            var digits = Bot.getLastDigitList().slice(-Math.max(1, Number(${count}) || 1));
+            var frequency = [];
+            var current_digit = 0;
+            var index = 0;
+            var matches = 0;
+            for (current_digit = 0; current_digit < 10; current_digit += 1) {
+                matches = 0;
+                for (index = 0; index < digits.length; index += 1) {
+                    if (Number(digits[index]) === current_digit) {
+                        matches += 1;
+                    }
+                }
+                frequency.push({
+                    digit: current_digit,
+                    count: matches,
+                });
+            }
+            frequency.sort(function (a, b) {
+                return ${order};
+            });
+            return frequency.length ? frequency[0].digit : 0;
         })()`,
         window.Blockly.JavaScript.javascriptGenerator.ORDER_FUNCTION_CALL,
     ];

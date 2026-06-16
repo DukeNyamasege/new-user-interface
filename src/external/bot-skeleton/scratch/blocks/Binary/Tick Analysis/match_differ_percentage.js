@@ -69,10 +69,17 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.match_differ_percentage =
     const operator = mode === 'differ' ? '!==' : '===';
 
     return [
-        `(() => {
-            const digits = Bot.getLastDigitList().slice(-Math.max(1, Number(${count}) || 1));
-            const target = Number(${digit});
-            return digits.length ? (digits.filter(value => Number(value) ${operator} target).length / digits.length) * 100 : 0;
+        `(function () {
+            var digits = Bot.getLastDigitList().slice(-Math.max(1, Number(${count}) || 1));
+            var target = Number(${digit});
+            var matches = 0;
+            var index = 0;
+            for (index = 0; index < digits.length; index += 1) {
+                if (Number(digits[index]) ${operator} target) {
+                    matches += 1;
+                }
+            }
+            return digits.length ? (matches / digits.length) * 100 : 0;
         })()`,
         window.Blockly.JavaScript.javascriptGenerator.ORDER_FUNCTION_CALL,
     ];

@@ -57,9 +57,16 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.even_odd_percentage = blo
     const comparator = parity === 'odd' ? '!== 0' : '=== 0';
 
     return [
-        `(() => {
-            const digits = Bot.getLastDigitList().slice(-Math.max(1, Number(${count}) || 1));
-            return digits.length ? (digits.filter(value => Number(value) % 2 ${comparator}).length / digits.length) * 100 : 0;
+        `(function () {
+            var digits = Bot.getLastDigitList().slice(-Math.max(1, Number(${count}) || 1));
+            var matches = 0;
+            var index = 0;
+            for (index = 0; index < digits.length; index += 1) {
+                if (Number(digits[index]) % 2 ${comparator}) {
+                    matches += 1;
+                }
+            }
+            return digits.length ? (matches / digits.length) * 100 : 0;
         })()`,
         window.Blockly.JavaScript.javascriptGenerator.ORDER_FUNCTION_CALL,
     ];

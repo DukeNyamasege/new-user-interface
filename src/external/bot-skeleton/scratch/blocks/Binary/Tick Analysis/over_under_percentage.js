@@ -66,9 +66,16 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.over_under_percentage = b
             'COUNT',
             window.Blockly.JavaScript.javascriptGenerator.ORDER_NONE
         ) || 100;
-    const code = `(() => {
-        const digits = Bot.getLastDigitList().slice(-Number(${count}));
-        return digits.length ? (digits.filter(digit => Number(digit) ${condition} Number(${digit})).length / digits.length) * 100 : 0;
+    const code = `(function () {
+        var digits = Bot.getLastDigitList().slice(-Number(${count}));
+        var matches = 0;
+        var index = 0;
+        for (index = 0; index < digits.length; index += 1) {
+            if (Number(digits[index]) ${condition} Number(${digit})) {
+                matches += 1;
+            }
+        }
+        return digits.length ? (matches / digits.length) * 100 : 0;
     })()`;
 
     return [code, window.Blockly.JavaScript.javascriptGenerator.ORDER_FUNCTION_CALL];

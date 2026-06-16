@@ -29,8 +29,8 @@ window.Blockly.Blocks.second_last_digit = {
 };
 
 window.Blockly.JavaScript.javascriptGenerator.forBlock.second_last_digit = () => [
-    `(() => {
-        const digits = Bot.getLastDigitList();
+    `(function () {
+        var digits = Bot.getLastDigitList();
         return digits.length > 1 ? Number(digits[digits.length - 2]) : 0;
     })()`,
     window.Blockly.JavaScript.javascriptGenerator.ORDER_FUNCTION_CALL,
