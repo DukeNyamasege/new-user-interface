@@ -1,6 +1,9 @@
 import React from 'react';
 import classNames from 'classnames';
-import { LabelPairedChevronsRightCaptionRegularIcon, LegacyHandleLessIcon } from '@/components/shared_ui/figma-icons';
+import {
+    LabelPairedChevronDownLgRegularIcon,
+    LabelPairedChevronsRightCaptionRegularIcon,
+} from '@/components/shared_ui/figma-icons';
 import { useDevice } from '@deriv-com/ui';
 
 type TDrawer = {
@@ -70,7 +73,7 @@ const Drawer = ({
                         })}
                     />
                 ) : (
-                    <LegacyHandleLessIcon iconSize='sm' className='dc-drawer__toggle-icon' />
+                    <LabelPairedChevronDownLgRegularIcon className='dc-drawer__toggle-icon' />
                 )}
             </div>
             <div className={classNames('dc-drawer__container', { [`dc-drawer__container--${anchor}`]: isDesktop })}>
