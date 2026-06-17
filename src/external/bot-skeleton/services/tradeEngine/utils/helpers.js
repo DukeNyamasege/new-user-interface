@@ -272,16 +272,6 @@ export const recoverFromError = (promiseFn, recoverFn, errors_to_ignore, delay_i
     });
 };
 
-                            globalObserver.setState({ global_timeouts });
-                        })
-                );
-            });
-        } else {
-            resolve();
-        }
-    });
-};
-
 /**
  * @param {*} promiseFn api call - it could be api call or subscription
  * @param {*} errors_to_ignore list of errors to ignore
