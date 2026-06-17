@@ -157,6 +157,10 @@
         .dc-tabs {
             &__list {
                 border-bottom: 1px solid var(--general-section-1);
+
+                @include mobile-or-tablet-screen {
+                    padding-right: 9rem;
+                }
             }
 
             &__item {
@@ -223,7 +227,7 @@
     &__clear-button {
         @include mobile-or-tablet-screen {
             position: absolute !important;
-            top: 0.8rem;
+            top: 0.6rem;
             right: max(1.2rem, env(safe-area-inset-right, 0));
             height: 3rem !important;
             min-width: 7.2rem;
