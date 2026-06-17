@@ -43,7 +43,10 @@ const normalizeScopeValue = (value: unknown) => {
         .toLowerCase();
     if (!normalized) return '';
 
-    return normalized.replace(/^['"]|['"]$/g, '').replace(/^scope:/i, '').trim();
+    return normalized
+        .replace(/^['"]|['"]$/g, '')
+        .replace(/^scope:/i, '')
+        .trim();
 };
 
 export const normalizeScopes = (scopes: unknown): ApiTokenScope[] => {

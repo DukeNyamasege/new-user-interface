@@ -72,9 +72,7 @@ router.get('/usd-kes', async (req, res, next) => {
             return;
         }
 
-        const payload = setCachedResponse(
-            (await fetchFromExchangeRateApi()) || (await fetchFromOpenExchangeRateApi())
-        );
+        const payload = setCachedResponse((await fetchFromExchangeRateApi()) || (await fetchFromOpenExchangeRateApi()));
 
         res.json({ ...payload, cached: false });
     } catch (error) {

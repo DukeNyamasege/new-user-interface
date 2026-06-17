@@ -3,8 +3,15 @@
 :root {
     --brand-secondary: #85acb0;
     --border-normal: #d6dadb;
-    --gneral-main-1: #fff;
     --text-loss-danger: #ec3f3f;
+}
+
+.theme--light {
+    --gneral-main-1: #ffffff;
+}
+
+.theme--dark {
+    --gneral-main-1: #151717;
 }
 
 .dc-input {

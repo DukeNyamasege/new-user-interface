@@ -1,4 +1,8 @@
-export type ManualMartingaleMode = 'no_martingale' | 'after_one_loss' | 'after_two_losses' | 'custom_consecutive_loss_trigger';
+export type ManualMartingaleMode =
+    | 'no_martingale'
+    | 'after_one_loss'
+    | 'after_two_losses'
+    | 'custom_consecutive_loss_trigger';
 
 type GetMartingaleStakeForRunArgs = {
     stake: number;

@@ -20,23 +20,52 @@ export const LegacyCloseCircle1pxBlackIcon = createStrokeIcon(({ stroke, strokeW
 ));
 
 export const LegacyChevronLeft1pxIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
-    <path d='M14.5 6.5L9 12l5.5 5.5' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' strokeLinejoin='round' />
+    <path
+        d='M14.5 6.5L9 12l5.5 5.5'
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeLinecap='round'
+        strokeLinejoin='round'
+    />
 ));
 
 export const LegacyChevronRight1pxIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
-    <path d='M9.5 6.5L15 12l-5.5 5.5' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' strokeLinejoin='round' />
+    <path
+        d='M9.5 6.5L15 12l-5.5 5.5'
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeLinecap='round'
+        strokeLinejoin='round'
+    />
 ));
 
 export const LegacyFullscreen1pxIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
     <>
-        <path d='M8 4H4v4M16 4h4v4M8 20H4v-4M20 20h-4v-4' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' />
+        <path
+            d='M8 4H4v4M16 4h4v4M8 20H4v-4M20 20h-4v-4'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinecap='round'
+        />
     </>
 ));
 
 export const LegacyHomeNewIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
     <>
-        <path d='M4.5 11.5L12 5l7.5 6.5' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' strokeLinejoin='round' />
-        <path d='M7 10.5V19h10v-8.5' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' strokeLinejoin='round' />
+        <path
+            d='M4.5 11.5L12 5l7.5 6.5'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
+        <path
+            d='M7 10.5V19h10v-8.5'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
     </>
 ));
 
@@ -50,8 +79,19 @@ export const LegacyInfo1pxIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
 
 export const LegacyLogout1pxIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
     <>
-        <path d='M10 6H6.5A1.5 1.5 0 005 7.5v9A1.5 1.5 0 006.5 18H10' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' />
-        <path d='M13 8l4 4-4 4M17 12H9' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' strokeLinejoin='round' />
+        <path
+            d='M10 6H6.5A1.5 1.5 0 005 7.5v9A1.5 1.5 0 006.5 18H10'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinecap='round'
+        />
+        <path
+            d='M13 8l4 4-4 4M17 12H9'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
     </>
 ));
 

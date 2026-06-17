@@ -117,7 +117,13 @@ export default function DesktopTransactionTable({
                                 <TableCell label={data?.entry_spot} loader={!data?.entry_spot} />
                                 <TableCell label={data?.exit_spot} loader={!data.exit_spot} />
                                 <TableCell
-                                    label={<Money amount={Math.abs(data?.buy_price ?? 0)} currency={data?.currency} show_currency />}
+                                    label={
+                                        <Money
+                                            amount={Math.abs(data?.buy_price ?? 0)}
+                                            currency={data?.currency}
+                                            show_currency
+                                        />
+                                    }
                                 />
                                 <TableCell
                                     label={
@@ -127,7 +133,11 @@ export default function DesktopTransactionTable({
                                                 [`${PARENT_CLASS}__profit--loss`]: data?.profit < 0,
                                             })}
                                         >
-                                            <Money amount={Math.abs(data?.profit ?? 0)} currency={data?.currency} show_currency />
+                                            <Money
+                                                amount={Math.abs(data?.profit ?? 0)}
+                                                currency={data?.currency}
+                                                show_currency
+                                            />
                                         </div>
                                     }
                                     loader={!data.is_completed}
@@ -155,8 +165,12 @@ export default function DesktopTransactionTable({
                 <div className={`${PARENT_CLASS}__table-row`}>
                     <TableCell label={account} extra_classes={[`${PARENT_CLASS}__table-cell--grow-mid`]} />
                     <TableCell label={result?.number_of_runs} />
-                    <TableCell label={<Money amount={Math.abs(result?.total_stake ?? 0)} currency={currency} show_currency />} />
-                    <TableCell label={<Money amount={Math.abs(result?.total_payout ?? 0)} currency={currency} show_currency />} />
+                    <TableCell
+                        label={<Money amount={Math.abs(result?.total_stake ?? 0)} currency={currency} show_currency />}
+                    />
+                    <TableCell
+                        label={<Money amount={Math.abs(result?.total_payout ?? 0)} currency={currency} show_currency />}
+                    />
                     <TableCell label={result?.won_contracts} />
                     <TableCell label={result?.lost_contracts} extra_classes={[`${PARENT_CLASS}__loss`]} />
                     <TableCell

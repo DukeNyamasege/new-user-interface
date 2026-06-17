@@ -66,16 +66,15 @@ const createManifestBot = (entry: TBotManifestEntry): TBot => {
         name,
         file: entry.file,
         description:
-            entry.description || `${name} loads into Bot Builder and executes through the standard purchase conditions.`,
+            entry.description ||
+            `${name} loads into Bot Builder and executes through the standard purchase conditions.`,
         emoji: entry.emoji || 'BOT',
     };
 };
 
-const RISK_MANAGERS_BOTS: TBot[] = [
-    'grffy v1.xml',
-    'Mr Duke Speed Bot.1.xml',
-    'Wealth Generator.xml',
-].map(createRiskManagersBot);
+const RISK_MANAGERS_BOTS: TBot[] = ['grffy v1.xml', 'Mr Duke Speed Bot.1.xml', 'Wealth Generator.xml'].map(
+    createRiskManagersBot
+);
 
 const TERMICA_BOTS: TBot[] = [
     {

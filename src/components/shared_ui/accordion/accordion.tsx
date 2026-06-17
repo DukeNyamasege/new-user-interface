@@ -1,7 +1,10 @@
 import React from 'react';
 import classNames from 'classnames';
 import { usePrevious } from '@/hooks/use-previous';
-import { LabelPairedMinusCaptionRegularIcon, LabelPairedPlusCaptionRegularIcon } from '@/components/shared_ui/figma-icons/LabelPaired';
+import {
+    LabelPairedMinusCaptionRegularIcon,
+    LabelPairedPlusCaptionRegularIcon,
+} from '@/components/shared_ui/figma-icons/LabelPaired';
 import { TAccordionProps } from '../types';
 
 const Accordion = ({ className, list }: TAccordionProps) => {

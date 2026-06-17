@@ -233,7 +233,9 @@ $at-text-faint: #2c4060;
             font-size: 1.2rem;
             font-weight: 700;
             cursor: pointer;
-            transition: transform 0.18s ease, opacity 0.18s ease;
+            transition:
+                transform 0.18s ease,
+                opacity 0.18s ease;
 
             &:hover {
                 transform: translateY(-1px);
@@ -242,7 +244,7 @@ $at-text-faint: #2c4060;
 
         button:first-child {
             background: linear-gradient(135deg, #0bb86a, #1e5aa8);
-            color: #fff;
+            color: var(--text-colored-background);
         }
 
         button:last-child {
@@ -724,7 +726,7 @@ $at-text-faint: #2c4060;
 
     &__run {
         background: linear-gradient(135deg, #007a42, #00a855);
-        color: #fff;
+        color: var(--text-colored-background);
         box-shadow: 0 4px 20px rgba(0, 168, 85, 0.25);
 
         &:not(:disabled):hover {
@@ -735,7 +737,7 @@ $at-text-faint: #2c4060;
 
     &__stop {
         background: linear-gradient(135deg, $at-crimson-dark, $at-crimson);
-        color: #fff;
+        color: var(--text-colored-background);
         box-shadow: 0 4px 20px $at-crimson-glow;
 
         &:not(:disabled):hover {
@@ -786,7 +788,7 @@ $at-text-faint: #2c4060;
         display: grid;
         place-items: center;
         position: relative;
-        color: #fff;
+        color: var(--text-colored-background);
         font-family: Georgia, 'Times New Roman', serif;
         font-weight: 800;
         background:
@@ -1014,7 +1016,7 @@ $at-text-faint: #2c4060;
 
     &__primary {
         background: linear-gradient(135deg, #7442b8, #9c6fdd);
-        color: #fff;
+        color: var(--text-colored-background);
         box-shadow: 0 0.8rem 2rem rgba(132, 91, 205, 0.28);
     }
 
@@ -1846,7 +1848,7 @@ $at-text-faint: #2c4060;
     right: 1.6rem;
     z-index: 200;
     background: rgba(217, 146, 26, 0.85);
-    color: #fff;
+    color: var(--text-colored-background);
     border: none;
     border-radius: 2rem;
     padding: 0.7rem 1.3rem;
@@ -1974,7 +1976,7 @@ $at-text-faint: #2c4060;
 
     &__ok {
         background: linear-gradient(135deg, #a07000, $at-amber);
-        color: #fff;
+        color: var(--text-colored-background);
         border: none;
         border-radius: 0.8rem;
         padding: 0.9rem 2.4rem;

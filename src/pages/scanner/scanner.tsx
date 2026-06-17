@@ -164,12 +164,16 @@ const buildAnalysis = (strategy: TScannerStrategy, ticks: TTickPoint[], symbol: 
         if (evenCount > oddCount) {
             lines.push(`EVEN numbers dominate (${evenPercentage}%)`);
             lines.push(getRandomEntryPoints(3).join(', '));
-            lines.push('Entry Point: Run your bot whenever an even number appears after a sequence of 3 or more consecutive odd numbers.');
+            lines.push(
+                'Entry Point: Run your bot whenever an even number appears after a sequence of 3 or more consecutive odd numbers.'
+            );
             signal = { contractType: 'DIGITEVEN', label: 'Even' };
         } else {
             lines.push(`ODD numbers dominate (${oddPercentage}%)`);
             lines.push(getRandomEntryPoints(3).join(', '));
-            lines.push('Entry Point: Run your bot whenever an odd number appears after a sequence of 3 or more consecutive even numbers.');
+            lines.push(
+                'Entry Point: Run your bot whenever an odd number appears after a sequence of 3 or more consecutive even numbers.'
+            );
             signal = { contractType: 'DIGITODD', label: 'Odd' };
         }
     } else if (strategy === 'Over & Under') {
@@ -197,7 +201,11 @@ const buildAnalysis = (strategy: TScannerStrategy, ticks: TTickPoint[], symbol: 
             lines.push(`UNDER (5-9) with ${underPercentage}%`);
             lines.push(`Recommended digit: ${leastCommonUnder}`);
             lines.push(`Entry Points: ${getRandomEntryPoints(3).join(', ')}`);
-            signal = { barrier: String(leastCommonUnder), contractType: 'DIGITUNDER', label: `Under ${leastCommonUnder}` };
+            signal = {
+                barrier: String(leastCommonUnder),
+                contractType: 'DIGITUNDER',
+                label: `Under ${leastCommonUnder}`,
+            };
         }
     } else {
         let ups = 0;
@@ -210,7 +218,9 @@ const buildAnalysis = (strategy: TScannerStrategy, ticks: TTickPoint[], symbol: 
 
         const prediction = ups > downs ? 'RISE' : 'FALL';
         lines.push(`Market will ${prediction}`);
-        lines.push(`Entry Point: ${ups > downs ? 'Enter when price crosses above resistance' : 'Enter when price crosses below support'}`);
+        lines.push(
+            `Entry Point: ${ups > downs ? 'Enter when price crosses above resistance' : 'Enter when price crosses below support'}`
+        );
         signal = {
             contractType: ups > downs ? 'CALL' : 'PUT',
             label: ups > downs ? 'Rise' : 'Fall',
@@ -475,7 +485,10 @@ const Scanner = observer(() => {
                 currency,
             };
 
-            setTerminalDashboard(previous => [...previous, `Buying ${signal.label} with ${stake.toFixed(2)} ${currency}...`]);
+            setTerminalDashboard(previous => [
+                ...previous,
+                `Buying ${signal.label} with ${stake.toFixed(2)} ${currency}...`,
+            ]);
             const buy = await buyContractForUi({
                 parameters: buildTradeParameters(signal, stake),
                 price: stake,
@@ -503,7 +516,12 @@ const Scanner = observer(() => {
 
     const executeTradeFromTick = useCallback(
         async (currentTicks: TTickPoint[]) => {
-            if (!tradeActiveRef.current || tradeInFlightRef.current || shouldStopRef.current || currentTicks.length < MAX_TICKS) {
+            if (
+                !tradeActiveRef.current ||
+                tradeInFlightRef.current ||
+                shouldStopRef.current ||
+                currentTicks.length < MAX_TICKS
+            ) {
                 return;
             }
 
@@ -632,7 +650,10 @@ const Scanner = observer(() => {
 
                     if (count < 0) {
                         clearInterval(countdownInterval);
-                        setTerminalDashboard(previous => [...previous, nextMode === 'Trade' ? 'Bot activated!' : 'Analysis mode complete.']);
+                        setTerminalDashboard(previous => [
+                            ...previous,
+                            nextMode === 'Trade' ? 'Bot activated!' : 'Analysis mode complete.',
+                        ]);
 
                         if (nextMode === 'Trade') {
                             startScannerTrading(analysis.signal, stake, stopLoss, takeProfit);
@@ -657,7 +678,14 @@ const Scanner = observer(() => {
             return;
         }
 
-        if (!Number.isFinite(stake) || stake <= 0 || !Number.isFinite(stopLoss) || stopLoss <= 0 || !Number.isFinite(takeProfit) || takeProfit <= 0) {
+        if (
+            !Number.isFinite(stake) ||
+            stake <= 0 ||
+            !Number.isFinite(stopLoss) ||
+            stopLoss <= 0 ||
+            !Number.isFinite(takeProfit) ||
+            takeProfit <= 0
+        ) {
             setTerminalDashboard(['Error: Please enter valid Stake, SL and TP amounts!']);
             setPopupOpen(true);
             return;
@@ -738,13 +766,23 @@ const Scanner = observer(() => {
             <div className='container'>
                 <h1> Signal Analyzer</h1>
                 <label htmlFor='strategy'>Select Strategy</label>
-                <select id='strategy' className='dropdown' value={strategy} onChange={event => handleStrategyChange(event.target.value as TScannerStrategy)}>
+                <select
+                    id='strategy'
+                    className='dropdown'
+                    value={strategy}
+                    onChange={event => handleStrategyChange(event.target.value as TScannerStrategy)}
+                >
                     {STRATEGIES.map(item => (
                         <option key={item}>{item}</option>
                     ))}
                 </select>
                 <label htmlFor='market'>Select Market</label>
-                <select id='market' className='dropdown' value={selectedSymbol} onChange={event => handleMarketChange(event.target.value)}>
+                <select
+                    id='market'
+                    className='dropdown'
+                    value={selectedSymbol}
+                    onChange={event => handleMarketChange(event.target.value)}
+                >
                     {MARKETS.map(market => (
                         <option key={market.symbol} value={market.symbol}>
                             {market.label}
@@ -752,13 +790,36 @@ const Scanner = observer(() => {
                     ))}
                 </select>
                 <label htmlFor='stake'>Stake</label>
-                <input id='stake' className='dropdown' inputMode='decimal' value={stakeInput} onChange={event => setStakeInput(cleanMoneyInput(event.target.value))} />
+                <input
+                    id='stake'
+                    className='dropdown'
+                    inputMode='decimal'
+                    value={stakeInput}
+                    onChange={event => setStakeInput(cleanMoneyInput(event.target.value))}
+                />
                 <label htmlFor='stop-loss'>SL</label>
-                <input id='stop-loss' className='dropdown' inputMode='decimal' value={stopLossInput} onChange={event => setStopLossInput(cleanMoneyInput(event.target.value))} />
+                <input
+                    id='stop-loss'
+                    className='dropdown'
+                    inputMode='decimal'
+                    value={stopLossInput}
+                    onChange={event => setStopLossInput(cleanMoneyInput(event.target.value))}
+                />
                 <label htmlFor='take-profit'>TP</label>
-                <input id='take-profit' className='dropdown' inputMode='decimal' value={takeProfitInput} onChange={event => setTakeProfitInput(cleanMoneyInput(event.target.value))} />
+                <input
+                    id='take-profit'
+                    className='dropdown'
+                    inputMode='decimal'
+                    value={takeProfitInput}
+                    onChange={event => setTakeProfitInput(cleanMoneyInput(event.target.value))}
+                />
                 <label htmlFor='mode'>Mode</label>
-                <select id='mode' className='dropdown' value={mode} onChange={event => handleModeChange(event.target.value as TScannerMode)}>
+                <select
+                    id='mode'
+                    className='dropdown'
+                    value={mode}
+                    onChange={event => handleModeChange(event.target.value as TScannerMode)}
+                >
                     <option>Analyze</option>
                     <option>Trade</option>
                 </select>
@@ -771,7 +832,10 @@ const Scanner = observer(() => {
                         Last Digit: <span>{latestDigit ?? '--'}</span>
                     </div>
                     <div className='latest-tick'>
-                        P/L: <span>{sessionProfit.toFixed(2)} {currency}</span>
+                        P/L:{' '}
+                        <span>
+                            {sessionProfit.toFixed(2)} {currency}
+                        </span>
                     </div>
                 </div>
 
@@ -801,7 +865,10 @@ const Scanner = observer(() => {
                     <div className='terminal-scroll'>
                         <div className='terminal-scroll-content'>
                             {terminalBody.map((line, index) => (
-                                <p className={(line ?? '').startsWith('Error') ? 'red' : 'green'} key={`${line}-${index}`}>
+                                <p
+                                    className={(line ?? '').startsWith('Error') ? 'red' : 'green'}
+                                    key={`${line}-${index}`}
+                                >
                                     {line ?? ''}
                                 </p>
                             ))}

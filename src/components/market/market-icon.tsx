@@ -93,100 +93,164 @@ const MARKET_ICONS = {
         import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketForexUsdmxnIcon }))
     ),
     FRXXAGUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCommoditySilverusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCommoditySilverusdIcon,
+        }))
     ),
     FRXXAUUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCommodityGoldusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCommodityGoldusdIcon,
+        }))
     ),
     FRXXPDUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCommodityPalladiumusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCommodityPalladiumusdIcon,
+        }))
     ),
     FRXXPTUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCommodityPlatinumusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCommodityPlatinumusdIcon,
+        }))
     ),
     OTC_AEX: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketIndicesNetherlands25Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketIndicesNetherlands25Icon,
+        }))
     ),
     OTC_AS51: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketIndicesAustralia200Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketIndicesAustralia200Icon,
+        }))
     ),
     OTC_DJI: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketIndicesWallStreet30Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketIndicesWallStreet30Icon,
+        }))
     ),
     OTC_FCHI: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketIndicesFrance40Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketIndicesFrance40Icon,
+        }))
     ),
     OTC_FTSE: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketIndicesUk100Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketIndicesUk100Icon,
+        }))
     ),
     OTC_GDAXI: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketIndicesUk100Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketIndicesUk100Icon,
+        }))
     ),
     OTC_HSI: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketIndicesHongKong50Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketIndicesHongKong50Icon,
+        }))
     ),
     OTC_IBEX35: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketIndicesSpain35Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketIndicesSpain35Icon,
+        }))
     ),
     OTC_N225: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketIndicesJapan225Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketIndicesJapan225Icon,
+        }))
     ),
     OTC_NDX: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketIndicesUsTech100Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketIndicesUsTech100Icon,
+        }))
     ),
     OTC_SPC: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketIndicesUs500Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketIndicesUs500Icon,
+        }))
     ),
     OTC_SSMI: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketIndicesSwiss20Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketIndicesSwiss20Icon,
+        }))
     ),
     OTC_SX5E: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketIndicesEuro50Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketIndicesEuro50Icon,
+        }))
     ),
     R_10: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedVolatility10Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedVolatility10Icon,
+        }))
     ),
     R_25: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedVolatility25Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedVolatility25Icon,
+        }))
     ),
     R_50: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedVolatility50Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedVolatility50Icon,
+        }))
     ),
     R_75: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedVolatility75Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedVolatility75Icon,
+        }))
     ),
     R_100: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedVolatility100Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedVolatility100Icon,
+        }))
     ),
     BOOM300N: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedBoom300Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedBoom300Icon,
+        }))
     ),
     BOOM500: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedBoom500Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedBoom500Icon,
+        }))
     ),
     BOOM600: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedBoom600Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedBoom600Icon,
+        }))
     ),
     BOOM900: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedBoom900Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedBoom900Icon,
+        }))
     ),
     BOOM1000: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedBoom1000Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedBoom1000Icon,
+        }))
     ),
     CRASH300N: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedCrash300Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedCrash300Icon,
+        }))
     ),
     CRASH500: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedCrash500Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedCrash500Icon,
+        }))
     ),
     CRASH600: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedCrash600Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedCrash600Icon,
+        }))
     ),
     CRASH900: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedCrash900Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedCrash900Icon,
+        }))
     ),
     CRASH1000: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedCrash1000Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedCrash1000Icon,
+        }))
     ),
     RDBEAR: lazy(() =>
         import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedBearIcon }))
@@ -195,145 +259,239 @@ const MARKET_ICONS = {
         import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedBullIcon }))
     ),
     STPRNG: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedStepIndices100Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedStepIndices100Icon,
+        }))
     ),
     STPRNG2: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedStepIndices200Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedStepIndices200Icon,
+        }))
     ),
     STPRNG3: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedStepIndices300Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedStepIndices300Icon,
+        }))
     ),
     STPRNG4: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedStepIndices400Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedStepIndices400Icon,
+        }))
     ),
     STPRNG5: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedStepIndices500Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedStepIndices500Icon,
+        }))
     ),
     WLDAUD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedAudBasketIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedAudBasketIcon,
+        }))
     ),
     WLDEUR: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedEurBasketIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedEurBasketIcon,
+        }))
     ),
     WLDGBP: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedGbpBasketIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedGbpBasketIcon,
+        }))
     ),
     WLDXAU: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedGoldBasketIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedGoldBasketIcon,
+        }))
     ),
     WLDUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedUsdBasketIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedUsdBasketIcon,
+        }))
     ),
     '1HZ10V': lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedVolatility101sIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedVolatility101sIcon,
+        }))
     ),
     '1HZ15V': lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedVolatility151sIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedVolatility151sIcon,
+        }))
     ),
     '1HZ25V': lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedVolatility251sIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedVolatility251sIcon,
+        }))
     ),
     '1HZ30V': lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedVolatility301sIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedVolatility301sIcon,
+        }))
     ),
     '1HZ50V': lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedVolatility501sIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedVolatility501sIcon,
+        }))
     ),
     '1HZ75V': lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedVolatility751sIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedVolatility751sIcon,
+        }))
     ),
     '1HZ90V': lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedVolatility901sIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedVolatility901sIcon,
+        }))
     ),
     '1HZ100V': lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedVolatility1001sIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedVolatility1001sIcon,
+        }))
     ),
     '1HZ150V': lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedVolatility1501sIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedVolatility1501sIcon,
+        }))
     ),
     '1HZ200V': lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedVolatility2001sIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedVolatility2001sIcon,
+        }))
     ),
     '1HZ250V': lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedVolatility2501sIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedVolatility2501sIcon,
+        }))
     ),
     '1HZ300V': lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedVolatility3001sIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedVolatility3001sIcon,
+        }))
     ),
     JD10: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedJump10Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedJump10Icon,
+        }))
     ),
     JD25: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedJump25Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedJump25Icon,
+        }))
     ),
     JD50: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedJump50Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedJump50Icon,
+        }))
     ),
     JD75: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedJump75Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedJump75Icon,
+        }))
     ),
     JD100: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedJump100Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedJump100Icon,
+        }))
     ),
     JD150: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedJump150Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedJump150Icon,
+        }))
     ),
     JD200: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketDerivedJump200Icon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketDerivedJump200Icon,
+        }))
     ),
     CRYBCHUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCryptocurrencyBchusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCryptocurrencyBchusdIcon,
+        }))
     ),
     CRYBNBUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCryptocurrencyBnbusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCryptocurrencyBnbusdIcon,
+        }))
     ),
     CRYBTCLTC: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCryptocurrencyBtcltcIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCryptocurrencyBtcltcIcon,
+        }))
     ),
     CRYIOTUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCryptocurrencyIotusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCryptocurrencyIotusdIcon,
+        }))
     ),
     CRYNEOUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCryptocurrencyNeousdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCryptocurrencyNeousdIcon,
+        }))
     ),
     CRYOMGUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCryptocurrencyOmgusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCryptocurrencyOmgusdIcon,
+        }))
     ),
     CRYTRXUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCryptocurrencyTrxusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCryptocurrencyTrxusdIcon,
+        }))
     ),
     CRYBTCETH: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCryptocurrencyBtcethIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCryptocurrencyBtcethIcon,
+        }))
     ),
     CRYZECUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCryptocurrencyZecusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCryptocurrencyZecusdIcon,
+        }))
     ),
     CRYXMRUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCryptocurrencyXmrusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCryptocurrencyXmrusdIcon,
+        }))
     ),
     CRYXMLUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCryptocurrencyXlmusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCryptocurrencyXlmusdIcon,
+        }))
     ),
     CRYXRPUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCryptocurrencyXrpusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCryptocurrencyXrpusdIcon,
+        }))
     ),
     CRYBTCUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCryptocurrencyBtcusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCryptocurrencyBtcusdIcon,
+        }))
     ),
     CRYDSHUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCryptocurrencyDshusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCryptocurrencyDshusdIcon,
+        }))
     ),
     CRYETHUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCryptocurrencyEthusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCryptocurrencyEthusdIcon,
+        }))
     ),
     CRYEOSUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCryptocurrencyEosusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCryptocurrencyEosusdIcon,
+        }))
     ),
     CRYLTCUSD: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Markets').then(module => ({ default: module.MarketCryptocurrencyLtcusdIcon }))
+        import('@/components/shared_ui/figma-icons/Markets').then(module => ({
+            default: module.MarketCryptocurrencyLtcusdIcon,
+        }))
     ),
     unknown: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Illustrative').then(module => ({ default: module.IllustrativeMarketsIcon }))
+        import('@/components/shared_ui/figma-icons/Illustrative').then(module => ({
+            default: module.IllustrativeMarketsIcon,
+        }))
     ),
 };
 

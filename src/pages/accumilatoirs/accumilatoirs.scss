@@ -3,7 +3,7 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
-    color: #ffffff;
+    color: var(--text-colored-background);
     background: linear-gradient(180deg, #101213 0%, #080a0b 100%);
     font-family: Arial, Helvetica, sans-serif;
 
@@ -466,7 +466,9 @@
 .accumilatoirs-check--auto-active {
     border-color: #ff4d5f;
     background: #b31224;
-    box-shadow: 0 0 0 1px rgba(255, 77, 95, 0.3), 0 10px 22px rgba(179, 18, 36, 0.28);
+    box-shadow:
+        0 0 0 1px rgba(255, 77, 95, 0.3),
+        0 10px 22px rgba(179, 18, 36, 0.28);
 }
 
 .accumilatoirs-primary {

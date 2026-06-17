@@ -134,9 +134,9 @@ export const getLastDigitForList = (tick, pip_size = 0) => {
     return value[value.length - 1];
 };
 
-const getBackoffDelayInMs = (error_obj, delay_index) => {
-    const base_delay = 2.5;
-    const max_delay = 15;
+const getBackoffDelayInMs = (error_obj, delay_index, execution_config = null) => {
+    const base_delay = execution_config?.backoffBaseDelay ?? 2.5;
+    const max_delay = execution_config?.backoffMaxDelay ?? 15;
     const next_delay_in_seconds = Math.min(base_delay * delay_index, max_delay);
 
     const { error = {}, msg_type = '', echo_req = {} } = error_obj;
@@ -225,14 +225,8 @@ export const recoverFromError = (promiseFn, recoverFn, errors_to_ignore, delay_i
 
         if (promise) {
             promise.then(resolve).catch(error => {
-                /**
-                 * if bot is not running there is no point of recovering from error
-                 * `!api_base.is_running` will check the bot status if it is not running it will kick out the control from loop
-                 */
                 if (shouldThrowError(error, errors_to_ignore) || (api_base && !api_base.is_running)) {
-                    // Check if this is a position limit exceeded error
                     if (error?.error?.code === 'OpenPositionLimitExceeded') {
-                        // Emit click_stop event to trigger the stopBot method in run-panel-store
                         setTimeout(() => {
                             globalObserver.emit('bot.stop_button_click');
                         }, 500);
@@ -247,6 +241,8 @@ export const recoverFromError = (promiseFn, recoverFn, errors_to_ignore, delay_i
                         new Promise(recoverResolve => {
                             const getGlobalTimeouts = () => globalObserver.getState('global_timeouts') ?? [];
 
+                            const executionConfig = api_base?.execution_config ?? null;
+
                             const timeout = setTimeout(
                                 () => {
                                     const global_timeouts = getGlobalTimeouts();
@@ -254,7 +250,7 @@ export const recoverFromError = (promiseFn, recoverFn, errors_to_ignore, delay_i
                                     globalObserver.setState(global_timeouts);
                                     recoverResolve();
                                 },
-                                getBackoffDelayInMs(error, delay_index)
+                                getBackoffDelayInMs(error, delay_index, executionConfig)
                             );
 
                             const global_timeouts = getGlobalTimeouts();
@@ -265,6 +261,16 @@ export const recoverFromError = (promiseFn, recoverFn, errors_to_ignore, delay_i
                                 is_cancellable: cancellable_timeouts.includes(msg_type),
                                 msg_type,
                             };
+
+                            globalObserver.setState({ global_timeouts });
+                        })
+                );
+            });
+        } else {
+            resolve();
+        }
+    });
+};
 
                             globalObserver.setState({ global_timeouts });
                         })

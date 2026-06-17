@@ -20,14 +20,25 @@ export const StandaloneSortUpFillIcon = createFillIcon(fill => <path d='M12 8l5 
 
 export const LegacyEdit1pxIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
     <>
-        <path d='M5 19l3.5-.7L17 9.8 14.2 7 5.7 15.5 5 19z' stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin='round' />
+        <path
+            d='M5 19l3.5-.7L17 9.8 14.2 7 5.7 15.5 5 19z'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinejoin='round'
+        />
         <path d='M12.8 8.4L15.6 11.2' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' />
     </>
 ));
 
 export const LegacyHandleLessIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
     <>
-        <path d='M7 10l5 5 5-5' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' strokeLinejoin='round' />
+        <path
+            d='M7 10l5 5 5-5'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
     </>
 ));
 
@@ -45,7 +56,13 @@ export const LegacyRadioOnIcon = createFillIcon(fill => (
 export const LegacyTimeIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
     <>
         <circle cx='12' cy='12' r='8.5' stroke={stroke} strokeWidth={strokeWidth} />
-        <path d='M12 8v4l2.8 2' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' strokeLinejoin='round' />
+        <path
+            d='M12 8v4l2.8 2'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
     </>
 ));
 
@@ -57,20 +74,36 @@ export const AccountsDerivAccountLightIcon = createBadgeIcon({
 
 export const DerivLightEmptyCardboardBoxIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
     <>
-        <path d='M6 8.5L12 5l6 3.5v7L12 19l-6-3.5v-7z' stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin='round' />
+        <path
+            d='M6 8.5L12 5l6 3.5v7L12 19l-6-3.5v-7z'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinejoin='round'
+        />
         <path d='M6 8.5l6 3.5 6-3.5M12 12v7' stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin='round' />
     </>
 ));
 
 export const LabelPairedChevronsRightCaptionRegularIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
     <>
-        <path d='M8 7l4 5-4 5M12 7l4 5-4 5' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' strokeLinejoin='round' />
+        <path
+            d='M8 7l4 5-4 5M12 7l4 5-4 5'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
     </>
 ));
 
 export const LabelPairedGlobeSmRegularIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
     <>
         <circle cx='12' cy='12' r='8.5' stroke={stroke} strokeWidth={strokeWidth} />
-        <path d='M3.8 12h16.4M12 3.8a12 12 0 010 16.4M12 3.8a12 12 0 000 16.4' stroke={stroke} strokeWidth={1.4} strokeLinecap='round' />
+        <path
+            d='M3.8 12h16.4M12 3.8a12 12 0 010 16.4M12 3.8a12 12 0 000 16.4'
+            stroke={stroke}
+            strokeWidth={1.4}
+            strokeLinecap='round'
+        />
     </>
 ));

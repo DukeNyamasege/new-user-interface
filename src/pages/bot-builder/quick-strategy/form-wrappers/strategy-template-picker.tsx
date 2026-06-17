@@ -61,7 +61,6 @@ const StrategyTemplatePicker = observer(({ setCurrentStep, setSelectedTradeType 
                     value={search_value}
                     size='sm'
                 />
-
             </div>
             <div className='strategy-template-picker__chips'>
                 {TRADE_TYPES.map((item, index) => (

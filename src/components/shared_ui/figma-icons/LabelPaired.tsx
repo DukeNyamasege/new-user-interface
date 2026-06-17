@@ -39,15 +39,32 @@ export const LabelPairedArrowRotateRightMdRegularIcon = createStrokeIcon(({ stro
 
 export const LabelPairedArrowsRotateMdRegularIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
     <>
-        <path d='M8 7H4v4M20 13v4h-4' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' strokeLinejoin='round' />
-        <path d='M5 11a7 7 0 0112-3M19 13a7 7 0 01-12 3' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' />
+        <path
+            d='M8 7H4v4M20 13v4h-4'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
+        <path
+            d='M5 11a7 7 0 0112-3M19 13a7 7 0 01-12 3'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinecap='round'
+        />
     </>
 ));
 
 export const LabelPairedChartLineMdRegularIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
     <>
         <path d='M5 18h14' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' />
-        <path d='M7 15l3-4 3 2 4-6' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' strokeLinejoin='round' />
+        <path
+            d='M7 15l3-4 3 2 4-6'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
     </>
 ));
 
@@ -64,7 +81,13 @@ export const LabelPairedChartMixedCaptionRegularIcon = createStrokeIcon(({ strok
 export const LabelPairedChartTrendUpCaptionRegularIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
     <>
         <path d='M5 18h14' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' />
-        <path d='M7 15l4-4 3 2 4-6' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' strokeLinejoin='round' />
+        <path
+            d='M7 15l4-4 3 2 4-6'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
     </>
 ));
 
@@ -77,8 +100,18 @@ export const LabelPairedFloppyDiskMdRegularIcon = createStrokeIcon(({ stroke, st
 
 export const LabelPairedFolderOpenMdRegularIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
     <>
-        <path d='M4 9h6l2 2h8v6.5A1.5 1.5 0 0118.5 19h-13A1.5 1.5 0 014 17.5z' stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin='round' />
-        <path d='M4 9V7a1.5 1.5 0 011.5-1.5h4L11 7h7.5A1.5 1.5 0 0120 8.5V11' stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin='round' />
+        <path
+            d='M4 9h6l2 2h8v6.5A1.5 1.5 0 0118.5 19h-13A1.5 1.5 0 014 17.5z'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinejoin='round'
+        />
+        <path
+            d='M4 9V7a1.5 1.5 0 011.5-1.5h4L11 7h7.5A1.5 1.5 0 0120 8.5V11'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinejoin='round'
+        />
     </>
 ));
 
@@ -122,7 +155,13 @@ export const LabelPairedPuzzlePieceTwoCaptionBoldIcon = createStrokeIcon(({ stro
 export const LabelPairedPlaceholderCaptionRegularIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
     <>
         <rect x='5' y='6' width='14' height='12' rx='2' stroke={stroke} strokeWidth={strokeWidth} />
-        <path d='M8 14l2.5-2.5 2 2 3.5-4 2 5' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' strokeLinejoin='round' />
+        <path
+            d='M8 14l2.5-2.5 2 2 3.5-4 2 5'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
         <circle cx='9' cy='10' r='1' fill={stroke} />
     </>
 ));
@@ -130,7 +169,12 @@ export const LabelPairedPlaceholderCaptionRegularIcon = createStrokeIcon(({ stro
 export const LabelPairedLightbulbCaptionRegularIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
     <>
         <path d='M9 15.5h6M10 18h4' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' />
-        <path d='M8.5 14a5 5 0 117 0c-.8.9-1.5 1.8-1.8 2.8h-3.4c-.3-1-.9-1.9-1.8-2.8z' stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin='round' />
+        <path
+            d='M8.5 14a5 5 0 117 0c-.8.9-1.5 1.8-1.8 2.8h-3.4c-.3-1-.9-1.9-1.8-2.8z'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinejoin='round'
+        />
     </>
 ));
 
@@ -155,13 +199,21 @@ export const LabelPairedLoaderMdBoldIcon = createStrokeIcon(({ stroke, strokeWid
 
 export const LabelPairedPlayLgFillIcon = createFillIcon(fill => <path d='M8 6.5v11l9-5.5-9-5.5z' fill={fill} />);
 
-export const LabelPairedSquareLgFillIcon = createFillIcon(fill => <rect x='7' y='7' width='10' height='10' rx='1.5' fill={fill} />);
+export const LabelPairedSquareLgFillIcon = createFillIcon(fill => (
+    <rect x='7' y='7' width='10' height='10' rx='1.5' fill={fill} />
+));
 
 export const LabelPairedCircleCheckMdFillIcon = createFillIcon(fill => (
     <>
         <circle cx='12' cy='12' r='8.5' fill={fill} opacity='0.18' />
         <circle cx='12' cy='12' r='8.5' stroke={fill} strokeWidth='1.5' fill='none' />
-        <path d='M8.8 12.2l2.1 2.1 4.3-4.6' stroke={fill} strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' />
+        <path
+            d='M8.8 12.2l2.1 2.1 4.3-4.6'
+            stroke={fill}
+            strokeWidth='2'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
     </>
 ));
 
@@ -188,18 +240,36 @@ export const LabelPairedPageCircleArrowRightSmRegularIcon = createStrokeIcon(({ 
     <>
         <path d='M8 5h7l3 3v11H8z' stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin='round' />
         <path d='M15 5v3h3' stroke={stroke} strokeWidth={strokeWidth} />
-        <path d='M10 13h5M13 10l3 3-3 3' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' strokeLinejoin='round' />
+        <path
+            d='M10 13h5M13 10l3 3-3 3'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
     </>
 ));
 
 export const LabelPairedTrashSmRegularIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
     <>
-        <path d='M7 8h10M9 8V6.8A1.8 1.8 0 0110.8 5h2.4A1.8 1.8 0 0115 6.8V8M8.2 8l.7 9h6.2l.7-9' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' strokeLinejoin='round' />
+        <path
+            d='M7 8h10M9 8V6.8A1.8 1.8 0 0110.8 5h2.4A1.8 1.8 0 0115 6.8V8M8.2 8l.7 9h6.2l.7-9'
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+        />
     </>
 ));
 
 export const LabelPairedArrowLeftCaptionFillIcon = createStrokeIcon(({ stroke, strokeWidth }) => (
-    <path d='M14.5 6.5L9 12l5.5 5.5' stroke={stroke} strokeWidth={strokeWidth} strokeLinecap='round' strokeLinejoin='round' />
+    <path
+        d='M14.5 6.5L9 12l5.5 5.5'
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeLinecap='round'
+        strokeLinejoin='round'
+    />
 ));
 
 export const LabelPairedArrowLeftCaptionRegularIcon = LabelPairedArrowLeftCaptionFillIcon;

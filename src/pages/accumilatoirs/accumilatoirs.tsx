@@ -8,7 +8,12 @@ import { api_base } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
 import { SUPPORTED_VOLATILITY_MARKETS } from '@/utils/digit-strategy';
 import { isExpectedStreamInterruption } from '@/utils/market-data';
-import { buyContractForUi, normalizeTradeParameters, sellContractForUi, streamContractUntilSettled } from '@/utils/trade-purchase';
+import {
+    buyContractForUi,
+    normalizeTradeParameters,
+    sellContractForUi,
+    streamContractUntilSettled,
+} from '@/utils/trade-purchase';
 import { safeSubscribe } from '@/utils/websocket-handler';
 
 type TAccumulatorMarket = {
@@ -46,11 +51,7 @@ type TAutoCashoutSettings = {
     useServerTakeProfit: boolean;
 };
 
-type MartingaleModeType =
-    | 'no_martingale'
-    | 'after_one_loss'
-    | 'after_two_losses'
-    | 'custom_consecutive_loss_trigger';
+type MartingaleModeType = 'no_martingale' | 'after_one_loss' | 'after_two_losses' | 'custom_consecutive_loss_trigger';
 
 const ACCUMULATOR_MARKETS: TAccumulatorMarket[] = SUPPORTED_VOLATILITY_MARKETS.map(({ label, symbol }) => ({
     label,
@@ -298,7 +299,9 @@ const getProposalBarriers = (proposal: any) => {
 };
 
 const hasCrossedProposalBarriers = (spot: number | undefined, barriers: { high: number; low: number } | null) =>
-    Number.isFinite(spot) && Boolean(barriers) && (Number(spot) >= Number(barriers?.high) || Number(spot) <= Number(barriers?.low));
+    Number.isFinite(spot) &&
+    Boolean(barriers) &&
+    (Number(spot) >= Number(barriers?.high) || Number(spot) <= Number(barriers?.low));
 
 const getReturnPercent = (cashoutValue: unknown, buyValue: unknown) => {
     const cashout = Number(cashoutValue);
@@ -308,7 +311,11 @@ const getReturnPercent = (cashoutValue: unknown, buyValue: unknown) => {
     return Number((((cashout - buy) / buy) * 100).toFixed(2));
 };
 
-const buildHistoryMoves = (ticks: TTickSnapshot[], tickSizeBarrier: unknown, growthRateValue: unknown): THistoryMove[] => {
+const buildHistoryMoves = (
+    ticks: TTickSnapshot[],
+    tickSizeBarrier: unknown,
+    growthRateValue: unknown
+): THistoryMove[] => {
     if (ticks.length < 2) return [];
 
     let entryQuote = ticks[0].quote;
@@ -569,7 +576,11 @@ const Accumilatoirs = observer(() => {
         setRoundStatus('flew');
 
         window.setTimeout(() => {
-            if (triggerQueuedPurchase && (queuedPurchaseRef.current || autoTradeEnabledRef.current) && executePurchaseRef.current) {
+            if (
+                triggerQueuedPurchase &&
+                (queuedPurchaseRef.current || autoTradeEnabledRef.current) &&
+                executePurchaseRef.current
+            ) {
                 executePurchaseRef.current();
                 return;
             }
@@ -614,25 +625,36 @@ const Accumilatoirs = observer(() => {
         }
     }, []);
 
-    const buildAccumulatorParameters = useCallback((stakeAmount = Number(stakeInput)) => {
-        const takeProfit = getTakeProfitAmountFromPercent(stakeAmount, autoCashout.takeProfitPercent);
-        const shouldUseServerTakeProfit =
-            autoCashout.enabled && autoCashout.useServerTakeProfit && Number.isFinite(takeProfit) && takeProfit > 0;
+    const buildAccumulatorParameters = useCallback(
+        (stakeAmount = Number(stakeInput)) => {
+            const takeProfit = getTakeProfitAmountFromPercent(stakeAmount, autoCashout.takeProfitPercent);
+            const shouldUseServerTakeProfit =
+                autoCashout.enabled && autoCashout.useServerTakeProfit && Number.isFinite(takeProfit) && takeProfit > 0;
 
-        return {
-            amount: stakeAmount,
-            basis: 'stake',
-            contract_type: 'ACCU',
+            return {
+                amount: stakeAmount,
+                basis: 'stake',
+                contract_type: 'ACCU',
+                currency,
+                growth_rate: Number(growthRate),
+                symbol: selectedSymbol,
+                limit_order: shouldUseServerTakeProfit
+                    ? {
+                          take_profit: Number(takeProfit.toFixed(2)),
+                      }
+                    : undefined,
+            };
+        },
+        [
+            autoCashout.enabled,
+            autoCashout.takeProfitPercent,
+            autoCashout.useServerTakeProfit,
             currency,
-            growth_rate: Number(growthRate),
-            symbol: selectedSymbol,
-            limit_order: shouldUseServerTakeProfit
-                ? {
-                      take_profit: Number(takeProfit.toFixed(2)),
-                  }
-                : undefined,
-        };
-    }, [autoCashout.enabled, autoCashout.takeProfitPercent, autoCashout.useServerTakeProfit, currency, growthRate, selectedSymbol, stakeInput]);
+            growthRate,
+            selectedSymbol,
+            stakeInput,
+        ]
+    );
 
     const cashoutContract = useCallback(
         async (reason = 'Manual cashout') => {
@@ -670,7 +692,10 @@ const Accumilatoirs = observer(() => {
             if (!settings.enabled) return;
 
             const profit = Number(snapshot.profit ?? 0);
-            const takeProfit = getTakeProfitAmountFromPercent(snapshot.buy_price ?? nextStakeRef.current, settings.takeProfitPercent);
+            const takeProfit = getTakeProfitAmountFromPercent(
+                snapshot.buy_price ?? nextStakeRef.current,
+                settings.takeProfitPercent
+            );
 
             if (Number.isFinite(takeProfit) && takeProfit > 0 && profit >= takeProfit) {
                 void cashoutContract('Automated take profit');
@@ -790,7 +815,13 @@ const Accumilatoirs = observer(() => {
                             marketEntryQuoteRef.current = tick.quote;
                             marketSurvivedTicksRef.current = 0;
                             setMarketSurvivedTicks(0);
-                        } else if (hasAccumulatorBarrierBreakout(tick.quote, Number(marketEntryQuoteRef.current), proposalBarrierRef.current)) {
+                        } else if (
+                            hasAccumulatorBarrierBreakout(
+                                tick.quote,
+                                Number(marketEntryQuoteRef.current),
+                                proposalBarrierRef.current
+                            )
+                        ) {
                             recordFlewAway(getAccumulatorReturnPercent(marketSurvivedTicksRef.current, growthRate));
                             marketEntryQuoteRef.current = tick.quote;
                             marketSurvivedTicksRef.current = 0;
@@ -970,7 +1001,10 @@ const Accumilatoirs = observer(() => {
                         setProposalPreview({
                             askPrice: stake,
                             currency,
-                            message: proposalError instanceof Error ? proposalError.message : 'Accumulator proposal stream failed.',
+                            message:
+                                proposalError instanceof Error
+                                    ? proposalError.message
+                                    : 'Accumulator proposal stream failed.',
                             status: 'error',
                         });
                     }
@@ -1098,7 +1132,8 @@ const Accumilatoirs = observer(() => {
                         profit,
                         current_stake: activeStake,
                         base_stake: Number.isFinite(baseStake) && baseStake > 0 ? baseStake : Number(DEFAULT_STAKE),
-                        multiplier: Number.isFinite(multiplier) && multiplier >= 1.01 ? multiplier : Number(DEFAULT_MARTINGALE),
+                        multiplier:
+                            Number.isFinite(multiplier) && multiplier >= 1.01 ? multiplier : Number(DEFAULT_MARTINGALE),
                         martingale_mode: martingaleModeRef.current,
                         consecutive_losses: consecutiveLossRef.current,
                         consecutive_loss_trigger: consecutiveLossCountRef.current,
@@ -1124,7 +1159,10 @@ const Accumilatoirs = observer(() => {
                         setOutcomeHistory(previous =>
                             [
                                 ...previous,
-                                { className: classifyMove(closedReturnPercent), value: formatPercent(closedReturnPercent) },
+                                {
+                                    className: classifyMove(closedReturnPercent),
+                                    value: formatPercent(closedReturnPercent),
+                                },
                             ].slice(-MAX_HISTORY_MOVES)
                         );
                         const shouldKeepWaitingForBreakout = autoTradeEnabledRef.current;
@@ -1337,7 +1375,11 @@ const Accumilatoirs = observer(() => {
                                             </radialGradient>
                                         </defs>
 
-                                        <path d='M95 58 L175 92 L200 96 L150 70 Z' fill='url(#accuWingBack)' opacity='0.85' />
+                                        <path
+                                            d='M95 58 L175 92 L200 96 L150 70 Z'
+                                            fill='url(#accuWingBack)'
+                                            opacity='0.85'
+                                        />
                                         <path d='M30 55 L18 18 L42 22 L55 58 Z' fill='url(#accuWing)' />
                                         <path d='M22 28 L40 30 L48 52 L34 52 Z' fill='#ff1a4d' opacity='0.9' />
                                         <path d='M30 58 L8 70 L26 72 L48 64 Z' fill='url(#accuWingBack)' />
@@ -1412,7 +1454,9 @@ const Accumilatoirs = observer(() => {
                                         <div className='avatar avatar-two'>E</div>
                                         <div className='avatar avatar-three'>P</div>
                                     </div>
-                                    <span className='balance-amount'>{formatMoney(client.balance || 0, currency).replace(` ${currency}`, '')}</span>
+                                    <span className='balance-amount'>
+                                        {formatMoney(client.balance || 0, currency).replace(` ${currency}`, '')}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -1521,7 +1565,9 @@ const Accumilatoirs = observer(() => {
                                             className='accumilatoirs-field__control'
                                             disabled={hasOpenContract || queuedPurchase}
                                             value={martingaleMode}
-                                            onChange={event => setMartingaleMode(normalizeMartingaleMode(event.target.value))}
+                                            onChange={event =>
+                                                setMartingaleMode(normalizeMartingaleMode(event.target.value))
+                                            }
                                         >
                                             <option value='no_martingale'>No Martingale</option>
                                             <option value='after_one_loss'>After 1 loss</option>
@@ -1619,14 +1665,25 @@ const Accumilatoirs = observer(() => {
                                     <span>{selectedMarket?.label}</span>
                                     <span>Current stake {formatMoney(currentStakeDisplay, currency)}</span>
                                     <span>
-                                        TP {autoCashout.takeProfitPercent || 0}% = {formatMoney(currentTakeProfitAmount, currency)}
+                                        TP {autoCashout.takeProfitPercent || 0}% ={' '}
+                                        {formatMoney(currentTakeProfitAmount, currency)}
                                     </span>
                                     <span>Consecutive losses {consecutiveLossDisplay}</span>
-                                    {hasProposalBarrierData ? <span>Spot {formatQuote(proposalPreview.spot)}</span> : null}
-                                    {hasProposalBarrierData ? <span>Low barrier {formatQuote(proposalPreview.lowBarrier)}</span> : null}
-                                    {hasProposalBarrierData ? <span>High barrier {formatQuote(proposalPreview.highBarrier)}</span> : null}
-                                    {proposalPreview.minStake ? <span>Min stake {formatMoney(proposalPreview.minStake, currency)}</span> : null}
-                                    {proposalPreview.maxPayout ? <span>Max payout {formatMoney(proposalPreview.maxPayout, currency)}</span> : null}
+                                    {hasProposalBarrierData ? (
+                                        <span>Spot {formatQuote(proposalPreview.spot)}</span>
+                                    ) : null}
+                                    {hasProposalBarrierData ? (
+                                        <span>Low barrier {formatQuote(proposalPreview.lowBarrier)}</span>
+                                    ) : null}
+                                    {hasProposalBarrierData ? (
+                                        <span>High barrier {formatQuote(proposalPreview.highBarrier)}</span>
+                                    ) : null}
+                                    {proposalPreview.minStake ? (
+                                        <span>Min stake {formatMoney(proposalPreview.minStake, currency)}</span>
+                                    ) : null}
+                                    {proposalPreview.maxPayout ? (
+                                        <span>Max payout {formatMoney(proposalPreview.maxPayout, currency)}</span>
+                                    ) : null}
                                 </div>
                             </div>
                         </section>

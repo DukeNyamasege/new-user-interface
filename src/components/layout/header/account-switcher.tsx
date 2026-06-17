@@ -8,7 +8,12 @@ import { api_base } from '@/external/bot-skeleton/services/api/api-base';
 import { useApiBase } from '@/hooks/useApiBase';
 import { useStore } from '@/hooks/useStore';
 import { isDemoAccount } from '@/utils/account-helpers';
-import { DISPLAY_CURRENCIES, formatDisplayBalanceValue, resolveDisplayCurrency, TDisplayCurrency } from '@/utils/display-currency';
+import {
+    DISPLAY_CURRENCIES,
+    formatDisplayBalanceValue,
+    resolveDisplayCurrency,
+    TDisplayCurrency,
+} from '@/utils/display-currency';
 import { Localize } from '@deriv-com/translations';
 import { TAccountSwitcher } from './common/types';
 import AccountInfoWrapper from './account-info-wrapper';
@@ -83,14 +88,11 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
         setIsOpen(prev => !prev);
     }, [is_bot_running, isSingleAccount]);
 
-    const toggleCurrencyMenu = useCallback(
-        (event: ReactMouseEvent<HTMLButtonElement>) => {
-            event.stopPropagation();
-            setIsOpen(false);
-            setIsCurrencyMenuOpen(prev => !prev);
-        },
-        []
-    );
+    const toggleCurrencyMenu = useCallback((event: ReactMouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        setIsOpen(false);
+        setIsCurrencyMenuOpen(prev => !prev);
+    }, []);
 
     const handleDisplayCurrencySelect = useCallback(
         (currency_code: TDisplayCurrency) => {
@@ -181,7 +183,9 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
             }
 
             const accountCurrency =
-                demoAccounts.find(a => a.loginid === currentActiveLogin)?.currency || client?.getAccountCurrency?.(currentActiveLogin) || 'USD';
+                demoAccounts.find(a => a.loginid === currentActiveLogin)?.currency ||
+                client?.getAccountCurrency?.(currentActiveLogin) ||
+                'USD';
 
             try {
                 const getResetSuccessMessage = (resetResult: unknown) => {
@@ -240,7 +244,12 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                     >
                         {selectedDisplayCurrency}
                         <svg width='10' height='10' viewBox='0 0 10 10' fill='none' aria-hidden='true'>
-                            <path d='M2 3.5L5 6.5L8 3.5' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+                            <path
+                                d='M2 3.5L5 6.5L8 3.5'
+                                stroke='currentColor'
+                                strokeWidth='1.5'
+                                strokeLinecap='round'
+                            />
                         </svg>
                     </button>
                     {isCurrencyMenuOpen && (
@@ -294,11 +303,7 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                                         'acc-info__balance--no-currency': !currency && !isVirtual,
                                     })}
                                 >
-                                    {!currency ? (
-                                        <Localize i18n_default_text='No currency assigned' />
-                                    ) : (
-                                        headerBalance
-                                    )}
+                                    {!currency ? <Localize i18n_default_text='No currency assigned' /> : headerBalance}
                                 </p>
                             </div>
                         )}
@@ -466,11 +471,15 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                     {activeDropdownTab === 'demo' && (
                         <div className='acc-dropdown__reset'>
                             <div className='acc-dropdown__reset-title'>Reset demo balance</div>
-                            <p className='acc-dropdown__reset-copy'>Set a starting balance for your active demo account.</p>
+                            <p className='acc-dropdown__reset-copy'>
+                                Set a starting balance for your active demo account.
+                            </p>
 
                             <form onSubmit={handleResetSubmit}>
                                 <div className='acc-dropdown__reset-input-row'>
-                                    <label htmlFor='demo-balance-amount' className='sr-only'>Demo balance amount</label>
+                                    <label htmlFor='demo-balance-amount' className='sr-only'>
+                                        Demo balance amount
+                                    </label>
                                     <input
                                         id='demo-balance-amount'
                                         aria-label='Demo balance amount'
@@ -481,14 +490,19 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                                         value={resetAmount}
                                         onChange={e => setResetAmount(e.target.value)}
                                     />
-                                    <button type='submit' className='acc-dropdown__reset-button'>Reset Demo Account Balance</button>
+                                    <button type='submit' className='acc-dropdown__reset-button'>
+                                        Reset Demo Account Balance
+                                    </button>
                                 </div>
                             </form>
 
                             {resetError && <p className='acc-dropdown__reset-error'>{resetError}</p>}
                             {resetMessage && <p className='acc-dropdown__reset-success'>{resetMessage}</p>}
 
-                            <p className='acc-dropdown__reset-hint'>Default: {getDefaultResetAmountForLogin(activeLoginid || loginid)} {client?.getAccountCurrency?.(activeLoginid || loginid) || 'USD'}</p>
+                            <p className='acc-dropdown__reset-hint'>
+                                Default: {getDefaultResetAmountForLogin(activeLoginid || loginid)}{' '}
+                                {client?.getAccountCurrency?.(activeLoginid || loginid) || 'USD'}
+                            </p>
                         </div>
                     )}
 

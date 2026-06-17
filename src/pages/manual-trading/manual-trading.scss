@@ -87,7 +87,7 @@
     border: none;
     border-radius: 0.6rem;
     background: #0b4ea2;
-    color: #ffffff;
+    color: var(--text-colored-background);
     cursor: pointer;
     font-size: 1.4rem;
     font-weight: 900;
@@ -183,7 +183,7 @@
     height: 6.8rem;
     border-radius: 50%;
     background: var(--manual-inner-bg);
-    color: #ffffff;
+    color: var(--text-colored-background);
     box-shadow: inset 0 0.2rem 0.3rem rgba(255, 255, 255, 0.08);
 }
 
@@ -318,7 +318,7 @@
     min-height: 7.2rem;
     border: none;
     border-radius: 0.8rem;
-    color: #ffffff;
+    color: var(--text-colored-background);
     cursor: pointer;
     font-weight: 900;
 
@@ -404,9 +404,7 @@
     padding: 0;
     border: none;
     border-radius: 0;
-    background:
-        linear-gradient(180deg, rgba(16, 185, 129, 0.08), rgba(255, 255, 255, 0.96)),
-        var(--manual-panel-bg);
+    background: linear-gradient(180deg, rgba(16, 185, 129, 0.08), rgba(255, 255, 255, 0.96)), var(--manual-panel-bg);
     box-shadow: none;
     backdrop-filter: none;
 }
@@ -498,7 +496,7 @@
 .manual-trading-signal-popup__button--primary {
     border-color: #0b4ea2;
     background: #0b4ea2;
-    color: #ffffff;
+    color: var(--text-colored-background);
 }
 
 @media (max-width: 76.8rem) {

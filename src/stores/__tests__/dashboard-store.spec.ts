@@ -3,9 +3,12 @@ import DashboardStore from '../dashboard-store';
 
 describe('DashboardStore trading navigation guard', () => {
     const createStore = () =>
-        new DashboardStore({} as any, {
-            ui: { is_mobile: false },
-        } as any);
+        new DashboardStore(
+            {} as any,
+            {
+                ui: { is_mobile: false },
+            } as any
+        );
 
     it('switches tabs immediately when no guarded trading session is active', () => {
         const store = createStore();

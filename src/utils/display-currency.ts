@@ -14,8 +14,11 @@ export const isSupportedDisplayCurrency = (currency?: string | null): currency i
 export const sanitizeUsdKesRate = (value?: number | null) =>
     Number.isFinite(value) && Number(value) > 0 ? Number(value) : DEFAULT_USD_KES_RATE;
 
-export const resolveDisplayCurrency = (currency?: string | null, fallback: TDisplayCurrency = 'USD'): TDisplayCurrency =>
-    isSupportedDisplayCurrency(currency) ? normalizeCurrency(currency) as TDisplayCurrency : fallback;
+export const resolveDisplayCurrency = (
+    currency?: string | null,
+    fallback: TDisplayCurrency = 'USD'
+): TDisplayCurrency =>
+    isSupportedDisplayCurrency(currency) ? (normalizeCurrency(currency) as TDisplayCurrency) : fallback;
 
 export const convertDisplayAmount = (
     amount: number | string,

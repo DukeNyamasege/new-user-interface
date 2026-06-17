@@ -1,4 +1,4 @@
- import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
@@ -351,7 +351,10 @@ const ManualTrading = observer(() => {
     const latestTick = ticks[ticks.length - 1] ?? null;
     const latestDigit = latestTick ? getLastDigitFromQuote(latestTick.quote, selectedSymbol) : null;
     const digitStats = useMemo(() => calculateDigitStats(ticks, selectedSymbol), [selectedSymbol, ticks]);
-    const specialDigitColorMap = useMemo(() => getSpecialDigitColorMap(digitStats, ticks.length > 0), [digitStats, ticks.length]);
+    const specialDigitColorMap = useMemo(
+        () => getSpecialDigitColorMap(digitStats, ticks.length > 0),
+        [digitStats, ticks.length]
+    );
     const needsBarrier = BARRIER_TRADE_GROUPS.has(tradeGroup);
     const activeActions = TRADE_ACTIONS[tradeGroup];
     const currency = client.currency || 'USD';
@@ -376,19 +379,25 @@ const ManualTrading = observer(() => {
         (focusedSignalKey ? marketStrategyStates[focusedSignalKey] : null) ??
         strategyTelemetry.activeSignals[0] ??
         null;
-    const actionableSignal = focusedSignal?.isQualified ? focusedSignal : strategyTelemetry.activeSignals[0] ?? null;
+    const actionableSignal = focusedSignal?.isQualified ? focusedSignal : (strategyTelemetry.activeSignals[0] ?? null);
     const loadedSignalState = loadedSignal
-        ? marketStrategyStates[`${loadedSignal.symbol}:${loadedSignal.strategyId}`] ?? null
+        ? (marketStrategyStates[`${loadedSignal.symbol}:${loadedSignal.strategyId}`] ?? null)
         : null;
     const signalTradeAction = loadedSignal
-        ? TRADE_ACTIONS.over_under.find(action => action.contractType === DIGIT_STRATEGIES[loadedSignal.strategyId].contractType) ??
-          null
+        ? (TRADE_ACTIONS.over_under.find(
+              action => action.contractType === DIGIT_STRATEGIES[loadedSignal.strategyId].contractType
+          ) ?? null)
         : null;
     const localProposalPreviews = useMemo(() => {
         const stake = Number(stakeInput);
 
         return activeActions.reduce<Record<string, TProposalPreview>>((previews, action) => {
-            previews[action.contractType] = getLocalPayoutPreview(action.contractType, stake, currency, selectedBarrier);
+            previews[action.contractType] = getLocalPayoutPreview(
+                action.contractType,
+                stake,
+                currency,
+                selectedBarrier
+            );
             return previews;
         }, {});
     }, [activeActions, currency, selectedBarrier, stakeInput]);
@@ -689,7 +698,9 @@ const ManualTrading = observer(() => {
 
                         const prices = Array.isArray(history?.history?.prices) ? history.history.prices : [];
                         const digits = prices
-                            .map((price: unknown) => getLastDigitFromQuote(Number(price), market.symbol, market.pip ?? 2))
+                            .map((price: unknown) =>
+                                getLastDigitFromQuote(Number(price), market.symbol, market.pip ?? 2)
+                            )
                             .filter(digit => Number.isInteger(digit))
                             .slice(-Math.max(activeTickCount, MONITOR_HISTORY_TICKS));
 
@@ -699,7 +710,9 @@ const ManualTrading = observer(() => {
                             market,
                             digits,
                             latestHistoricalDigit,
-                            Array.isArray(history?.history?.times) ? Number(history.history.times[history.history.times.length - 1]) : null
+                            Array.isArray(history?.history?.times)
+                                ? Number(history.history.times[history.history.times.length - 1])
+                                : null
                         );
 
                         const observable = (api_base.api as any).subscribe({ ticks: market.symbol });
@@ -745,7 +758,9 @@ const ManualTrading = observer(() => {
         (contractType: TManualTradeAction['contractType'], stakeOverride?: number) => {
             const stake = Number(stakeOverride ?? stakeInput);
             const duration = clampDuration(Number(durationInput));
-            const loadedStrategy = loadedSignalRef.current ? DIGIT_STRATEGIES[loadedSignalRef.current.strategyId] : null;
+            const loadedStrategy = loadedSignalRef.current
+                ? DIGIT_STRATEGIES[loadedSignalRef.current.strategyId]
+                : null;
             const barrierValue =
                 loadedStrategy?.contractType === contractType ? loadedStrategy.winBarrier : selectedBarrier;
             const parameters: Record<string, number | string> = {
@@ -858,31 +873,28 @@ const ManualTrading = observer(() => {
         setActiveTickCount(nextTickCount);
     };
 
-    const changeSelectedMarket = useCallback((symbol: string, source: 'user' | 'signal' = 'user') => {
-        requestVersionRef.current += 1;
-        clearRetryTimer();
-        clearStreamWatchdogTimer();
-        unsubscribe();
-        lastLiveTickAtRef.current = 0;
-        if (source === 'user') {
-            if (loadedSignalRef.current && loadedSignalRef.current.symbol !== symbol) {
-                stopSignalTrading('Manual market changed. Signal trading was stopped.');
-                setLoadedSignal(null);
-                lastTriggeredEntryKeyRef.current = '';
+    const changeSelectedMarket = useCallback(
+        (symbol: string, source: 'user' | 'signal' = 'user') => {
+            requestVersionRef.current += 1;
+            clearRetryTimer();
+            clearStreamWatchdogTimer();
+            unsubscribe();
+            lastLiveTickAtRef.current = 0;
+            if (source === 'user') {
+                if (loadedSignalRef.current && loadedSignalRef.current.symbol !== symbol) {
+                    stopSignalTrading('Manual market changed. Signal trading was stopped.');
+                    setLoadedSignal(null);
+                    lastTriggeredEntryKeyRef.current = '';
+                }
             }
-        }
-        setSelectedSymbol(symbol);
-        setTicks([]);
-        setProposalPreviews(localProposalPreviews);
-        setError(null);
-        setIsLoading(true);
-    }, [
-        clearRetryTimer,
-        clearStreamWatchdogTimer,
-        localProposalPreviews,
-        stopSignalTrading,
-        unsubscribe,
-    ]);
+            setSelectedSymbol(symbol);
+            setTicks([]);
+            setProposalPreviews(localProposalPreviews);
+            setError(null);
+            setIsLoading(true);
+        },
+        [clearRetryTimer, clearStreamWatchdogTimer, localProposalPreviews, stopSignalTrading, unsubscribe]
+    );
 
     const handleMarketChange = (symbol: string) => {
         changeSelectedMarket(symbol, 'user');
@@ -971,118 +983,123 @@ const ManualTrading = observer(() => {
         );
     }, [loadedSignalState]);
 
-    const handleManualPurchase = useCallback(async (action: TManualTradeAction) => {
-        const stake = Number(stakeInput);
-        if (!Number.isFinite(stake) || stake <= 0) {
-            setTradeError('Enter a valid stake before buying a contract.');
-            return;
-        }
-
-        if (!api_base.api) {
-            setTradeError('Deriv connection is not ready yet.');
-            return;
-        }
-
-        const runCount = clampRunCount(Number(runCountInput));
-        setRunCountInput(String(runCount));
-
-        setTradeError('');
-        setTradeMessage(`Buying ${action.label} contract 1 of ${runCount}...`);
-        setIsPurchasing(true);
-        stopRequestedRef.current = false;
-
-        try {
-            let totalProfit = 0;
-            let activeLossStreak = currentLossStreak;
-
-            for (let runIndex = 1; runIndex <= runCount; runIndex++) {
-                if (stopRequestedRef.current) {
-                    break;
-                }
-
-                const effectiveStake = getMartingaleStakeForRun({
-                    stake,
-                    currentLossStreak: activeLossStreak,
-                    martingaleMultiplier: Number(martingaleMultiplierInput),
-                    martingaleMode,
-                    consecutiveLossCount,
-                });
-                const parameters = buildTradeParameters(action.contractType, effectiveStake);
-                setTradeMessage(
-                    `Buying ${action.label} contract ${runIndex} of ${runCount} at ${effectiveStake.toFixed(2)} ${currency}...`
-                );
-                const tradeStartTime = Math.floor(Date.now() / 1000);
-                const verificationId = `manual_${selectedSymbol}_${tradeStartTime}_${runIndex}_${Math.random()
-                    .toString(36)
-                    .slice(2, 11)}`;
-                const fallbackContract = {
-                    buy_price: effectiveStake,
-                    date_start: tradeStartTime,
-                    display_name: selectedMarket.label,
-                    underlying_symbol: selectedSymbol,
-                    shortcode: `MANUAL_${action.contractType}_${selectedSymbol}_${runIndex}`,
-                    contract_type: action.contractType,
-                    currency,
-                    verification_id: verificationId,
-                };
-                const buy = await buyContractForUi({ parameters, price: effectiveStake, source: 'ManualTrading' });
-                const buySnapshot = {
-                    ...fallbackContract,
-                    buy_price: buy.buy_price,
-                    contract_id: buy.contract_id,
-                    transaction_ids: { buy: buy.transaction_id },
-                };
-
-                pushContract(buySnapshot);
-
-                const settledContract = await streamContractUntilSettled({
-                    contractId: buy.contract_id,
-                    fallback: buySnapshot,
-                    onUpdate: snapshot => pushContract(snapshot),
-                    source: 'ManualTrading',
-                });
-                const profit = Number(settledContract.profit ?? 0);
-                totalProfit = Number((totalProfit + profit).toFixed(8));
-                activeLossStreak = profit < 0 ? activeLossStreak + 1 : 0;
-                setCurrentLossStreak(activeLossStreak);
-                if (stopRequestedRef.current && runIndex < runCount) {
-                    setTradeMessage(
-                        `${action.label} stopped after run ${runIndex}. Total P/L: ${totalProfit.toFixed(2)} ${currency}`
-                    );
-                    break;
-                }
-                setTradeMessage(
-                    `${action.label} run ${runIndex} of ${runCount} closed ${profit >= 0 ? 'with profit' : 'with loss'}: ${profit.toFixed(2)} ${currency}`
-                );
+    const handleManualPurchase = useCallback(
+        async (action: TManualTradeAction) => {
+            const stake = Number(stakeInput);
+            if (!Number.isFinite(stake) || stake <= 0) {
+                setTradeError('Enter a valid stake before buying a contract.');
+                return;
             }
 
-            if (!stopRequestedRef.current) {
-                setTradeMessage(
-                    `${action.label} ${runCount} run${runCount === 1 ? '' : 's'} complete. Total P/L: ${totalProfit.toFixed(2)} ${currency}`
-                );
+            if (!api_base.api) {
+                setTradeError('Deriv connection is not ready yet.');
+                return;
             }
-        } catch (purchaseError) {
-            setTradeMessage('');
-            setTradeError(
-                purchaseError instanceof Error ? purchaseError.message : 'Manual Trading could not purchase this contract.'
-            );
-        } finally {
-            setIsPurchasing(false);
+
+            const runCount = clampRunCount(Number(runCountInput));
+            setRunCountInput(String(runCount));
+
+            setTradeError('');
+            setTradeMessage(`Buying ${action.label} contract 1 of ${runCount}...`);
+            setIsPurchasing(true);
             stopRequestedRef.current = false;
-        }
-    }, [
-        buildTradeParameters,
-        consecutiveLossCount,
-        currency,
-        currentLossStreak,
-        martingaleMode,
-        martingaleMultiplierInput,
-        pushContract,
-        runCountInput,
-        selectedMarket.label,
-        selectedSymbol,
-        stakeInput,
-    ]);
+
+            try {
+                let totalProfit = 0;
+                let activeLossStreak = currentLossStreak;
+
+                for (let runIndex = 1; runIndex <= runCount; runIndex++) {
+                    if (stopRequestedRef.current) {
+                        break;
+                    }
+
+                    const effectiveStake = getMartingaleStakeForRun({
+                        stake,
+                        currentLossStreak: activeLossStreak,
+                        martingaleMultiplier: Number(martingaleMultiplierInput),
+                        martingaleMode,
+                        consecutiveLossCount,
+                    });
+                    const parameters = buildTradeParameters(action.contractType, effectiveStake);
+                    setTradeMessage(
+                        `Buying ${action.label} contract ${runIndex} of ${runCount} at ${effectiveStake.toFixed(2)} ${currency}...`
+                    );
+                    const tradeStartTime = Math.floor(Date.now() / 1000);
+                    const verificationId = `manual_${selectedSymbol}_${tradeStartTime}_${runIndex}_${Math.random()
+                        .toString(36)
+                        .slice(2, 11)}`;
+                    const fallbackContract = {
+                        buy_price: effectiveStake,
+                        date_start: tradeStartTime,
+                        display_name: selectedMarket.label,
+                        underlying_symbol: selectedSymbol,
+                        shortcode: `MANUAL_${action.contractType}_${selectedSymbol}_${runIndex}`,
+                        contract_type: action.contractType,
+                        currency,
+                        verification_id: verificationId,
+                    };
+                    const buy = await buyContractForUi({ parameters, price: effectiveStake, source: 'ManualTrading' });
+                    const buySnapshot = {
+                        ...fallbackContract,
+                        buy_price: buy.buy_price,
+                        contract_id: buy.contract_id,
+                        transaction_ids: { buy: buy.transaction_id },
+                    };
+
+                    pushContract(buySnapshot);
+
+                    const settledContract = await streamContractUntilSettled({
+                        contractId: buy.contract_id,
+                        fallback: buySnapshot,
+                        onUpdate: snapshot => pushContract(snapshot),
+                        source: 'ManualTrading',
+                    });
+                    const profit = Number(settledContract.profit ?? 0);
+                    totalProfit = Number((totalProfit + profit).toFixed(8));
+                    activeLossStreak = profit < 0 ? activeLossStreak + 1 : 0;
+                    setCurrentLossStreak(activeLossStreak);
+                    if (stopRequestedRef.current && runIndex < runCount) {
+                        setTradeMessage(
+                            `${action.label} stopped after run ${runIndex}. Total P/L: ${totalProfit.toFixed(2)} ${currency}`
+                        );
+                        break;
+                    }
+                    setTradeMessage(
+                        `${action.label} run ${runIndex} of ${runCount} closed ${profit >= 0 ? 'with profit' : 'with loss'}: ${profit.toFixed(2)} ${currency}`
+                    );
+                }
+
+                if (!stopRequestedRef.current) {
+                    setTradeMessage(
+                        `${action.label} ${runCount} run${runCount === 1 ? '' : 's'} complete. Total P/L: ${totalProfit.toFixed(2)} ${currency}`
+                    );
+                }
+            } catch (purchaseError) {
+                setTradeMessage('');
+                setTradeError(
+                    purchaseError instanceof Error
+                        ? purchaseError.message
+                        : 'Manual Trading could not purchase this contract.'
+                );
+            } finally {
+                setIsPurchasing(false);
+                stopRequestedRef.current = false;
+            }
+        },
+        [
+            buildTradeParameters,
+            consecutiveLossCount,
+            currency,
+            currentLossStreak,
+            martingaleMode,
+            martingaleMultiplierInput,
+            pushContract,
+            runCountInput,
+            selectedMarket.label,
+            selectedSymbol,
+            stakeInput,
+        ]
+    );
 
     const handleStopRuns = () => {
         stopRequestedRef.current = true;
@@ -1102,7 +1119,8 @@ const ManualTrading = observer(() => {
 
     useEffect(() => {
         if (!loadedSignalState || !signalTradeAction || !isSignalTradingActive || isPurchasing) return;
-        if (!loadedSignalState.isQualified || !loadedSignalState.entryReady || !loadedSignalState.entryFingerprint) return;
+        if (!loadedSignalState.isQualified || !loadedSignalState.entryReady || !loadedSignalState.entryFingerprint)
+            return;
         if (lastTriggeredEntryKeyRef.current === loadedSignalState.entryFingerprint) return;
 
         lastTriggeredEntryKeyRef.current = loadedSignalState.entryFingerprint;
@@ -1185,7 +1203,9 @@ const ManualTrading = observer(() => {
                                 >
                                     <div className='manual-trading-digit__inner'>
                                         <span className='manual-trading-digit__number'>{stat.digit}</span>
-                                        <span className='manual-trading-digit__percent'>{stat.percent.toFixed(2)}%</span>
+                                        <span className='manual-trading-digit__percent'>
+                                            {stat.percent.toFixed(2)}%
+                                        </span>
                                     </div>
                                 </div>
                                 {stat.digit === latestDigit && <span className='manual-trading-digit__active-arrow' />}
@@ -1341,10 +1361,13 @@ const ManualTrading = observer(() => {
 
                 <div className='manual-trading-actions'>
                     {activeActions.map(action => {
-                        const preview = proposalPreviews[action.contractType] ?? localProposalPreviews[action.contractType];
+                        const preview =
+                            proposalPreviews[action.contractType] ?? localProposalPreviews[action.contractType];
                         const payoutLabel = preview.payout;
                         const returnLabel =
-                            preview.status === 'ready' || !isProposalLoading ? preview.returnLabel : `${preview.returnLabel} · quoting`;
+                            preview.status === 'ready' || !isProposalLoading
+                                ? preview.returnLabel
+                                : `${preview.returnLabel} · quoting`;
 
                         return (
                             <button
@@ -1384,7 +1407,9 @@ const ManualTrading = observer(() => {
                 has_close_icon
                 is_content_centered={false}
                 is_mobile_full_width={false}
-                is_visible={isSignalLauncherVisible && Boolean(actionableSignal || loadedSignalState || isSignalTradingActive)}
+                is_visible={
+                    isSignalLauncherVisible && Boolean(actionableSignal || loadedSignalState || isSignalTradingActive)
+                }
                 login={() => undefined}
                 onClose={() => setIsSignalLauncherVisible(false)}
                 onConfirm={() => undefined}
@@ -1396,90 +1421,92 @@ const ManualTrading = observer(() => {
                         'manual-trading-signal-popup--active': strategyTelemetry.totalCount > 0 || loadedSignalState,
                     })}
                 >
-                <div className='manual-trading-signal-popup__header'>
-                    <strong>Signal monitor</strong>
-                    <span>{strategyTelemetry.totalCount} active</span>
-                </div>
-
-                <div className='manual-trading-signal-popup__counts'>
-                    <div className='manual-trading-signal-popup__count-card'>
-                        <span>Over 2</span>
-                        <strong>{strategyTelemetry.over2Count}</strong>
+                    <div className='manual-trading-signal-popup__header'>
+                        <strong>Signal monitor</strong>
+                        <span>{strategyTelemetry.totalCount} active</span>
                     </div>
-                    <div className='manual-trading-signal-popup__count-card'>
-                        <span>Under 7</span>
-                        <strong>{strategyTelemetry.under7Count}</strong>
-                    </div>
-                </div>
 
-                <p className='manual-trading-signal-popup__message'>{monitorStatusMessage}</p>
-
-                {actionableSignal && (
-                    <div className='manual-trading-signal-popup__focus'>
-                        <div>
-                            <strong>{SUPPORTED_VOLATILITY_MARKETS.find(market => market.symbol === actionableSignal.symbol)?.label ?? actionableSignal.symbol}</strong>
-                            <span>{actionableSignal.alertLabel}</span>
+                    <div className='manual-trading-signal-popup__counts'>
+                        <div className='manual-trading-signal-popup__count-card'>
+                            <span>Over 2</span>
+                            <strong>{strategyTelemetry.over2Count}</strong>
                         </div>
-                        <div className='manual-trading-signal-popup__badge'>
-                            {actionableSignal.entryReady ? 'ENTRY READY' : actionableSignal.isQualified ? 'SIGNAL READY' : 'WATCHING'}
+                        <div className='manual-trading-signal-popup__count-card'>
+                            <span>Under 7</span>
+                            <strong>{strategyTelemetry.under7Count}</strong>
                         </div>
                     </div>
-                )}
 
-                {actionableSignal && (
-                    <p className='manual-trading-signal-popup__detail'>
-                        {actionableSignal.isQualified
-                            ? `Winning digits: ${actionableSignal.qualifyingWinningDigits.join(', ')}. Trigger streak ${actionableSignal.trailingTriggerCount}/3.`
-                            : 'Waiting for the qualification percentages to line up.'}
-                    </p>
-                )}
+                    <p className='manual-trading-signal-popup__message'>{monitorStatusMessage}</p>
 
-                <div className='manual-trading-signal-popup__actions'>
-                    <button
-                        type='button'
-                        className='manual-trading-signal-popup__button manual-trading-signal-popup__button--primary'
-                        disabled={!actionableSignal || !actionableSignal.isQualified}
-                        onClick={() => actionableSignal && handleLoadSignalMarket(actionableSignal)}
-                    >
-                        Load market
-                    </button>
-                    <button
-                        type='button'
-                        className='manual-trading-signal-popup__button'
-                        disabled={!loadedSignalState?.isQualified || isSignalTradingActive}
-                        onClick={handleStartSignalTrading}
-                    >
-                        Start trading
-                    </button>
-                    <button
-                        type='button'
-                        className='manual-trading-signal-popup__button'
-                        disabled={!isSignalTradingActive && !isPurchasing}
-                        onClick={() => stopSignalTrading('Signal trading stopped manually.')}
-                    >
-                        Stop
-                    </button>
-                </div>
+                    {actionableSignal && (
+                        <div className='manual-trading-signal-popup__focus'>
+                            <div>
+                                <strong>
+                                    {SUPPORTED_VOLATILITY_MARKETS.find(
+                                        market => market.symbol === actionableSignal.symbol
+                                    )?.label ?? actionableSignal.symbol}
+                                </strong>
+                                <span>{actionableSignal.alertLabel}</span>
+                            </div>
+                            <div className='manual-trading-signal-popup__badge'>
+                                {actionableSignal.entryReady
+                                    ? 'ENTRY READY'
+                                    : actionableSignal.isQualified
+                                      ? 'SIGNAL READY'
+                                      : 'WATCHING'}
+                            </div>
+                        </div>
+                    )}
 
-                {loadedSignalState && (
-                    <div className='manual-trading-signal-popup__loaded'>
-                        Loaded:
-                        {' '}
-                        {SUPPORTED_VOLATILITY_MARKETS.find(market => market.symbol === loadedSignalState.symbol)?.label ?? loadedSignalState.symbol}
-                        {' '}
-                        ·
-                        {' '}
-                        {loadedSignalState.alertLabel}
-                        {' '}
-                        ·
-                        {' '}
-                        {isSignalTradingActive
-                            ? loadedSignalState.entryReady
-                                ? 'Entry live'
-                                : 'Waiting for entry'
-                            : 'Ready to arm'}
+                    {actionableSignal && (
+                        <p className='manual-trading-signal-popup__detail'>
+                            {actionableSignal.isQualified
+                                ? `Winning digits: ${actionableSignal.qualifyingWinningDigits.join(', ')}. Trigger streak ${actionableSignal.trailingTriggerCount}/3.`
+                                : 'Waiting for the qualification percentages to line up.'}
+                        </p>
+                    )}
+
+                    <div className='manual-trading-signal-popup__actions'>
+                        <button
+                            type='button'
+                            className='manual-trading-signal-popup__button manual-trading-signal-popup__button--primary'
+                            disabled={!actionableSignal || !actionableSignal.isQualified}
+                            onClick={() => actionableSignal && handleLoadSignalMarket(actionableSignal)}
+                        >
+                            Load market
+                        </button>
+                        <button
+                            type='button'
+                            className='manual-trading-signal-popup__button'
+                            disabled={!loadedSignalState?.isQualified || isSignalTradingActive}
+                            onClick={handleStartSignalTrading}
+                        >
+                            Start trading
+                        </button>
+                        <button
+                            type='button'
+                            className='manual-trading-signal-popup__button'
+                            disabled={!isSignalTradingActive && !isPurchasing}
+                            onClick={() => stopSignalTrading('Signal trading stopped manually.')}
+                        >
+                            Stop
+                        </button>
                     </div>
-                )}
+
+                    {loadedSignalState && (
+                        <div className='manual-trading-signal-popup__loaded'>
+                            Loaded:{' '}
+                            {SUPPORTED_VOLATILITY_MARKETS.find(market => market.symbol === loadedSignalState.symbol)
+                                ?.label ?? loadedSignalState.symbol}{' '}
+                            · {loadedSignalState.alertLabel} ·{' '}
+                            {isSignalTradingActive
+                                ? loadedSignalState.entryReady
+                                    ? 'Entry live'
+                                    : 'Waiting for entry'
+                                : 'Ready to arm'}
+                        </div>
+                    )}
                 </div>
             </Dialog>
         </div>

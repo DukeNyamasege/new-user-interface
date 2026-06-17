@@ -29,9 +29,7 @@ const TourEndDialog = observer(() => {
                 <div className='dc-dialog__content__description__text'>
                     <Localize
                         key={0}
-                        i18n_default_text={
-                            'Note: You can continue refining this setup in the Bot Builder.'
-                        }
+                        i18n_default_text={'Note: You can continue refining this setup in the Bot Builder.'}
                         components={[<strong key={0} />]}
                     />
                 </div>

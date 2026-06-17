@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import classNames from 'classnames';
 import Text from '@/components/shared_ui/text';
 import { useStore } from '@/hooks/useStore';
-import { LabelPairedMinusCaptionRegularIcon, LabelPairedPlusCaptionRegularIcon } from '@/components/shared_ui/figma-icons/LabelPaired';
+import {
+    LabelPairedMinusCaptionRegularIcon,
+    LabelPairedPlusCaptionRegularIcon,
+} from '@/components/shared_ui/figma-icons/LabelPaired';
 
 type TContentData = {
     header: string;

@@ -36,7 +36,10 @@ export default Engine =>
                         log(LogTypes.SELL, { sold_for });
                     }
 
-                    contractStatus('purchase.sold');
+                    contractStatus({
+                        id: 'contract.sold',
+                        data: sell_response?.sell?.sold_for,
+                    });
                     this.waitForAfter();
                     resolve();
                 };
@@ -59,9 +62,6 @@ export default Engine =>
                                 'InvalidSellContractProposal',
                             ];
                             if (non_fatal_sell_errors.includes(error.code)) {
-                                // "InvalidOfferings" may occur when user tries to sell the contract too close
-                                // to the expiry time. We shouldn't interrupt the bot but instead let the contract
-                                // finish.
                                 return Promise.resolve();
                             }
 
@@ -76,7 +76,6 @@ export default Engine =>
                                 return Promise.reject(sell_error);
                             }
 
-                            // For every other error, check whether the contract is not actually already sold.
                             return doUntilDone(() =>
                                 api_base.api.send({
                                     proposal_open_contract: 1,
@@ -89,9 +88,6 @@ export default Engine =>
                                     return Promise.reject(sell_error);
                                 }
 
-                                // If the contract is sold at this point it means there was a race condition.
-                                // Pretend this sell request was successful and mislead the trade engine into
-                                // moving onto the next scope.
                                 return Promise.resolve({
                                     sell: {
                                         sold_for: proposal_open_contract.sell_price,
@@ -103,15 +99,19 @@ export default Engine =>
 
                 const errors_to_ignore = ['NoOpenPosition', 'InvalidSellContractProposal', 'UnrecognisedRequest'];
 
-                // Restart buy/sell on error is enabled, don't recover from sell error.
                 if (!this.options.timeMachineEnabled) {
                     // eslint-disable-next-line no-promise-executor-return
                     return doUntilDone(sellContractAndGetContractInfo, errors_to_ignore)
                         .then(sell_response => onContractSold(sell_response))
-                        .catch(error => error);
+                        .catch(error => {
+                            contractStatus({
+                                id: 'contract.sold',
+                                data: null,
+                            });
+                            return error;
+                        });
                 }
 
-                // If above checkbox not checked, try to recover from sell error.
                 const recoverFn = (error_code, makeDelay) => {
                     return makeDelay().then(() => this.observer.emit('REVERT', 'during'));
                 };

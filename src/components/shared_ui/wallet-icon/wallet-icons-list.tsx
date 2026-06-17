@@ -3,10 +3,14 @@ import { IconSize } from '@/components/shared_ui/figma-icons';
 
 const WALLET_ICONS = {
     IcWalletDerivDemoLight: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Logo').then(module => ({ default: module.PaymentMethodDerivDemoBrandDarkIcon }))
+        import('@/components/shared_ui/figma-icons/Logo').then(module => ({
+            default: module.PaymentMethodDerivDemoBrandDarkIcon,
+        }))
     ),
     IcWalletDerivDemoDark: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Logo').then(module => ({ default: module.PaymentMethodDerivDemoBrandDarkIcon }))
+        import('@/components/shared_ui/figma-icons/Logo').then(module => ({
+            default: module.PaymentMethodDerivDemoBrandDarkIcon,
+        }))
     ),
     IcWalletCurrencyUsdLight: lazy(() =>
         import('@/components/shared_ui/figma-icons/Currencies').then(module => ({ default: module.CurrencyUsdIcon }))
@@ -45,30 +49,48 @@ const WALLET_ICONS = {
         import('@/components/shared_ui/figma-icons/Currencies').then(module => ({ default: module.CurrencyEthIcon }))
     ),
     IcWalletTetherLight: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Logo').then(module => ({ default: module.PaymentMethodTetherUsdtBrandIcon }))
+        import('@/components/shared_ui/figma-icons/Logo').then(module => ({
+            default: module.PaymentMethodTetherUsdtBrandIcon,
+        }))
     ),
     IcWalletTetherDark: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Logo').then(module => ({ default: module.PaymentMethodTetherUsdtBrandIcon }))
+        import('@/components/shared_ui/figma-icons/Logo').then(module => ({
+            default: module.PaymentMethodTetherUsdtBrandIcon,
+        }))
     ),
     IcWalletLiteCoinLight: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Logo').then(module => ({ default: module.PaymentMethodLitecoinBrandIcon }))
+        import('@/components/shared_ui/figma-icons/Logo').then(module => ({
+            default: module.PaymentMethodLitecoinBrandIcon,
+        }))
     ),
     IcWalletLiteCoinDark: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Logo').then(module => ({ default: module.PaymentMethodLitecoinBrandIcon }))
+        import('@/components/shared_ui/figma-icons/Logo').then(module => ({
+            default: module.PaymentMethodLitecoinBrandIcon,
+        }))
     ),
     IcWalletUsdCoinLight: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Logo').then(module => ({ default: module.PaymentMethodUsdCoinBrandIcon }))
+        import('@/components/shared_ui/figma-icons/Logo').then(module => ({
+            default: module.PaymentMethodUsdCoinBrandIcon,
+        }))
     ),
     IcWalletUsdCoinDark: lazy(() =>
-        import('@/components/shared_ui/figma-icons/Logo').then(module => ({ default: module.PaymentMethodUsdCoinBrandIcon }))
+        import('@/components/shared_ui/figma-icons/Logo').then(module => ({
+            default: module.PaymentMethodUsdCoinBrandIcon,
+        }))
     ),
     IcWalletXrpLight: lazy(() =>
-        import('@/components/shared_ui/figma-icons/PaymentMethods').then(module => ({ default: module.PaymentMethodXrpBrandIcon }))
+        import('@/components/shared_ui/figma-icons/PaymentMethods').then(module => ({
+            default: module.PaymentMethodXrpBrandIcon,
+        }))
     ),
     IcWalletXrpDark: lazy(() =>
-        import('@/components/shared_ui/figma-icons/PaymentMethods').then(module => ({ default: module.PaymentMethodXrpBrandIcon }))
+        import('@/components/shared_ui/figma-icons/PaymentMethods').then(module => ({
+            default: module.PaymentMethodXrpBrandIcon,
+        }))
     ),
-    unknown: lazy(() => import('@/components/shared_ui/figma-icons/Currencies').then(module => ({ default: module.CurrencyUsdIcon }))),
+    unknown: lazy(() =>
+        import('@/components/shared_ui/figma-icons/Currencies').then(module => ({ default: module.CurrencyUsdIcon }))
+    ),
 };
 
 export const WalletIconList = ({ type, size }: { type: string; size?: IconSize }) => {

@@ -546,7 +546,7 @@ const AppWrapper = observer(() => {
                                     <AutoTrades />
                                 </div>
                             )}
-{show_manual_trading && (
+                            {show_manual_trading && (
                                 <div
                                     label={
                                         <>
@@ -662,9 +662,7 @@ const AppWrapper = observer(() => {
             </DesktopWrapper>
             <MobileWrapper>{!is_open && <RunPanel />}</MobileWrapper>
             <Dialog
-                cancel_button_text={
-                    navigation_stop_in_progress ? undefined : localize('Stay')
-                }
+                cancel_button_text={navigation_stop_in_progress ? undefined : localize('Stay')}
                 className='dc-dialog__wrapper--fixed'
                 confirm_button_text={
                     navigation_stop_in_progress ? localize('Stopping trades...') : localize('Stop and switch')

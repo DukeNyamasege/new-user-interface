@@ -121,16 +121,16 @@ const DEFAULT_DOMAIN_UI: DomainUIConfig = {
     logoUrl: '',
     faviconUrl: '',
     headerBgColor: '#1a1a2e',
-    headerTextColor: '#ffffff',
+    headerTextColor: 'var(--text-colored-background)',
     sidebarBgColor: '#16213e',
     sidebarTextColor: '#e0e0e0',
     buttonPrimaryBg: '#f97316',
-    buttonPrimaryText: '#ffffff',
+    buttonPrimaryText: 'var(--text-colored-background)',
     buttonSecondaryBg: '#2d2d44',
     buttonSecondaryText: '#e0e0e0',
     cardBgColor: '#1e1e32',
     cardBorderColor: '#2d2d44',
-    textPrimary: '#ffffff',
+    textPrimary: 'var(--text-colored-background)',
     textSecondary: '#a0a0b0',
     successColor: '#4caf50',
     errorColor: '#f44336',
@@ -305,10 +305,13 @@ const DOMAIN_REDIRECTS: Record<string, string> = {
     'www.mrzetuzetu.site': 'https://www.kicktrade.site',
 };
 
-export const getDomainConfigForHost = (hostname: string): DomainConfig | undefined => DOMAIN_CONFIG[normalizeHostname(hostname)];
+export const getDomainConfigForHost = (hostname: string): DomainConfig | undefined =>
+    DOMAIN_CONFIG[normalizeHostname(hostname)];
 export const getCanonicalHostForHost = (hostname: string): string | undefined =>
     DOMAIN_CONFIG[normalizeHostname(hostname)]?.canonicalHost;
-export const getDomainRedirectUrl = (location: Pick<Location, 'hash' | 'hostname' | 'pathname' | 'search'> = window.location) => {
+export const getDomainRedirectUrl = (
+    location: Pick<Location, 'hash' | 'hostname' | 'pathname' | 'search'> = window.location
+) => {
     const redirect_origin = DOMAIN_REDIRECTS[normalizeHostname(location.hostname)];
     if (!redirect_origin) return '';
 

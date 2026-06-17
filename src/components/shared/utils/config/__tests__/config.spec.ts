@@ -49,38 +49,38 @@ describe('DOMAIN_CONFIG', () => {
     ])(
         'returns auth and bot folder settings for %s',
         (domain, clientId, appId, brandName, useLegacyOAuthLogin, botsFolder = domain) => {
-        expect(getDomainConfigForHost(domain)).toMatchObject({
-            clientId,
-            appId,
-            redirectUri: `https://${domain}/`,
-            botsFolder,
-            canonicalHost: domain,
-            includeLegacyAppIdInOAuth: true,
-            useLegacyOAuthLogin,
-            ui: {
-                brandName,
-            },
-            features: {
-                autoTrades: true,
-                manualTrading: true,
-            },
-        });
-        expect(getDomainConfigForHost(`www.${domain}`)).toMatchObject({
-            clientId,
-            appId,
-            redirectUri: `https://${domain}/`,
-            botsFolder,
-            canonicalHost: domain,
-            includeLegacyAppIdInOAuth: true,
-            useLegacyOAuthLogin,
-            ui: {
-                brandName,
-            },
-            features: {
-                autoTrades: true,
-                manualTrading: true,
-            },
-        });
+            expect(getDomainConfigForHost(domain)).toMatchObject({
+                clientId,
+                appId,
+                redirectUri: `https://${domain}/`,
+                botsFolder,
+                canonicalHost: domain,
+                includeLegacyAppIdInOAuth: true,
+                useLegacyOAuthLogin,
+                ui: {
+                    brandName,
+                },
+                features: {
+                    autoTrades: true,
+                    manualTrading: true,
+                },
+            });
+            expect(getDomainConfigForHost(`www.${domain}`)).toMatchObject({
+                clientId,
+                appId,
+                redirectUri: `https://${domain}/`,
+                botsFolder,
+                canonicalHost: domain,
+                includeLegacyAppIdInOAuth: true,
+                useLegacyOAuthLogin,
+                ui: {
+                    brandName,
+                },
+                features: {
+                    autoTrades: true,
+                    manualTrading: true,
+                },
+            });
         }
     );
 

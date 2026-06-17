@@ -264,13 +264,7 @@ const buildPreset = (
     variantIndex: number
 ): AutoTradeStrategyPreset => {
     const familyId = `family-${tradeIndex + 1}-${profileIndex + 1}`;
-    const digitSettings = getDigitSettings(
-        trade.tradeType,
-        tradeIndex,
-        profileIndex,
-        variantIndex,
-        trade.baseBarrier
-    );
+    const digitSettings = getDigitSettings(trade.tradeType, tradeIndex, profileIndex, variantIndex, trade.baseBarrier);
     const streak = Math.min(10, Math.max(1, profile.streakBase + variant.streakLift));
     const stake = profile.stakeBase + variant.stakeLift;
     const martingale = Math.max(1.01, profile.martingaleBase + variantIndex * 0.03);
@@ -324,19 +318,16 @@ export const AUTO_TRADE_STRATEGY_PRESETS: AutoTradeStrategyPreset[] = TRADE_BLUE
     )
 );
 
-export const AUTO_TRADE_STRATEGY_FAMILIES: AutoTradeStrategyFamily[] = TRADE_BLUEPRINTS.flatMap(
-    (trade, tradeIndex) =>
-        PROFILE_BLUEPRINTS.map((profile, profileIndex) => {
-            const id = `family-${tradeIndex + 1}-${profileIndex + 1}`;
-            return {
-                id,
-                name: `${trade.label} ${profile.label}`,
-                description: `${trade.label} ${profile.label} presets for all supported Auto Trades markets.`,
-                presetIds: AUTO_TRADE_STRATEGY_PRESETS.filter(preset => preset.familyId === id).map(
-                    preset => preset.id
-                ),
-            };
-        })
+export const AUTO_TRADE_STRATEGY_FAMILIES: AutoTradeStrategyFamily[] = TRADE_BLUEPRINTS.flatMap((trade, tradeIndex) =>
+    PROFILE_BLUEPRINTS.map((profile, profileIndex) => {
+        const id = `family-${tradeIndex + 1}-${profileIndex + 1}`;
+        return {
+            id,
+            name: `${trade.label} ${profile.label}`,
+            description: `${trade.label} ${profile.label} presets for all supported Auto Trades markets.`,
+            presetIds: AUTO_TRADE_STRATEGY_PRESETS.filter(preset => preset.familyId === id).map(preset => preset.id),
+        };
+    })
 );
 
 export const AUTO_TRADE_STRATEGY_PRESET_LOOKUP = new Map(

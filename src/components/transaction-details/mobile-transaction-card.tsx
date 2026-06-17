@@ -116,7 +116,13 @@ export default function MobileTransactionCards({ transaction }: { transaction: T
             <div className={`${PARENT_CLASS}__card__row`}>
                 <CardColumn
                     title='Buy Price'
-                    label={<Money amount={Math.abs(transaction?.buy_price ?? 0)} currency={transaction?.currency} show_currency />}
+                    label={
+                        <Money
+                            amount={Math.abs(transaction?.buy_price ?? 0)}
+                            currency={transaction?.currency}
+                            show_currency
+                        />
+                    }
                 />
                 <CardColumn
                     title='Exit Spot'
@@ -136,7 +142,11 @@ export default function MobileTransactionCards({ transaction }: { transaction: T
                                 [`${PARENT_CLASS}__card__profit--loss`]: transaction?.profit < 0,
                             })}
                         >
-                            <Money amount={Math.abs(transaction?.profit ?? 0)} currency={transaction?.currency} show_currency />
+                            <Money
+                                amount={Math.abs(transaction?.profit ?? 0)}
+                                currency={transaction?.currency}
+                                show_currency
+                            />
                         </div>
                     }
                     right_aligned

@@ -29,6 +29,15 @@ body {
     --rm-shell-progress-dot: #222222;
 }
 
+.theme--light {
+    --rm-shell-top: #ffffff;
+    --rm-shell-text: #333333;
+    --rm-shell-run-panel: #ffffff;
+    --rm-shell-muted: #666666;
+    --rm-shell-progress-track: #e0e0e0;
+    --rm-shell-progress-dot: #444444;
+}
+
 .deriv-header {
     height: 40px !important;
     min-height: 40px !important;

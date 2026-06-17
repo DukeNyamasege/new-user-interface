@@ -380,7 +380,11 @@ export default class ClientStore {
                 subscribe: 0,
             });
             const balanceData = balanceResponse?.balance;
-            const serverBalance = Number(balanceData?.balance ?? this.server_balances[resolvedLoginId] ?? this.getDisplayBalanceAmount(resolvedLoginId));
+            const serverBalance = Number(
+                balanceData?.balance ??
+                    this.server_balances[resolvedLoginId] ??
+                    this.getDisplayBalanceAmount(resolvedLoginId)
+            );
             const accountCurrency = balanceData?.currency || currency || this.getAccountCurrency(resolvedLoginId);
             this.applyBalanceUpdate(resolvedLoginId, accountCurrency, serverBalance);
 
@@ -451,9 +455,12 @@ export default class ClientStore {
             window.clearInterval(this.exchange_rate_refresh_timer);
         }
 
-        this.exchange_rate_refresh_timer = window.setInterval(() => {
-            this.fetchUsdKesRate();
-        }, 10 * 60 * 1000);
+        this.exchange_rate_refresh_timer = window.setInterval(
+            () => {
+                this.fetchUsdKesRate();
+            },
+            10 * 60 * 1000
+        );
     };
 
     stopExchangeRateAutoRefresh = () => {
