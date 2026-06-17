@@ -16,18 +16,18 @@
             position: fixed;
             inset: var(--app-header-height, 4rem) 0 0;
             width: 100%;
-            z-index: 10000;
+            z-index: 1100;
             height: calc(100% - var(--app-header-height, 4rem) - env(safe-area-inset-bottom, 0));
             padding-bottom: env(safe-area-inset-bottom, 0);
             background: var(--general-main-1);
             isolation: isolate;
 
             > .dc-drawer {
-                z-index: 10001 !important;
+                z-index: 1101 !important;
             }
 
             .controls__section {
-                z-index: 10002;
+                z-index: 1102;
             }
 
             .dc-drawer,

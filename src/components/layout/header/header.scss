@@ -16,9 +16,10 @@
         overflow: visible;
         position: sticky;
         top: 0;
-        z-index: 1200;
+        z-index: 20000;
         padding-top: env(safe-area-inset-top, 0);
         padding-inline: 0.4rem;
+        color: #fff;
 
         &:before,
         &:after {
@@ -46,8 +47,13 @@
         }
 
         .auth-actions {
+            gap: 0.6rem;
             min-width: 0;
             margin-left: auto;
+        }
+
+        .dark-mode-toggle {
+            margin-right: 0.2rem;
         }
 
         .account-info,
@@ -58,7 +64,7 @@
         }
 
         .acc-info {
-            max-width: calc(100vw - 12.8rem);
+            max-width: calc(100vw - 10.2rem);
             padding-inline: 0.2rem;
         }
 
@@ -72,6 +78,14 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+        }
+
+        .dc-btn,
+        .dc-btn__text,
+        .deriv-text,
+        .app-header__account-settings,
+        .notifications__wrapper {
+            color: #fff !important;
         }
     }
 
@@ -406,6 +420,25 @@
     &--loading {
         align-items: center;
         margin-inline-end: 1.6rem;
+    }
+
+    @include mobile-or-tablet-screen {
+        padding-block: 0;
+
+        button {
+            margin-inline-end: 0;
+            min-width: 0;
+            height: 2.8rem;
+            min-height: 2.8rem;
+            padding-inline: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .dc-btn--primary,
+        .dc-btn--primary__light,
+        .dc-btn--tertiary {
+            border-radius: 0.4rem;
+        }
     }
 
     &__spinner {

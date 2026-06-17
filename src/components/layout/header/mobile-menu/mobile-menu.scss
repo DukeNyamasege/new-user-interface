@@ -1,5 +1,6 @@
 .mobile-menu {
     height: 100%;
+    color: #fff;
 
     &__toggle {
         padding-inline-start: 1rem;
@@ -68,6 +69,10 @@
                 cursor: pointer;
                 width: 100%;
 
+                .deriv-text {
+                    color: #fff !important;
+                }
+
                 .deriv-toggle-switch {
                     margin-left: auto;
                     margin-right: 1.6rem;
@@ -94,7 +99,7 @@
             &__icons {
                 g > path,
                 path {
-                    fill: var(--text-prominent);
+                    fill: #fff;
                 }
             }
         }
@@ -148,7 +153,7 @@
     .deriv-drawer__header__close-btn {
         button > svg > path,
         svg > path {
-            fill: var(--text-prominent);
+            fill: #fff;
         }
     }
 }
