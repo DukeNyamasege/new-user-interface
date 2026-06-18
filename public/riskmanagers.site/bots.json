@@ -1,4 +1,13 @@
-﻿[
+[
+    {
+        "id": "percentage-over-by-mr-duke",
+        "name": "Percentage Over by Mr Duke",
+        "file": "Percentage Over by Mr Duke.xml",
+        "description": "Premium Risk Managers percentage-over strategy with an elevated VIP presentation.",
+        "emoji": "VIP",
+        "is_premium": true,
+        "priority": 1
+    },
     {
         "name": "grffy v1",
         "file": "grffy v1.xml"

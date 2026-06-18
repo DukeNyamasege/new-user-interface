@@ -21,18 +21,20 @@ describe('Best Bots domain catalogs', () => {
         });
     });
 
-    it('keeps the current Risk Managers bot names for the Risk Managers folder', () => {
+    it('keeps the premium Risk Managers bot first for the Risk Managers folder', () => {
         const bots = getBestBotsForFolder('riskmanagers.site');
 
-        expect(bots).toHaveLength(3);
-        expect(bots.every(bot => bot.name === bot.file.replace(/\.xml$/, ''))).toBe(true);
+        expect(bots).toHaveLength(4);
         expect(bots[0]).toMatchObject({
-            name: 'grffy v1',
-            file: 'grffy v1.xml',
+            id: 'percentage-over-by-mr-duke',
+            name: 'Percentage Over by Mr Duke',
+            file: 'Percentage Over by Mr Duke.xml',
+            is_premium: true,
+            priority: 1,
         });
         expect(bots[1]).toMatchObject({
-            name: 'Mr Duke Speed Bot.1',
-            file: 'Mr Duke Speed Bot.1.xml',
+            name: 'grffy v1',
+            file: 'grffy v1.xml',
         });
     });
 

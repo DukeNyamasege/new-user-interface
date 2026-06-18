@@ -14,6 +14,8 @@ type TBot = {
     file: string;
     description: string;
     emoji: string;
+    is_premium?: boolean;
+    priority?: number;
 };
 
 type TBotStats = {
@@ -31,6 +33,8 @@ type TBotManifestEntry = {
     file: string;
     description?: string;
     emoji?: string;
+    is_premium?: boolean;
+    priority?: number;
 };
 
 const formatMoney = (value: number | string | null | undefined) => {
@@ -69,12 +73,23 @@ const createManifestBot = (entry: TBotManifestEntry): TBot => {
             entry.description ||
             `${name} loads into Bot Builder and executes through the standard purchase conditions.`,
         emoji: entry.emoji || 'BOT',
+        is_premium: entry.is_premium,
+        priority: entry.priority,
     };
 };
 
-const RISK_MANAGERS_BOTS: TBot[] = ['grffy v1.xml', 'Mr Duke Speed Bot.1.xml', 'Wealth Generator.xml'].map(
-    createRiskManagersBot
-);
+const RISK_MANAGERS_BOTS: TBot[] = [
+    {
+        id: 'percentage-over-by-mr-duke',
+        name: 'Percentage Over by Mr Duke',
+        file: 'Percentage Over by Mr Duke.xml',
+        description: 'Premium Risk Managers percentage-over strategy with an elevated VIP presentation.',
+        emoji: 'VIP',
+        is_premium: true,
+        priority: 1,
+    },
+    ...['grffy v1.xml', 'Mr Duke Speed Bot.1.xml', 'Wealth Generator.xml'].map(createRiskManagersBot),
+];
 
 const TERMICA_BOTS: TBot[] = [
     {
@@ -503,10 +518,15 @@ const BotCard = observer(({ bot, stats }: { bot: TBot; stats: TBotStats | undefi
     const netAmount = Number(profitAmount || 0) - Number(lossAmount || 0);
     const winRate = totalRuns > 0 ? Math.round((profits / totalRuns) * 100) : 0;
 
+    const cardClassName = `bb-card${bot.is_premium ? ' bb-card--premium' : ''}`;
+
     return (
-        <div className='bb-card'>
+        <div className={cardClassName}>
             <div className='bb-card__header'>
-                <h3 className='bb-card__name'>{bot.name}</h3>
+                <div className='bb-card__title-group'>
+                    {bot.is_premium && <span className='bb-card__premium-badge'>Premium</span>}
+                    <h3 className='bb-card__name'>{bot.name}</h3>
+                </div>
                 <span className={`bb-card__net${netAmount >= 0 ? ' bb-card__net--profit' : ' bb-card__net--loss'}`}>
                     {formatMoney(netAmount)}
                 </span>
@@ -603,6 +623,11 @@ const BestBots = () => {
     }, []);
 
     const rankedBots = [...bots].sort((a, b) => {
+        const priorityA = a.priority ?? (a.is_premium ? 1 : 999);
+        const priorityB = b.priority ?? (b.is_premium ? 1 : 999);
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        if (!!a.is_premium !== !!b.is_premium) return a.is_premium ? -1 : 1;
+
         const sa = statsMap[a.id];
         const sb = statsMap[b.id];
         const netA = Number(sa?.profit_amount || 0) - Number(sa?.loss_amount || 0);
