@@ -8,6 +8,7 @@
     height: 100vh;
     min-height: 100dvh;
     overflow: hidden;
+    background: var(--rm-shell-run-panel);
 
     @include mobile-or-tablet-screen {
         --app-header-height: calc(5rem + env(safe-area-inset-top, 0px));

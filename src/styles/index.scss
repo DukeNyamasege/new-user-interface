@@ -5,7 +5,12 @@
 body {
     // Updated to use brand font variable from brand.config.json
     font-family: var(--brand-font-primary);
-    background: var(--general-main-1);
+    background: var(--rm-shell-run-panel);
+}
+
+html,
+#root {
+    background: var(--rm-shell-run-panel);
 }
 
 :root,
