@@ -72,6 +72,15 @@
             transition: width 0.3s ease;
         }
 
+        &--with-open-mobile-run-panel {
+            @include mobile-or-tablet-screen {
+                .dc-tabs__list {
+                    visibility: hidden;
+                    pointer-events: none;
+                }
+            }
+        }
+
         &--active {
             // css for onboard tour overlay
             &:before {
@@ -154,9 +163,16 @@
                 box-shadow: none;
 
                 @include mobile-or-tablet-screen {
-                    display: none;
+                    display: flex;
+                    overflow-x: auto;
+                    overflow-y: hidden;
+                    white-space: nowrap;
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
 
-                    overflow: hidden;
+                    &::-webkit-scrollbar {
+                        display: none;
+                    }
                 }
 
                 &--header {
