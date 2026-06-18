@@ -96,7 +96,7 @@
 
             &__active {
                 background: var(--rm-shell-nav-active);
-                color: var(--rm-shell-text) !important;
+                color: var(--rm-shell-nav-text) !important;
                 border: 0;
                 border-radius: 0;
                 box-shadow: none;
@@ -109,7 +109,7 @@
             }
 
             &__item {
-                color: var(--rm-shell-text);
+                color: var(--rm-shell-nav-text);
                 display: flex;
                 align-items: center;
                 gap: 0.6rem;
@@ -121,7 +121,7 @@
 
                 &:not(.dc-tabs__active):hover {
                     background: var(--rm-shell-nav-hover);
-                    color: var(--rm-shell-text);
+                    color: var(--rm-shell-nav-text);
 
                     svg,
                     svg path,
@@ -131,7 +131,7 @@
                 }
 
                 &:not(.dc-tabs__active) {
-                    color: var(--rm-shell-text);
+                    color: var(--rm-shell-nav-text);
                 }
 
                 svg {
@@ -154,14 +154,9 @@
                 box-shadow: none;
 
                 @include mobile-or-tablet-screen {
-                    overflow-x: auto;
-                    overflow-y: hidden;
-                    -ms-overflow-style: none;
-                    scrollbar-width: none;
+                    display: none;
 
-                    &::-webkit-scrollbar {
-                        display: none;
-                    }
+                    overflow: hidden;
                 }
 
                 &--header {
@@ -294,7 +289,8 @@
             width: 100%;
             max-width: 100%;
             inset-inline-end: 0;
-            top: 0;
+            top: var(--app-header-height, 4rem);
+            z-index: 900;
         }
     }
 
@@ -541,7 +537,33 @@
         top: 5.6rem;
         inset-inline-start: 0;
         width: 100vw;
-        height: var(--tab-content-height-mobile);
+        height: calc(var(--tab-content-height-mobile) - var(--app-header-height, 4rem));
+    }
+}
+
+.theme--light {
+    .main__container {
+        .dc-tabs {
+            &__list {
+                background: var(--rm-shell-nav);
+            }
+
+            &__item,
+            &__active {
+                color: var(--rm-shell-nav-text) !important;
+
+                .dc-text,
+                span {
+                    color: var(--rm-shell-nav-text) !important;
+                }
+
+                svg,
+                svg path,
+                svg g path {
+                    fill: var(--rm-shell-gold) !important;
+                }
+            }
+        }
     }
 }
 

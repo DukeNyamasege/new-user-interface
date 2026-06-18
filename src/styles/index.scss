@@ -18,6 +18,16 @@ body {
     --rm-shell-nav-hover: #15136b;
     --rm-shell-gold: #ffb300;
     --rm-shell-text: #ffffff;
+    --rm-shell-header-text: #ffffff;
+    --rm-shell-nav-text: #ffffff;
+    --rm-shell-surface: #111111;
+    --rm-shell-surface-2: #181818;
+    --rm-shell-border: #2c3440;
+    --rm-shell-input-bg: #0f1a2b;
+    --rm-shell-input-text: #ffffff;
+    --rm-shell-button-text: #ffffff;
+    --rm-shell-circle-bg: #333333;
+    --rm-shell-circle-text: #ffffff;
     --rm-shell-muted: #9a9a9a;
     --rm-shell-auth-blue: #003b73;
     --rm-shell-auth-border: #8f8f8f;
@@ -31,9 +41,21 @@ body {
 
 .theme--light {
     --rm-shell-top: #ffffff;
-    --rm-shell-text: #333333;
+    --rm-shell-text: #111827;
+    --rm-shell-header-text: #111827;
+    --rm-shell-nav-text: #ffffff;
+    --rm-shell-surface: #ffffff;
+    --rm-shell-surface-2: #f3f4f6;
+    --rm-shell-border: #cbd5e1;
+    --rm-shell-input-bg: #ffffff;
+    --rm-shell-input-text: #111827;
+    --rm-shell-button-text: #ffffff;
+    --rm-shell-circle-bg: #303030;
+    --rm-shell-circle-text: #ffffff;
     --rm-shell-run-panel: #ffffff;
-    --rm-shell-muted: #666666;
+    --rm-shell-muted: #4b5563;
+    --rm-shell-auth-blue: #1559b7;
+    --rm-shell-auth-border: #b8c2cf;
     --rm-shell-progress-track: #e0e0e0;
     --rm-shell-progress-dot: #444444;
 }
@@ -48,6 +70,23 @@ body {
 
 .theme--light .deriv-header {
     background: var(--rm-shell-top-light) !important;
+}
+
+.theme--light {
+    color: var(--rm-shell-text);
+
+    .dc-btn--primary,
+    .dc-btn--primary__light,
+    .dc-btn--tertiary {
+        color: var(--rm-shell-button-text) !important;
+    }
+
+    input,
+    select,
+    textarea {
+        color: var(--rm-shell-input-text);
+        background-color: var(--rm-shell-input-bg);
+    }
 }
 
 .icon-general-fill-path {

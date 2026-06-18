@@ -126,7 +126,8 @@
 
     .theme--light &__container {
         background-color: var(--rm-shell-run-panel-light);
-        border-color: var(--rm-shell-run-panel-light);
+        border-color: var(--rm-shell-border);
+        color: var(--rm-shell-text);
     }
 
     &__execution-mode {
@@ -307,6 +308,50 @@
                     transform: scale(0);
                 }
             }
+        }
+    }
+}
+
+.theme--light {
+    .animation {
+        &__run-button,
+        &__stop-button {
+            color: #ffffff !important;
+
+            span,
+            .dc-text {
+                color: #ffffff !important;
+            }
+        }
+
+        &__container {
+            background-color: #ffffff;
+            border-color: #cbd5e1;
+            color: #111827;
+        }
+
+        &__execution-mode-label {
+            color: #475569;
+        }
+
+        &__execution-mode-value,
+        &__text {
+            color: #111827;
+        }
+
+        &__progress-line {
+            background-color: #d1d5db;
+        }
+
+        &__progress {
+            .circular-wrapper .static-circle {
+                background-color: #374151;
+            }
+        }
+
+        &__execution-mode-toggle {
+            background: #dbeafe;
+            border-color: #cbd5e1;
         }
     }
 }

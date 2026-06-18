@@ -9,6 +9,9 @@
     --manual-muted: #777777;
     --manual-ring-base: #666666;
     --manual-inner-bg: #333333;
+    --manual-circle-text: #ffffff;
+    --manual-primary-bg: #1559b7;
+    --manual-primary-text: #ffffff;
     --manual-shadow: 0 0.8rem 1.6rem rgba(0, 0, 0, 0.35);
 
     box-sizing: border-box;
@@ -38,6 +41,9 @@
     --manual-muted: #8aa2c2;
     --manual-ring-base: #5d6673;
     --manual-inner-bg: #1d2530;
+    --manual-circle-text: #ffffff;
+    --manual-primary-bg: #1661b9;
+    --manual-primary-text: #ffffff;
     --manual-shadow: 0 0.8rem 1.6rem rgba(0, 0, 0, 0.55);
 }
 
@@ -86,8 +92,8 @@
     height: 3.8rem;
     border: none;
     border-radius: 0.6rem;
-    background: #0b4ea2;
-    color: var(--text-colored-background);
+    background: var(--manual-primary-bg);
+    color: var(--manual-primary-text) !important;
     cursor: pointer;
     font-size: 1.4rem;
     font-weight: 900;
@@ -183,17 +189,19 @@
     height: 6.8rem;
     border-radius: 50%;
     background: var(--manual-inner-bg);
-    color: var(--text-colored-background);
+    color: var(--manual-circle-text) !important;
     box-shadow: inset 0 0.2rem 0.3rem rgba(255, 255, 255, 0.08);
 }
 
 .manual-trading-digit__number {
     margin-bottom: 1.4rem;
+    color: var(--manual-circle-text) !important;
     font-size: 1.5rem;
     font-weight: 900;
 }
 
 .manual-trading-digit__percent {
+    color: var(--manual-circle-text) !important;
     font-size: 1.3rem;
     font-weight: 900;
 }
@@ -494,9 +502,36 @@
 }
 
 .manual-trading-signal-popup__button--primary {
-    border-color: #0b4ea2;
-    background: #0b4ea2;
-    color: var(--text-colored-background);
+    border-color: var(--manual-primary-bg);
+    background: var(--manual-primary-bg);
+    color: var(--manual-primary-text) !important;
+}
+
+.theme--light {
+    .manual-trading-field span,
+    .manual-trading-ticket__header span,
+    .manual-trading-inline-input span,
+    .manual-trading-signal-popup__header span,
+    .manual-trading-signal-popup__focus span,
+    .manual-trading-signal-popup__message,
+    .manual-trading-signal-popup__detail,
+    .manual-trading-signal-popup__loaded {
+        color: #4b5563;
+    }
+
+    .manual-trading-field__control,
+    .manual-trading-trade-types__button,
+    .manual-trading-barrier__digit,
+    .manual-trading-inline-input input {
+        background: #ffffff;
+        border-color: #cbd5e1;
+        color: #111827;
+    }
+
+    .manual-trading-toolbar__apply {
+        background: var(--manual-primary-bg);
+        color: var(--manual-primary-text) !important;
+    }
 }
 
 @media (max-width: 76.8rem) {

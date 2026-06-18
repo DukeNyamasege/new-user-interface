@@ -16,18 +16,24 @@
             position: fixed;
             inset: var(--app-header-height, 4rem) 0 0;
             width: 100%;
-            z-index: 1100;
+            z-index: 900;
             height: calc(100% - var(--app-header-height, 4rem) - env(safe-area-inset-bottom, 0));
             padding-bottom: env(safe-area-inset-bottom, 0);
             background: var(--general-main-1);
             isolation: isolate;
 
             > .dc-drawer {
-                z-index: 1101 !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                transform: none !important;
+                z-index: 901 !important;
             }
 
             .controls__section {
-                z-index: 1102;
+                z-index: 902;
             }
 
             .dc-drawer,
@@ -64,6 +70,7 @@
         &-title {
             min-height: 1.8rem;
             margin-bottom: 4px;
+            color: var(--text-prominent);
 
             @include typeface(--small-center-bold-black, none);
         }
@@ -71,6 +78,7 @@
         &-content {
             height: 18px;
             margin-bottom: 4px;
+            color: var(--text-general);
 
             @include typeface(--small-center-normal-black, none);
         }
@@ -82,6 +90,7 @@
         flex-direction: column;
         width: min(35rem, 100%);
         background-color: var(--general-section-2);
+        color: var(--text-prominent);
 
         @include mobile-or-tablet-screen {
             margin: 0;
@@ -115,6 +124,8 @@
         }
 
         &-amount {
+            color: var(--text-prominent);
+
             @include typeface(--small-center-normal-black, none);
 
             &--positive {
@@ -291,6 +302,84 @@
         width: 100%;
         min-height: 4rem;
         border-radius: 0 4px 4px 0;
+    }
+}
+
+.theme--light {
+    .run-panel {
+        &__container,
+        &__container--mobile,
+        &__content,
+        &-tab__content,
+        .dc-drawer,
+        .dc-drawer__container,
+        .dc-drawer__content,
+        .summary,
+        .transactions,
+        .journal {
+            background-color: #ffffff;
+            color: #111827;
+        }
+
+        &__stat {
+            background-color: #f3f4f6;
+            border-top: 1px solid #cbd5e1;
+            border-bottom: 1px solid #cbd5e1;
+        }
+
+        &__tile-title,
+        &__stat-amount,
+        &__tile-content,
+        .summary,
+        .transactions,
+        .journal {
+            color: #111827;
+        }
+
+        &__stat--info,
+        &__stat--info-item {
+            color: #374151;
+            border-color: #374151;
+        }
+
+        .dc-tabs__item {
+            color: #334155 !important;
+
+            span,
+            .dc-text {
+                color: #334155 !important;
+            }
+        }
+
+        .dc-tabs__active {
+            color: #1559b7 !important;
+
+            span,
+            .dc-text {
+                color: #1559b7 !important;
+            }
+        }
+
+        .dc-tabs__active-line {
+            background: #2563eb;
+        }
+
+        .dc-drawer__toggle {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            box-shadow: 0 0.4rem 1rem rgb(15 23 42 / 14%);
+
+            svg,
+            path {
+                fill: #334155;
+            }
+        }
+    }
+
+    .controls__section {
+        background-color: #ffffff;
+        border-top-color: #cbd5e1;
+        color: #111827;
     }
 }
 

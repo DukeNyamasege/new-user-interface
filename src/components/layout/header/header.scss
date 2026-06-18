@@ -8,6 +8,11 @@
     box-shadow: none !important;
     border: 0 !important;
     border-bottom: 0 !important;
+    color: var(--rm-shell-header-text);
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 30000;
 
     &--mobile {
         display: flex;
@@ -16,7 +21,7 @@
         overflow: visible;
         position: sticky;
         top: 0;
-        z-index: 20000;
+        z-index: 30000;
         padding-top: env(safe-area-inset-top, 0);
         padding-inline: 0.4rem;
         color: #fff;
@@ -50,6 +55,7 @@
             gap: 0.6rem;
             min-width: 0;
             margin-left: auto;
+            flex-shrink: 0;
         }
 
         .dark-mode-toggle {
@@ -64,7 +70,7 @@
         }
 
         .acc-info {
-            max-width: calc(100vw - 10.2rem);
+            max-width: calc(100vw - 14rem);
             padding-inline: 0.2rem;
         }
 
@@ -87,6 +93,24 @@
         .notifications__wrapper {
             color: #fff !important;
         }
+
+        .theme--light & {
+            color: var(--rm-shell-header-text);
+
+            .dc-btn,
+            .dc-btn__text,
+            .deriv-text,
+            .app-header__account-settings,
+            .notifications__wrapper {
+                color: var(--rm-shell-header-text) !important;
+            }
+
+            .dc-btn--primary,
+            .dc-btn--primary__light,
+            .dc-btn--tertiary {
+                color: var(--rm-shell-button-text) !important;
+            }
+        }
     }
 
     &__account-settings {
@@ -103,7 +127,7 @@
         }
     }
 
-    color: var(--rm-shell-muted);
+    color: var(--rm-shell-header-text);
 }
 
 .theme--light .app-header {
@@ -413,7 +437,9 @@
 
     .theme--light & {
         .dc-btn--tertiary:first-child {
-            color: var(--rm-shell-top) !important;
+            color: var(--rm-shell-header-text) !important;
+            background: #ffffff !important;
+            border-color: var(--rm-shell-auth-border) !important;
         }
     }
 
