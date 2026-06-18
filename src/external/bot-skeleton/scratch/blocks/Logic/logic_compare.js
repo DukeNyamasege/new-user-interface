@@ -8,25 +8,27 @@ const getBlockValueCode = (block, input_name, fallback = '0') =>
         window.Blockly.JavaScript.javascriptGenerator.ORDER_NONE
     ) || fallback;
 
+const OVER_UNDER_AUTO_THRESHOLDS = {
+    over: {
+        1: 80,
+        2: 70,
+        3: 60,
+        4: 50,
+    },
+    under: {
+        5: 50,
+        6: 60,
+        7: 70,
+        8: 80,
+    },
+};
+
 const getPresetThresholdExpression = target_block => {
     if (!target_block || target_block.type !== 'over_under_percentage') return null;
 
     const digit = getBlockValueCode(target_block, 'DIGIT');
     const condition = target_block.getFieldValue('CONDITION');
-    const preset_map =
-        condition === 'under'
-            ? {
-                  8: 80,
-                  7: 70,
-                  6: 60,
-                  5: 50,
-              }
-            : {
-                  1: 80,
-                  2: 70,
-                  3: 60,
-                  4: 50,
-              };
+    const preset_map = OVER_UNDER_AUTO_THRESHOLDS[condition] || {};
 
     return `(function () {
         var digit = Number(${digit});
@@ -184,12 +186,14 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.logic_compare = block => 
             var analysisValue = ${value_format};
             var targetValue = String(${target_side});
             if (${is_over_under_percentage ? 'true' : 'false'} && typeof presetThreshold === 'number') {
+                // Over/Under percentage blocks always use system preset thresholds.
+                // This intentionally ignores manual/imported comparison percentages.
                 result = Number(${analysis_side}) >= presetThreshold;
                 targetValue = String(presetThreshold) + '%';
             }
             var message = result
-                ? 'Condition met: ' + analysisLabel + ' is ' + analysisValue + '. Purchasing contract.'
-                : 'Waiting: ' + analysisLabel + ' is ' + analysisValue + '. Target ' + '${operator}' + ' ' + targetValue + '.';
+                ? 'Condition met: ' + analysisLabel + ' is ' + analysisValue + '. Auto target ' + targetValue + '. Purchasing contract.'
+                : 'Waiting: ' + analysisLabel + ' is ' + analysisValue + '. Auto target ' + targetValue + '.';
             Bot.notify({
                 className: 'journal__text--analysis',
                 message: message,
