@@ -7,10 +7,17 @@
     height: 0;
 
     &__container {
+        box-sizing: border-box;
         height: var(--bot-content-height) !important;
         top: 10.4rem !important;
         width: 36.6rem !important;
         right: 0;
+        background: var(--rm-shell-run-panel);
+        border: 3px solid var(--rm-shell-run-panel-border);
+        box-shadow:
+            0 0 0 1px var(--rm-shell-run-panel-border-soft),
+            0 1.2rem 3.2rem rgb(0 0 0 / 28%);
+        overflow: hidden;
 
         &--mobile {
             position: fixed;
@@ -19,8 +26,12 @@
             z-index: 900;
             height: calc(100% - var(--app-header-height, 4rem) - env(safe-area-inset-bottom, 0));
             padding-bottom: env(safe-area-inset-bottom, 0);
-            background: var(--general-main-1);
+            background: var(--rm-shell-run-panel);
+            border: 3px solid var(--rm-shell-run-panel-border);
+            box-shadow: inset 0 0 0 1px var(--rm-shell-run-panel-border-soft);
+            box-sizing: border-box;
             isolation: isolate;
+            overflow: hidden;
 
             > .dc-drawer {
                 position: absolute !important;
@@ -44,7 +55,7 @@
             .transactions,
             .summary,
             .journal {
-                background-color: var(--general-main-1);
+                background-color: var(--rm-shell-run-panel);
             }
 
             &-closed {
@@ -317,7 +328,7 @@
         .summary,
         .transactions,
         .journal {
-            background-color: #ffffff;
+            background-color: var(--rm-shell-run-panel);
             color: #111827;
         }
 

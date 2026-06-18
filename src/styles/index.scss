@@ -33,8 +33,10 @@ body {
     --rm-shell-auth-border: #8f8f8f;
     --rm-shell-run: #00b8ad;
     --rm-shell-run-hover: #0bc7bc;
-    --rm-shell-run-panel: #111111;
-    --rm-shell-run-panel-light: #ffffff;
+    --rm-shell-run-panel: #061c36;
+    --rm-shell-run-panel-light: #eaf4ff;
+    --rm-shell-run-panel-border: #1e88ff;
+    --rm-shell-run-panel-border-soft: rgba(30, 136, 255, 0.24);
     --rm-shell-progress-track: #dfe3e6;
     --rm-shell-progress-dot: #222222;
 }
@@ -52,7 +54,9 @@ body {
     --rm-shell-button-text: #ffffff;
     --rm-shell-circle-bg: #303030;
     --rm-shell-circle-text: #ffffff;
-    --rm-shell-run-panel: #ffffff;
+    --rm-shell-run-panel: #eaf4ff;
+    --rm-shell-run-panel-border: #1559d8;
+    --rm-shell-run-panel-border-soft: rgba(21, 89, 216, 0.18);
     --rm-shell-muted: #4b5563;
     --rm-shell-auth-blue: #1559b7;
     --rm-shell-auth-border: #b8c2cf;
