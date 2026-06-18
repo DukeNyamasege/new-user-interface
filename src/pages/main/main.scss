@@ -62,6 +62,7 @@
         > div > .dc-tabs > .dc-tabs__content {
             min-height: 0;
             overflow-y: auto;
+            background: var(--rm-shell-run-panel);
         }
 
         &.no-scroll {
@@ -241,7 +242,7 @@
 
                         @include mobile-or-tablet-screen {
                             flex-direction: column;
-                            background-color: var(--general-section-1);
+                            background-color: var(--rm-shell-run-panel);
                         }
                     }
                 }
@@ -465,7 +466,7 @@
             }
 
             &__content {
-                border: solid 1px var(--general-section-1);
+                border: solid 1px var(--rm-shell-section-border);
             }
 
             &__category-menu {
@@ -524,7 +525,7 @@
     height: calc(100vh - 14rem);
     min-height: 62rem;
     overflow: hidden;
-    background: #ffffff;
+    background: var(--rm-shell-section);
 }
 
 .bot-builder {
@@ -782,7 +783,7 @@
 
     &__image,
     &__media {
-        background: var(--general-section-1);
+        background: var(--rm-shell-section);
         text-align: center;
         width: 100%;
         height: 55%;
@@ -841,7 +842,7 @@
 
     &__bot-builder-tour {
         height: auto;
-        background: var(--general-section-1);
+        background: var(--rm-shell-section);
 
         .dbot-slider {
             width: 100%;

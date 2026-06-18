@@ -6,6 +6,7 @@
     $grid-template-columns: minmax(4.8rem, 0.75fr) minmax(8.8rem, 1.25fr) minmax(9.6rem, 1.15fr);
 
     flex-direction: column;
+    background: var(--rm-shell-section);
 
     .ReactVirtualized__Grid__innerScrollContainer {
         & > :first-child,
@@ -87,7 +88,7 @@
     }
 
     &__header {
-        border-bottom: 1px solid var(--general-section-1);
+        border-bottom: 1px solid var(--rm-shell-section-border);
         width: 100%;
         display: grid;
 
@@ -172,7 +173,7 @@
             padding: 0 1.6rem;
             cursor: pointer;
             position: relative;
-            border-top: 1px solid var(--general-section-2);
+            border-top: 1px solid var(--rm-shell-section-border);
 
             &:hover {
                 background-color: var(--state-hover);
@@ -205,12 +206,12 @@
     }
 
     &__divider {
-        border-top: 1px solid var(--general-section-2);
+        border-top: 1px solid var(--rm-shell-section-border);
         padding: 8px 16px;
 
         &-line {
             height: 4px;
-            background-color: var(--general-section-2);
+            background-color: var(--rm-shell-section-2);
         }
     }
 

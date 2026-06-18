@@ -17,6 +17,8 @@
 }
 
 .journal {
+    background: var(--rm-shell-section);
+
     .ReactVirtualized__Grid__innerScrollContainer {
         & > :first-child,
         :before,
@@ -84,7 +86,7 @@
     &__data-list {
         .ReactVirtualized__Grid__innerScrollContainer {
             > div:nth-child(even) {
-                background: var(--general-section-2);
+                background: var(--rm-shell-section-2);
             }
         }
     }
@@ -95,7 +97,7 @@
             justify-content: space-between;
             padding: 12px;
             padding-left: 16px;
-            border: solid 1px var(--general-section-1);
+            border: solid 1px var(--rm-shell-section-border);
 
             &-filter {
                 @include flex-center(flex-end);

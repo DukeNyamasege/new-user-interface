@@ -6,7 +6,7 @@
     align-items: center;
     flex-direction: column;
     justify-content: center;
-    background: linear-gradient(180deg, var(--general-section-2) 0%, rgb(242 243 244 / 0%) 80%);
+    background: linear-gradient(180deg, var(--rm-shell-section) 0%, var(--rm-shell-run-panel) 88%);
     width: 100%;
 
     @include desktop-screen {
@@ -36,7 +36,7 @@
         width: 32%;
         max-width: 32%;
         text-align: center;
-        background-color: var(--general-section-1);
+        background-color: var(--rm-shell-section-2);
         padding: 8px 8px 0;
         margin-bottom: 2%;
         height: 56px;
