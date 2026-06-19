@@ -155,11 +155,11 @@
         }
 
         &--analysis {
-            color: #1d4ed8;
-            background: linear-gradient(135deg, rgb(29 78 216 / 0.08), rgb(59 130 246 / 0.16));
-            border: 1px solid rgb(59 130 246 / 0.22);
+            color: #064e5f;
+            background: linear-gradient(135deg, rgb(207 250 254 / 0.95), rgb(186 230 253 / 0.9));
+            border: 1px solid rgb(14 116 144 / 0.38);
             border-radius: 10px;
-            box-shadow: 0 8px 24px rgb(37 99 235 / 0.08);
+            box-shadow: 0 8px 24px rgb(8 145 178 / 0.14);
             display: inline-block;
             font-weight: 600;
             margin-bottom: 0.4rem;
@@ -187,10 +187,10 @@
     .journal {
         &__text {
             &--analysis {
-                color: #93c5fd;
-                background: linear-gradient(135deg, rgb(30 41 59 / 0.88), rgb(30 64 175 / 0.34));
-                border-color: rgb(96 165 250 / 0.3);
-                box-shadow: 0 10px 28px rgb(15 23 42 / 0.35);
+                color: #c8f7ff;
+                background: linear-gradient(135deg, rgb(8 47 73 / 0.92), rgb(14 116 144 / 0.42));
+                border-color: rgb(103 232 249 / 0.34);
+                box-shadow: 0 10px 28px rgb(8 145 178 / 0.28);
             }
         }
     }

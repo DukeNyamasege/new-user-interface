@@ -10,6 +10,18 @@ import { expectPositiveInteger } from '../utils/sanitize';
 import * as constants from './state/constants';
 
 let tickListenerKey;
+const FALLBACK_MARKET_PIP_SIZES = {
+    '1HZ10V': 2,
+    '1HZ25V': 2,
+    '1HZ50V': 2,
+    '1HZ75V': 2,
+    '1HZ100V': 2,
+    R_10: 3,
+    R_25: 3,
+    R_50: 4,
+    R_75: 4,
+    R_100: 2,
+};
 
 export default Engine =>
     class Ticks extends Engine {
@@ -46,7 +58,7 @@ export default Engine =>
                 this.$scope.ticksService.request({ symbol: this.symbol }).then(ticks => {
                     const ticks_list = ticks.map(tick => {
                         if (toString) {
-                            return tick.quote.toFixed(this.getPipSize());
+                            return this.formatTickQuote(tick);
                         }
                         return tick.quote;
                     });
@@ -62,9 +74,10 @@ export default Engine =>
                     .request({ symbol: this.symbol })
                     .then(ticks => {
                         try {
-                            let last_tick = raw ? getLast(ticks) : getLast(ticks).quote;
+                            const last_tick_data = getLast(ticks);
+                            let last_tick = raw ? last_tick_data : last_tick_data.quote;
                             if (!raw && toString) {
-                                last_tick = last_tick.toFixed(this.getPipSize());
+                                last_tick = this.formatTickQuote(last_tick_data);
                             }
                             resolve(last_tick);
                         } catch (error) {
@@ -89,11 +102,15 @@ export default Engine =>
         }
 
         getLastDigitList() {
-            return new Promise(resolve => this.getTicks().then(ticks => resolve(this.getLastDigitsFromList(ticks))));
+            return new Promise(resolve =>
+                this.$scope.ticksService
+                    .request({ symbol: this.symbol })
+                    .then(ticks => resolve(this.getLastDigitsFromList(ticks)))
+            );
         }
         getLastDigitsFromList(ticks) {
             const digits = ticks.map(tick => {
-                return getLastDigit(tick.toFixed(this.getPipSize()));
+                return getLastDigit(this.formatTickQuote(tick));
             });
             return digits;
         }
@@ -125,7 +142,26 @@ export default Engine =>
         }
 
         getPipSize() {
-            return this.$scope.ticksService.pipSizes[this.symbol];
+            const pip_size = Number(this.$scope.ticksService.pipSizes?.[this.symbol]);
+
+            if (Number.isFinite(pip_size) && pip_size >= 0) {
+                return pip_size;
+            }
+
+            return FALLBACK_MARKET_PIP_SIZES[this.symbol] ?? 2;
+        }
+
+        formatTickQuote(tick) {
+            const quote = typeof tick === 'object' ? tick.quote : tick;
+            const raw_quote = typeof tick === 'object' ? tick.raw_quote : undefined;
+            const quote_value = raw_quote ?? quote;
+            const numeric_quote = Number(quote_value);
+
+            if (!Number.isFinite(numeric_quote)) {
+                return String(quote_value ?? '');
+            }
+
+            return numeric_quote.toFixed(this.getPipSize());
         }
 
         async requestAccumulatorStats() {
