@@ -13,7 +13,7 @@
     }
 
     &--inactive {
-        color: var(--text-general);
+        color: var(--rm-shell-panel-text);
         font-size: 14px;
         justify-content: center;
         margin: auto;
@@ -22,6 +22,7 @@
         padding: 0 3rem;
 
         & .dc-text {
+            color: var(--rm-shell-panel-text) !important;
             text-align: center;
         }
     }

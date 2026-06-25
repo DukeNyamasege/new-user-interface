@@ -120,6 +120,8 @@ type DomainShellPalette = {
     authBlue?: string;
     authBorder?: string;
     gold?: string;
+    panelText?: string;
+    panelTextMuted?: string;
 };
 
 const DEFAULT_BOTS_FOLDER = 'optimumtraders.site';
@@ -197,6 +199,8 @@ const createDomainShellUI = (
         authBlue = secondaryColor,
         authBorder = panelBorder,
         gold = accentColor,
+        panelText = headerTextColor,
+        panelTextMuted = `${sidebarTextColor}cc`,
     }: DomainShellPalette
 ): Partial<DomainUIConfig> => ({
     brandName,
@@ -213,8 +217,8 @@ const createDomainShellUI = (
     buttonSecondaryText: sidebarTextColor,
     cardBgColor: sectionBg,
     cardBorderColor: sectionBorder,
-    textPrimary: headerTextColor,
-    textSecondary: sidebarTextColor,
+    textPrimary: panelText,
+    textSecondary: panelTextMuted,
     successColor: runButton,
     warningColor: gold,
     customCssVars: {
@@ -227,6 +231,8 @@ const createDomainShellUI = (
         '--rm-shell-text': headerTextColor,
         '--rm-shell-header-text': headerTextColor,
         '--rm-shell-nav-text': sidebarTextColor,
+        '--rm-shell-panel-text': panelText,
+        '--rm-shell-panel-text-muted': panelTextMuted,
         '--rm-shell-surface': headerBgColor,
         '--rm-shell-surface-2': sectionBg,
         '--rm-shell-border': sectionBorder,
@@ -235,7 +241,7 @@ const createDomainShellUI = (
         '--rm-shell-button-text': '#ffffff',
         '--rm-shell-circle-bg': navActive,
         '--rm-shell-circle-text': sidebarTextColor,
-        '--rm-shell-muted': `${sidebarTextColor}b3`,
+        '--rm-shell-muted': panelTextMuted,
         '--rm-shell-auth-blue': authBlue,
         '--rm-shell-auth-border': authBorder,
         '--rm-shell-run': runButton,
@@ -349,7 +355,7 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
             sidebarBgColor: '#062b24',
             navBg: '#064e3b',
             navActive: '#047857',
-            navHover: '#059669',
+            navHover: '#047857',
             pageBg: '#082f49',
             pageBgLight: '#dcfce7',
             sectionBg: '#063244',
@@ -494,7 +500,7 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
             sidebarBgColor: '#431407',
             navBg: '#9a3412',
             navActive: '#c2410c',
-            navHover: '#ea580c',
+            navHover: '#9a3412',
             pageBg: '#7c2d12',
             pageBgLight: '#ffedd5',
             sectionBg: '#9a3412',
@@ -565,12 +571,12 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
             headerBgColor: '#04130b',
             sidebarBgColor: '#064e3b',
             navBg: '#047857',
-            navActive: '#059669',
-            navHover: '#10b981',
+            navActive: '#047857',
+            navHover: '#047857',
             pageBg: '#065f46',
             pageBgLight: '#d1fae5',
             sectionBg: '#047857',
-            sectionBg2: '#059669',
+            sectionBg2: '#047857',
             sectionMuted: '#10b981',
             sectionBorder: 'rgba(132, 204, 22, 0.34)',
             panelBorder: '#10b981',
@@ -602,7 +608,7 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
             sidebarBgColor: '#1f2a0a',
             navBg: '#3f6212',
             navActive: '#4d7c0f',
-            navHover: '#65a30d',
+            navHover: '#4d7c0f',
             pageBg: '#365314',
             pageBgLight: '#fef9c3',
             sectionBg: '#3f6212',
@@ -673,8 +679,8 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
             headerBgColor: '#031412',
             sidebarBgColor: '#042f2e',
             navBg: '#0f766e',
-            navActive: '#0d9488',
-            navHover: '#14b8a6',
+            navActive: '#0f766e',
+            navHover: '#0f766e',
             pageBg: '#134e4a',
             pageBgLight: '#ccfbf1',
             sectionBg: '#115e59',
@@ -709,8 +715,8 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
             headerBgColor: '#0f1204',
             sidebarBgColor: '#1a2e05',
             navBg: '#4d7c0f',
-            navActive: '#65a30d',
-            navHover: '#84cc16',
+            navActive: '#4d7c0f',
+            navHover: '#4d7c0f',
             pageBg: '#365314',
             pageBgLight: '#fef9c3',
             sectionBg: '#3f6212',
@@ -830,9 +836,12 @@ export const applyDomainUI = (): void => {
     setVariable('--domain-border-radius', ui.borderRadius);
     setVariable('--rm-shell-top', ui.headerBgColor);
     setVariable('--rm-shell-top-light', ui.headerBgColor);
+    setVariable('--rm-shell-text', ui.textPrimary);
     setVariable('--rm-shell-header-text', ui.headerTextColor);
     setVariable('--rm-shell-nav', ui.sidebarBgColor);
     setVariable('--rm-shell-nav-text', ui.sidebarTextColor);
+    setVariable('--rm-shell-panel-text', ui.textPrimary);
+    setVariable('--rm-shell-panel-text-muted', ui.textSecondary);
     setVariable('--rm-shell-run-panel', ui.secondaryColor);
     setVariable('--rm-shell-section', ui.cardBgColor);
     setVariable('--rm-shell-section-border', ui.cardBorderColor);

@@ -18,6 +18,7 @@
 
 .journal {
     background: var(--rm-shell-section);
+    color: var(--rm-shell-panel-text);
 
     .ReactVirtualized__Grid__innerScrollContainer {
         & > :first-child,
@@ -64,7 +65,7 @@
             line-height: var(--text-lh-xl);
 
             li::marker {
-                color: var(--text-less-prominent);
+                color: var(--rm-shell-panel-text-muted);
             }
         }
     }
@@ -120,7 +121,7 @@
         font-size: var(--text-size-xxs);
         line-height: 1.5;
         display: inline;
-        color: var(--text-general);
+        color: var(--rm-shell-panel-text);
         text-wrap: pretty;
 
         &-content {
@@ -133,7 +134,7 @@
         }
 
         &-datetime {
-            color: var(--text-less-prominent);
+            color: var(--rm-shell-panel-text-muted);
             font-size: var(--text-size--xxxs);
             margin-top: 6px;
         }
@@ -201,7 +202,7 @@
     &__content {
         padding: 0 16px;
         margin-bottom: 16px;
-        color: var(--text-general);
+        color: var(--rm-shell-panel-text);
         font-size: var(--text-size-xs);
         line-height: 1.5;
     }

@@ -7,6 +7,7 @@
 
     flex-direction: column;
     background: var(--rm-shell-section);
+    color: var(--rm-shell-panel-text);
 
     .ReactVirtualized__Grid__innerScrollContainer {
         & > :first-child,
@@ -83,7 +84,7 @@
             margin-left: 2rem;
             font-size: var(--text-size-xxs);
             line-height: var(--text-lh-xl);
-            color: var(--text-less-prominent);
+            color: var(--rm-shell-panel-text-muted);
         }
     }
 
@@ -297,7 +298,7 @@
     &__cell {
         display: flex;
         align-items: center;
-        color: var(--text-general);
+        color: var(--rm-shell-panel-text);
         min-width: 0;
     }
 
