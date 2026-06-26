@@ -8,6 +8,58 @@ type LeaderboardState = {
 };
 
 const DEFAULT_COMPETITION_SLUG = 'giftbaris-2026-july';
+const apiBaseUrl = process.env.API_BASE_URL || '/api';
+
+const buildCompetitionUrl = (path: string) => `${apiBaseUrl}${path}`;
+
+const parseLeaderboardError = async (response: Response, fallbackMessage: string) => {
+    const contentType = response.headers.get('content-type') || '';
+
+    try {
+        if (contentType.includes('application/json')) {
+            const payload = (await response.json()) as { error?: string; message?: string };
+            return payload.error || payload.message || fallbackMessage;
+        }
+
+        const text = await response.text();
+        return text || fallbackMessage;
+    } catch {
+        return fallbackMessage;
+    }
+};
+
+const parseLeaderboardJson = async <T>(response: Response, fallbackMessage: string): Promise<T> => {
+    const contentType = response.headers.get('content-type') || '';
+
+    if (!contentType.includes('application/json')) {
+        const text = await response.text().catch(() => '');
+        const htmlLike = text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html');
+
+        throw new Error(
+            htmlLike
+                ? 'Competition API returned HTML instead of JSON. Make sure the backend route /api/competitions is running and reachable.'
+                : fallbackMessage
+        );
+    }
+
+    try {
+        return (await response.json()) as T;
+    } catch {
+        throw new Error(fallbackMessage);
+    }
+};
+
+const toLeaderboardErrorMessage = (error: unknown, fallbackMessage: string) => {
+    if (error instanceof TypeError) {
+        return 'Competition service is unavailable. Start the backend server on port 8000 and refresh the page.';
+    }
+
+    if (error instanceof Error && error.message) {
+        return error.message;
+    }
+
+    return fallbackMessage;
+};
 
 export const useLeaderboard = (slug = DEFAULT_COMPETITION_SLUG) => {
     const [state, setState] = useState<LeaderboardState>({
@@ -23,12 +75,18 @@ export const useLeaderboard = (slug = DEFAULT_COMPETITION_SLUG) => {
             setState(prev => ({ ...prev, isLoading: true, error: null }));
 
             try {
-                const response = await fetch(`/api/competitions/${slug}/leaderboard`);
-                const payload = await response.json();
+                const response = await fetch(buildCompetitionUrl(`/competitions/${slug}/leaderboard`));
 
                 if (!response.ok) {
-                    throw new Error(payload.error || 'Unable to load the competition leaderboard.');
+                    throw new Error(
+                        await parseLeaderboardError(response, 'Unable to load the competition leaderboard.')
+                    );
                 }
+
+                const payload = await parseLeaderboardJson<{ entries?: LeaderboardEntry[] }>(
+                    response,
+                    'Competition leaderboard response could not be read.'
+                );
 
                 if (!isMounted) {
                     return;
@@ -47,7 +105,10 @@ export const useLeaderboard = (slug = DEFAULT_COMPETITION_SLUG) => {
                 setState({
                     entries: [],
                     isLoading: false,
-                    error: error instanceof Error ? error.message : 'Unable to load the competition leaderboard.',
+                    error: toLeaderboardErrorMessage(
+                        error,
+                        'Unable to load the competition leaderboard. Check that the competition backend is running.'
+                    ),
                 });
             }
         };

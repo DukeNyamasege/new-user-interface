@@ -17,6 +17,7 @@ const CompetitionPage = observer(() => {
         isLoading,
         isJoining,
         error,
+        refreshCompetition,
         createPendingProfile,
         connectAccount,
     } = useCompetition();
@@ -47,7 +48,16 @@ const CompetitionPage = observer(() => {
         }
 
         setFormError('');
-        await createPendingProfile(normalized);
+
+        try {
+            await createPendingProfile(normalized);
+        } catch (createError) {
+            setFormError(
+                createError instanceof Error
+                    ? createError.message
+                    : 'Unable to create your competition profile right now.'
+            );
+        }
     };
 
     const handleConnectAccount = async (accountId: string) => {
@@ -55,16 +65,23 @@ const CompetitionPage = observer(() => {
             return;
         }
 
-        const account = await derivAuth.connectAccount(accountId);
-        const currentBalance = await derivAuth.getBalance(account.loginid);
+        try {
+            const account = await derivAuth.connectAccount(accountId);
+            const currentBalance = await derivAuth.getBalance(account.loginid);
 
-        await connectAccount({
-            participantId: participantSnapshot.participant.id,
-            accountId: account.loginid,
-            accountCurrency: account.currency,
-            currentBalance,
-        });
-        setIsJoinModalOpen(false);
+            await connectAccount({
+                participantId: participantSnapshot.participant.id,
+                accountId: account.loginid,
+                accountCurrency: account.currency,
+                currentBalance,
+            });
+            setIsJoinModalOpen(false);
+            setFormError('');
+        } catch (connectError) {
+            setFormError(
+                connectError instanceof Error ? connectError.message : 'Unable to connect this Deriv account right now.'
+            );
+        }
     };
 
     const joinState = participantSnapshot?.participant.registration_status || 'not_joined';
@@ -94,7 +111,10 @@ const CompetitionPage = observer(() => {
                         <button
                             type='button'
                             className='competition-button competition-button--primary'
-                            onClick={() => setIsJoinModalOpen(true)}
+                            onClick={() => {
+                                setFormError('');
+                                setIsJoinModalOpen(true);
+                            }}
                         >
                             {participantSnapshot ? 'Manage' : 'Join'}
                         </button>
@@ -108,7 +128,16 @@ const CompetitionPage = observer(() => {
                         <LeaderboardTable entries={entries} competitionIsLive={competition?.status === 'live'} />
                     )}
                     {error || leaderboardError ? (
-                        <div className='competition-banner competition-banner--error'>{error || leaderboardError}</div>
+                        <div className='competition-banner competition-banner--error'>
+                            <strong>Competition error:</strong> {error || leaderboardError}
+                            <button
+                                type='button'
+                                className='competition-button competition-button--secondary'
+                                onClick={() => void refreshCompetition()}
+                            >
+                                Retry
+                            </button>
+                        </div>
                     ) : null}
                 </div>
             </div>
@@ -137,10 +166,19 @@ const CompetitionPage = observer(() => {
                                 <div className='competition-join-minimal'>
                                     <input
                                         value={username}
-                                        onChange={event => setUsername(event.target.value)}
+                                        onChange={event => {
+                                            setUsername(event.target.value);
+                                            if (formError) {
+                                                setFormError('');
+                                            }
+                                        }}
                                         placeholder='username'
                                     />
-                                    {formError ? <div className='competition-banner competition-banner--error'>{formError}</div> : null}
+                                    {formError || error ? (
+                                        <div className='competition-banner competition-banner--error'>
+                                            {formError || error}
+                                        </div>
+                                    ) : null}
                                     <button
                                         type='button'
                                         className='competition-button competition-button--primary'
@@ -166,6 +204,11 @@ const CompetitionPage = observer(() => {
                                             <span>{account.currency}</span>
                                         </button>
                                     ))}
+                                    {formError || error ? (
+                                        <div className='competition-banner competition-banner--error'>
+                                            {formError || error}
+                                        </div>
+                                    ) : null}
                                     {!availableAccounts.length ? <div className='competition-empty'>No real account found.</div> : null}
                                 </div>
                             ) : null}
