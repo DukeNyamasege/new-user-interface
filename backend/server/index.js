@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const { initializeDatabase } = require('./db');
+const { getDatabaseStatus, initializeDatabase } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -34,7 +34,18 @@ app.use(express.json());
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.json({ status: 'OK', message: 'API server is running' });
+    const database = getDatabaseStatus();
+    const statusCode = database.ready || !database.configured ? 200 : 503;
+
+    res.status(statusCode).json({
+        status: database.ready || !database.configured ? 'OK' : 'DEGRADED',
+        message: database.ready
+            ? 'API server is running.'
+            : database.configured
+              ? 'API server is running, but the database is unavailable.'
+              : 'API server is running without a configured database.',
+        database,
+    });
 });
 
 // Routes
@@ -60,16 +71,18 @@ app.use((req, res) => {
 
 // Initialize database and start server
 async function start() {
-    try {
-        await initializeDatabase();
+    await initializeDatabase();
 
-        app.listen(PORT, '0.0.0.0', () => {
-            console.log(`API server running on http://0.0.0.0:${PORT}`);
-        });
-    } catch (error) {
-        console.error('Failed to start server:', error);
-        process.exit(1);
-    }
+    app.listen(PORT, '0.0.0.0', () => {
+        const database = getDatabaseStatus();
+        const databaseState = database.ready
+            ? 'connected'
+            : database.configured
+              ? `unavailable (${database.error})`
+              : 'not configured';
+
+        console.log(`API server running on http://0.0.0.0:${PORT} with database ${databaseState}`);
+    });
 }
 
 start();

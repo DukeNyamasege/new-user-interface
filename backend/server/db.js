@@ -1,19 +1,44 @@
 const { Pool } = require('pg');
 
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false,
-    },
-});
+const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
+let databaseReady = false;
+let lastDatabaseError = hasDatabaseUrl ? 'Database connection has not been initialized yet.' : 'DATABASE_URL is not configured.';
 
-pool.on('error', err => {
-    console.error('[DB] Unexpected error on idle client', err);
-    process.exit(-1);
-});
+const createDatabaseUnavailableError = message => {
+    const error = new Error(message || 'Database is currently unavailable.');
+    error.status = 503;
+    return error;
+};
+
+const pool = hasDatabaseUrl
+    ? new Pool({
+          connectionString: process.env.DATABASE_URL,
+          ssl: {
+              rejectUnauthorized: false,
+          },
+      })
+    : {
+          query: async () => {
+              throw createDatabaseUnavailableError('Database is unavailable because DATABASE_URL is not configured.');
+          },
+      };
+
+if (hasDatabaseUrl && typeof pool.on === 'function') {
+    pool.on('error', err => {
+        databaseReady = false;
+        lastDatabaseError = err.message || 'Unexpected database error.';
+        console.error('[DB] Unexpected error on idle client', err);
+    });
+}
 
 // Initialize database tables
 async function initializeDatabase() {
+    if (!hasDatabaseUrl) {
+        databaseReady = false;
+        console.warn('[DB] Skipping database initialization because DATABASE_URL is not configured.');
+        return false;
+    }
+
     try {
         // Bot Ideas table
         await pool.query(`
@@ -74,12 +99,23 @@ async function initializeDatabase() {
       )
     `);
 
+        databaseReady = true;
+        lastDatabaseError = null;
         console.log('[DB] Database connection successful');
         console.log('[DB] Database tables verified / created.');
+        return true;
     } catch (err) {
+        databaseReady = false;
+        lastDatabaseError = err.message || 'Unable to initialize database.';
         console.error('[DB] Error initializing database:', err);
-        throw err;
+        return false;
     }
 }
 
-module.exports = { pool, initializeDatabase };
+const getDatabaseStatus = () => ({
+    configured: hasDatabaseUrl,
+    ready: databaseReady,
+    error: lastDatabaseError,
+});
+
+module.exports = { pool, initializeDatabase, getDatabaseStatus };
