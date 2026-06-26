@@ -54,6 +54,7 @@ import Analysistool from '../analysistool';
 import Accumilatoirs from '../accumilatoirs';
 import Scanner from '../scanner';
 import TradingView from '../tradingview';
+import CompetitionPage from '@/features/competition/pages/CompetitionPage';
 import './main.scss';
 
 const AppWrapper = observer(() => {
@@ -102,6 +103,7 @@ const AppWrapper = observer(() => {
         'analysistool',
         'chart',
         'tradingview',
+        'competition',
     ];
     const show_bot_ideas = isDomainFeatureEnabled('botIdeas');
     const show_auto_trades = isDomainFeatureEnabled('autoTrades');
@@ -110,6 +112,7 @@ const AppWrapper = observer(() => {
     const show_accumilatoirs = isDomainFeatureEnabled('accumilatoirs');
     const show_chart = isDomainFeatureEnabled('chart');
     const show_trading_view = isDomainFeatureEnabled('tradingView');
+    const show_competition = isDomainFeatureEnabled('competition');
     const isMainTabVisible = (tab_index: number) => {
         if (tab_index === BOT_IDEAS) return show_bot_ideas;
         if (tab_index === AUTO_TRADES) return show_auto_trades;
@@ -118,6 +121,7 @@ const AppWrapper = observer(() => {
         if (tab_index === DBOT_TABS.ACCUMILATOIRS) return show_accumilatoirs;
         if (tab_index === CHART) return show_chart;
         if (tab_index === TRADING_VIEW) return show_trading_view;
+        if (tab_index === DBOT_TABS.COMPETITION) return show_competition;
         return true;
     };
     const { isDesktop } = useDevice();
@@ -191,7 +195,12 @@ const AppWrapper = observer(() => {
 
     React.useEffect(() => {
         const el_dashboard = document.getElementById('id-dbot-dashboard');
-        const el_last_tab = document.getElementById(show_trading_view ? 'id-tradingview' : 'id-analysistool');
+        const last_visible_tab_id = show_competition
+            ? 'id-competition'
+            : show_trading_view
+              ? 'id-tradingview'
+              : 'id-analysistool';
+        const el_last_tab = document.getElementById(last_visible_tab_id);
 
         const observer_dashboard = new window.IntersectionObserver(
             ([entry]) => {
@@ -227,7 +236,7 @@ const AppWrapper = observer(() => {
             observer_dashboard.disconnect();
             observer_last_tab.disconnect();
         };
-    }, []);
+    }, [show_competition, show_trading_view]);
 
     React.useEffect(() => {
         const is_recoverable_trading_module = active_trading_module === 'auto_trades';
@@ -647,6 +656,23 @@ const AppWrapper = observer(() => {
                                     id='id-tradingview'
                                 >
                                     <TradingView />
+                                </div>
+                            )}
+                            {show_competition && (
+                                <div
+                                    label={
+                                        <>
+                                            <LabelPairedCircleStarCaptionRegularIcon
+                                                height='24px'
+                                                width='24px'
+                                                fill='#c8a45d'
+                                            />
+                                            <Localize i18n_default_text='Competition' />
+                                        </>
+                                    }
+                                    id='id-competition'
+                                >
+                                    <CompetitionPage />
                                 </div>
                             )}
                         </Tabs>

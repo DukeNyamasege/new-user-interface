@@ -1,0 +1,201 @@
+import type { LeaderboardEntry } from '@/features/competition/types/competition.types';
+
+const formatMoney = (amount?: number | null, currency = 'USD') => {
+    if (amount === null || amount === undefined) {
+        return '--';
+    }
+
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 2,
+    }).format(amount);
+};
+
+const formatGrowth = (growth?: number | null) => {
+    if (growth === null || growth === undefined) {
+        return '--';
+    }
+
+    return `${growth >= 0 ? '+' : ''}${growth.toFixed(2)}%`;
+};
+
+const getRankMovement = (currentRank?: number | null, previousRank?: number | null) => {
+    if (!currentRank || !previousRank || currentRank === previousRank) {
+        return '\u2022';
+    }
+
+    if (currentRank < previousRank) {
+        return '\u25B2';
+    }
+
+    return '\u25BC';
+};
+
+type LeaderboardTableProps = {
+    entries: LeaderboardEntry[];
+    competitionIsLive: boolean;
+};
+
+const MAX_VISIBLE_ROWS = 50;
+const AWARD_CUTOFF = 20;
+
+const LeaderboardTable = ({ entries, competitionIsLive }: LeaderboardTableProps) => {
+    const visibleEntries = entries.slice(0, MAX_VISIBLE_ROWS);
+    const fillerCount = Math.max(MAX_VISIBLE_ROWS - visibleEntries.length, 0);
+
+    return (
+        <div className='competition-card competition-leaderboard competition-leaderboard--minimal'>
+            <div className='competition-leaderboard__table-wrap'>
+                <table className='competition-leaderboard__table'>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Participant</th>
+                            <th>Account</th>
+                            {competitionIsLive ? (
+                                <>
+                                    <th>Start</th>
+                                    <th>Current</th>
+                                    <th>Profit</th>
+                                    <th>Growth %</th>
+                                </>
+                            ) : (
+                                <>
+                                    <th>Current balance</th>
+                                    <th>Growth %</th>
+                                </>
+                            )}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {visibleEntries.map((entry, index) => {
+                            const tone =
+                                (entry.growth_percentage ?? 0) > 0
+                                    ? 'positive'
+                                    : (entry.growth_percentage ?? 0) < 0
+                                      ? 'negative'
+                                      : 'neutral';
+                            const isAwardZone = index < AWARD_CUTOFF;
+
+                            return (
+                                <tr
+                                    key={entry.participant_id}
+                                    className={`competition-leaderboard__row--${tone}${isAwardZone ? ' competition-leaderboard__row--award' : ''}`}
+                                >
+                                    <td>
+                                        <div className={`competition-rank competition-rank--${index + 1}`}>
+                                            <strong>{entry.current_rank || index + 1}</strong>
+                                            <span>{getRankMovement(entry.current_rank, entry.previous_rank)}</span>
+                                        </div>
+                                    </td>
+                                    <td>{entry.username}</td>
+                                    <td>{entry.masked_account_id || 'Pending verification'}</td>
+                                    {competitionIsLive ? (
+                                        <>
+                                            <td>{formatMoney(entry.starting_balance, entry.account_currency || 'USD')}</td>
+                                            <td>{formatMoney(entry.current_balance, entry.account_currency || 'USD')}</td>
+                                            <td className={`competition-metric competition-metric--${tone}`}>
+                                                {formatMoney(entry.adjusted_profit, entry.account_currency || 'USD')}
+                                            </td>
+                                            <td className={`competition-metric competition-metric--${tone}`}>
+                                                {formatGrowth(entry.growth_percentage)}
+                                            </td>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <td>{formatMoney(entry.current_balance, entry.account_currency || 'USD')}</td>
+                                            <td className={`competition-metric competition-metric--${tone}`}>
+                                                {formatGrowth(entry.growth_percentage)}
+                                            </td>
+                                        </>
+                                    )}
+                                </tr>
+                            );
+                        })}
+                        {Array.from({ length: fillerCount }, (_, index) => {
+                            const rank = visibleEntries.length + index + 1;
+                            const isAwardZone = rank <= AWARD_CUTOFF;
+
+                            return (
+                                <tr
+                                    key={`empty-row-${rank}`}
+                                    className={`competition-leaderboard__row--empty${isAwardZone ? ' competition-leaderboard__row--award' : ''}`}
+                                >
+                                    <td>
+                                        <div className='competition-rank'>
+                                            <strong>{rank}</strong>
+                                            <span>{'\u2022'}</span>
+                                        </div>
+                                    </td>
+                                    <td>--</td>
+                                    <td>--</td>
+                                    {competitionIsLive ? (
+                                        <>
+                                            <td>--</td>
+                                            <td>--</td>
+                                            <td>--</td>
+                                            <td>--</td>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <td>--</td>
+                                            <td>--</td>
+                                        </>
+                                    )}
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+
+            <div className='competition-leaderboard__cards'>
+                {visibleEntries.map((entry, index) => {
+                    const tone =
+                        (entry.growth_percentage ?? 0) > 0
+                            ? 'positive'
+                            : (entry.growth_percentage ?? 0) < 0
+                              ? 'negative'
+                              : 'neutral';
+                    const isAwardZone = index < AWARD_CUTOFF;
+
+                    return (
+                        <article
+                            key={entry.participant_id}
+                            className={`competition-leaderboard__card${isAwardZone ? ' competition-leaderboard__card--award' : ''}`}
+                        >
+                            <div className='competition-leaderboard__card-top'>
+                                <strong>#{entry.current_rank || index + 1}</strong>
+                                <span>{getRankMovement(entry.current_rank, entry.previous_rank)}</span>
+                            </div>
+                            <h3>{entry.username}</h3>
+                            <p>{entry.masked_account_id || 'Pending verification'}</p>
+                            {competitionIsLive ? (
+                                <>
+                                    <p>Start: {formatMoney(entry.starting_balance, entry.account_currency || 'USD')}</p>
+                                    <p>Current: {formatMoney(entry.current_balance, entry.account_currency || 'USD')}</p>
+                                    <p className={`competition-metric competition-metric--${tone}`}>
+                                        Profit: {formatMoney(entry.adjusted_profit, entry.account_currency || 'USD')}
+                                    </p>
+                                    <p className={`competition-metric competition-metric--${tone}`}>
+                                        Growth: {formatGrowth(entry.growth_percentage)}
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <p>Current: {formatMoney(entry.current_balance, entry.account_currency || 'USD')}</p>
+                                    <p className={`competition-metric competition-metric--${tone}`}>
+                                        Growth: {formatGrowth(entry.growth_percentage)}
+                                    </p>
+                                </>
+                            )}
+                        </article>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
+export default LeaderboardTable;
