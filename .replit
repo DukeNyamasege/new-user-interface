@@ -64,9 +64,10 @@ localPort = 10000
 externalPort = 3002
 
 [deployment]
-deploymentTarget = "static"
-build = ["npm", "run", "build"]
+deploymentTarget = "autoscale"
+build = ["sh", "-c", "npm run build && cd backend && npm install --production"]
 publicDir = "dist"
+run = ["sh", "-c", "NODE_ENV=production node backend/server/index.js"]
 
 [userenv]
 
@@ -74,3 +75,4 @@ publicDir = "dist"
 APP_ID = "71937"
 CLIENT_ID = "33cCr2bWsByPgLlormNFw"
 APP_ENV = "production"
+CORS_ORIGIN = "https://riskmanagers.site,https://www.riskmanagers.site"

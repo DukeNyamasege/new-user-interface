@@ -3,17 +3,26 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const path = require('path');
+const fs = require('fs');
 const { getDatabaseStatus, initializeDatabase } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
 const corsOrigins = (process.env.CORS_ORIGIN || '')
     .split(',')
     .map(origin => origin.trim())
     .filter(Boolean);
 
 // Middleware
-app.use(helmet());
+app.use(
+    helmet({
+        // Allow inline scripts/styles needed by the SPA in production
+        contentSecurityPolicy: IS_PRODUCTION ? false : undefined,
+    })
+);
 app.use(morgan('combined'));
 app.use(
     cors(
@@ -48,7 +57,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Routes
+// API Routes
 app.use('/api/bot-ideas', require('./routes/bot-ideas'));
 app.use('/api/best-bot-stats', require('./routes/best-bot-stats'));
 app.use('/api/scanner', require('./routes/scanner'));
@@ -56,18 +65,39 @@ app.use('/api/ai', require('./routes/ai'));
 app.use('/api/exchange-rates', require('./routes/exchange-rates'));
 app.use('/api/competitions', require('./routes/competitions'));
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error('Error:', err);
-    res.status(err.status || 500).json({
-        error: err.message || 'Internal Server Error',
-    });
-});
+// Serve static frontend in production (dist/ built by `npm run build`)
+const distPath = path.join(__dirname, '../../dist');
+if (IS_PRODUCTION && fs.existsSync(distPath)) {
+    app.use(express.static(distPath));
 
-// 404 handler
-app.use((req, res) => {
-    res.status(404).json({ error: 'Route not found' });
-});
+    // SPA fallback — serve index.html for any non-API route
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+    });
+} else {
+    // Error handling middleware (development — no static files)
+    app.use((err, req, res, next) => {
+        console.error('Error:', err);
+        res.status(err.status || 500).json({
+            error: err.message || 'Internal Server Error',
+        });
+    });
+
+    // 404 handler
+    app.use((req, res) => {
+        res.status(404).json({ error: 'Route not found' });
+    });
+}
+
+// Error handling for production (after static handler)
+if (IS_PRODUCTION) {
+    app.use((err, req, res, next) => {
+        console.error('Error:', err);
+        res.status(err.status || 500).json({
+            error: err.message || 'Internal Server Error',
+        });
+    });
+}
 
 // Initialize database and start server
 async function start() {
@@ -82,6 +112,9 @@ async function start() {
               : 'not configured';
 
         console.log(`API server running on http://0.0.0.0:${PORT} with database ${databaseState}`);
+        if (IS_PRODUCTION && fs.existsSync(distPath)) {
+            console.log(`Serving frontend static files from ${distPath}`);
+        }
     });
 }
 

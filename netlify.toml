@@ -5,6 +5,19 @@
 [build.environment]
   NODE_VERSION = "20"
 
+# Proxy /api/* to the Replit autoscale backend.
+# Set the REPLIT_BACKEND_URL environment variable in Netlify's site settings
+# to your deployed Replit URL (e.g. https://your-repl.replit.app).
+# This is only needed if the site is hosted on Netlify separately from the backend.
+# When deployed on Replit (autoscale), both frontend and backend share one origin
+# and no proxy is needed.
+[[redirects]]
+  from = "/api/*"
+  to = ":REPLIT_BACKEND_URL/api/:splat"
+  status = 200
+  force = true
+
+# SPA fallback — must come AFTER the /api proxy rule
 [[redirects]]
   from = "/*"
   to = "/index.html"
