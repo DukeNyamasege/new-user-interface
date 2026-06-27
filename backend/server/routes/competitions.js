@@ -1,4 +1,5 @@
 const express = require('express');
+const { ensureCompetitionSchema, isMissingRelationError } = require('../competition-schema');
 const { pool } = require('../db');
 
 const router = express.Router();
@@ -134,6 +135,20 @@ const getParticipantSnapshot = async participantId => {
         result: resultRows.rows[0] || null,
     };
 };
+
+router.use(async (req, res, next) => {
+    try {
+        await ensureCompetitionSchema(pool);
+        next();
+    } catch (error) {
+        if (isMissingRelationError(error)) {
+            error.status = 503;
+            error.message = 'Competition database schema is still being deployed. Please try again shortly.';
+        }
+
+        next(error);
+    }
+});
 
 router.get('/:slug', async (req, res, next) => {
     try {

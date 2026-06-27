@@ -23,6 +23,7 @@
         "build:analyze": "BUNDLE_ANALYZE=true rsbuild build",
         "generate:brand-css": "node scripts/generate-brand-css.js",
         "dev:commit-push": "powershell -ExecutionPolicy Bypass -File scripts/dev-commit-push.ps1",
+        "migrate:competition": "node scripts/run-competition-migrations.js",
         "type-check": "tsc --noEmit"
     },
     "dependencies": {

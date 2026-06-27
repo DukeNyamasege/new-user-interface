@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { ensureCompetitionSchema, isMissingRelationError } = require('../../backend/server/competition-schema');
 const { pool } = require('../../backend/server/db');
 
 const COMPETITION_ACCOUNT_HASH_SALT = process.env.COMPETITION_ACCOUNT_HASH_SALT || 'risk-managers-competition-salt';
@@ -494,6 +495,8 @@ const handleAdminAction = async (competitionId, body) => {
 
 exports.handler = async event => {
     try {
+        await ensureCompetitionSchema(pool);
+
         const segments = parsePath(event.path || '');
         const method = event.httpMethod;
         const body = getRequestBody(event);
@@ -528,6 +531,11 @@ exports.handler = async event => {
 
         return json(404, { error: 'Competition route not found.' });
     } catch (error) {
+        if (isMissingRelationError(error)) {
+            error.status = 503;
+            error.message = 'Competition database schema is still being deployed. Please try again shortly.';
+        }
+
         console.error('[netlify-functions][competitions]', error);
         return json(error.status || 500, {
             error: error.message || 'Internal Server Error',
