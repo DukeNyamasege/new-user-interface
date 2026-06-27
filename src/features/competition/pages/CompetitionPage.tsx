@@ -15,6 +15,9 @@ type EligibleCompetitionAccount = DerivCompetitionAccount & {
     current_balance: number;
 };
 
+const getBelowMinimumBalanceMessage = (balance: number, currency: string) =>
+    `Only real accounts above 20 USD can join the competition. Your current balance is ${currency} ${balance.toFixed(2)}. Top up and try again.`;
+
 const CompetitionPage = observer(() => {
     const store = useStore();
     const derivAuth = useMemo(() => getDerivCompetitionAuth(store), [store]);
@@ -31,6 +34,7 @@ const CompetitionPage = observer(() => {
     } = useCompetition();
     const { entries, isLoading: isLeaderboardLoading, error: leaderboardError } = useLeaderboard();
     const [eligibleAccount, setEligibleAccount] = useState<EligibleCompetitionAccount | null>(null);
+    const [bestRealAccountBalance, setBestRealAccountBalance] = useState<EligibleCompetitionAccount | null>(null);
     const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
     const [username, setUsername] = useState('');
     const [formError, setFormError] = useState('');
@@ -66,10 +70,14 @@ const CompetitionPage = observer(() => {
 
                 if (isMounted) {
                     setEligibleAccount(bestEligibleAccount);
+                    setBestRealAccountBalance(
+                        accountsWithBalances.sort((left, right) => right.current_balance - left.current_balance)[0] || null
+                    );
                 }
             } catch {
                 if (isMounted) {
                     setEligibleAccount(null);
+                    setBestRealAccountBalance(null);
                 }
             }
         };
@@ -81,6 +89,10 @@ const CompetitionPage = observer(() => {
         };
     }, [derivAuth, store?.client?.is_logged_in]);
 
+    const ineligibleBalanceMessage = bestRealAccountBalance
+        ? getBelowMinimumBalanceMessage(bestRealAccountBalance.current_balance, bestRealAccountBalance.currency)
+        : 'Only real accounts above 20 USD can join the competition. Top up and try again.';
+
     const handleCreateProfile = async () => {
         const normalized = username.trim().toLowerCase();
 
@@ -90,7 +102,7 @@ const CompetitionPage = observer(() => {
         }
 
         if (!eligibleAccount) {
-            setFormError('Only real accounts above 20 USD can join the competition. Top up and try again.');
+            setFormError(ineligibleBalanceMessage);
             return;
         }
 
@@ -122,7 +134,7 @@ const CompetitionPage = observer(() => {
         }
 
         if (!eligibleAccount) {
-            setFormError('Only real accounts above 20 USD can join the competition. Top up and try again.');
+            setFormError(ineligibleBalanceMessage);
             return;
         }
 
@@ -163,7 +175,7 @@ const CompetitionPage = observer(() => {
     const showUsernameStep = !participantSnapshot;
     const showAccountStep = participantSnapshot?.participant.registration_status === 'pending';
     const ineligibleAccountMessage = store?.client?.is_logged_in
-        ? 'Only real accounts above 20 USD can join the competition. Top up and try again.'
+        ? ineligibleBalanceMessage
         : 'Log in with a real Deriv account above 20 USD to join the competition.';
 
     return (
