@@ -3,6 +3,7 @@ const { pool } = require('../../backend/server/db');
 
 const COMPETITION_ACCOUNT_HASH_SALT = process.env.COMPETITION_ACCOUNT_HASH_SALT || 'risk-managers-competition-salt';
 const FUNCTION_PREFIX = '/.netlify/functions/competitions';
+const API_PREFIX = '/api/competitions';
 
 const json = (statusCode, body) => ({
     statusCode,
@@ -140,7 +141,11 @@ const getParticipantSnapshot = async participantId => {
 };
 
 const parsePath = rawPath => {
-    const path = rawPath.startsWith(FUNCTION_PREFIX) ? rawPath.slice(FUNCTION_PREFIX.length) : rawPath;
+    const path = rawPath.startsWith(FUNCTION_PREFIX)
+        ? rawPath.slice(FUNCTION_PREFIX.length)
+        : rawPath.startsWith(API_PREFIX)
+          ? rawPath.slice(API_PREFIX.length)
+          : rawPath;
     return path.replace(/^\/+/, '').split('/').filter(Boolean);
 };
 
