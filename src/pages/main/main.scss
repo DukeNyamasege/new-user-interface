@@ -344,6 +344,14 @@
     }
 }
 
+.main--risk-managers {
+    .dc-tabs__list {
+        #id-competition {
+            order: -1;
+        }
+    }
+}
+
 .animation__wrapper {
     .animation {
         &__button#db-animation {

@@ -58,6 +58,8 @@ import CompetitionPage from '@/features/competition/pages/CompetitionPage';
 import './main.scss';
 
 const AppWrapper = observer(() => {
+    const isRiskManagersDomain =
+        window.location.hostname === 'riskmanagers.site' || window.location.hostname === 'www.riskmanagers.site';
     const { connectionStatus } = useApiBase();
     const { dashboard, load_modal, run_panel, quick_strategy, summary_card, blockly_store } = useStore();
     const { is_loading } = blockly_store;
@@ -172,7 +174,13 @@ const AppWrapper = observer(() => {
     };
 
     let tab_value: number | string = active_tab;
-    const getDefaultLandingTab = () => (show_manual_trading ? MANUAL_TRADING : DBOT_TABS.BEST_BOTS);
+    const getDefaultLandingTab = () => {
+        if (isRiskManagersDomain && show_competition) {
+            return DBOT_TABS.COMPETITION;
+        }
+
+        return show_manual_trading ? MANUAL_TRADING : DBOT_TABS.BEST_BOTS;
+    };
     const GetHashedValue = (tab: number) => {
         tab_value = location.hash?.split('#')[1];
         if (!tab_value) return tab === MANUAL_TRADING && isMainTabVisible(tab) ? tab : getDefaultLandingTab();
@@ -194,7 +202,13 @@ const AppWrapper = observer(() => {
     }, [location.search]);
 
     React.useEffect(() => {
-        const el_dashboard = document.getElementById('id-dbot-dashboard');
+        const first_visible_tab_id =
+            isRiskManagersDomain && show_competition
+                ? 'id-competition'
+                : show_bot_ideas
+                  ? 'id-bot-ideas'
+                  : 'id-best-bots';
+        const el_dashboard = document.getElementById(first_visible_tab_id);
         const last_visible_tab_id = show_competition
             ? 'id-competition'
             : show_trading_view
@@ -236,7 +250,7 @@ const AppWrapper = observer(() => {
             observer_dashboard.disconnect();
             observer_last_tab.disconnect();
         };
-    }, [show_competition, show_trading_view]);
+    }, [isRiskManagersDomain, show_bot_ideas, show_competition, show_trading_view]);
 
     React.useEffect(() => {
         const is_recoverable_trading_module = active_trading_module === 'auto_trades';
@@ -468,7 +482,7 @@ const AppWrapper = observer(() => {
     // [/AI]
     return (
         <React.Fragment>
-            <div className='main'>
+            <div className={classNames('main', { 'main--risk-managers': isRiskManagersDomain })}>
                 <div
                     className={classNames('main__container', {
                         'main__container--active': active_tour && active_tab === DASHBOARD && !isDesktop,
