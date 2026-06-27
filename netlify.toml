@@ -11,6 +11,12 @@
 # The Replit dev server (port 5000) internally proxies /api → port 8000 (Express).
 # Update this URL to your deployed Replit autoscale URL after publishing.
 [[redirects]]
+  from = "/api/competitions/*"
+  to = "/.netlify/functions/competitions/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/*"
   to = "https://439a6b4c-93b6-40a3-9d2a-406052ed76f2-00-34dshrqu4dsru.janeway.replit.dev/api/:splat"
   status = 200
