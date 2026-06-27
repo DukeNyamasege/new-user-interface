@@ -1,11 +1,11 @@
 [build]
-  # Use npm install (not npm ci) so npm re-resolves packages from the public
-  # registry, ignoring any package-firewall.replit.local URLs in package-lock.json.
+  # Install from the public npm registry during Netlify builds.
   command = "npm install && npm run build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "20"
+  NPM_CONFIG_REGISTRY = "https://registry.npmjs.org/"
 
 # Proxy all /api/* requests to the Replit backend.
 # The Replit dev server (port 5000) internally proxies /api → port 8000 (Express).
