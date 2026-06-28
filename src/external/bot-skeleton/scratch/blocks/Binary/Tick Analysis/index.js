@@ -19,3 +19,4 @@ import './even_odd_percentage';
 import './match_differ_percentage';
 import './last_n_ticks_direction';
 import './rise_fall_percentage';
+import './rotating_differ_prediction';

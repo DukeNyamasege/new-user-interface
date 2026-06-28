@@ -126,7 +126,7 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.smart_purchase_contract =
                 'CALL',
                 'PUT'
             ];
-            if (!supportedContractTypes.includes(contractType)) {
+            if (supportedContractTypes.indexOf(contractType) === -1) {
                 Bot.notify({
                     className: 'journal__text--warn',
                     message: 'Unknown contract type "' + contractType + '". Falling back to DIGITDIFF.',
@@ -137,7 +137,21 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.smart_purchase_contract =
             var amountValue = +(Number(${amount}).toFixed(${decimal_places}));
             var durationValue = Number(${duration}) || 1;
             var predictionValue = Number(${prediction});
-            var isDigitContract = ['DIGITDIFF', 'DIGITOVER', 'DIGITUNDER', 'DIGITMATCH', 'DIGITEVEN', 'DIGITODD'].includes(contractType);
+            var digitContractTypes = ['DIGITDIFF', 'DIGITOVER', 'DIGITUNDER', 'DIGITMATCH', 'DIGITEVEN', 'DIGITODD'];
+            var isDigitContract = digitContractTypes.indexOf(contractType) !== -1;
+            Bot.notify({
+                className: 'journal__text--info',
+                message:
+                    'Purchase request: ' +
+                    contractType +
+                    ' | stake ' +
+                    amountValue +
+                    ' ${currency} | duration ' +
+                    durationValue +
+                    ' ${duration_type}' +
+                    (isDigitContract ? ' | prediction ' + predictionValue : ''),
+                sound: '',
+            });
             Bot.start({
                 limitations        : BinaryBotPrivateLimitations,
                 duration           : durationValue,

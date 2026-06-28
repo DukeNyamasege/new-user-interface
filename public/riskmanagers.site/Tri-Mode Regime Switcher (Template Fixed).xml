@@ -8,6 +8,7 @@
     <variable id="rm_duration">Duration</variable>
     <variable id="rm_recovery_mode">Recovery Mode</variable>
     <variable id="rm_primary_digit">Primary Differs Digit</variable>
+    <variable id="rm_last_differs_prediction">Last Differs Prediction</variable>
   </variables>
   <block type="trade_definition" id="rm_trade_definition" deletable="false" x="24" y="40">
     <statement name="TRADE_OPTIONS">
@@ -113,15 +114,20 @@
                                   <block type="variables_set" id="rm_init_primary_digit">
                                     <field name="VAR" id="rm_primary_digit">Primary Differs Digit</field>
                                     <value name="VALUE">
-                                      <block type="digit_frequency_analysis" id="rm_init_primary_digit_value">
-                                        <field name="RANK">most</field>
-                                        <value name="COUNT">
-                                          <shadow type="math_number" id="rm_init_primary_digit_count">
-                                            <field name="NUM">100</field>
-                                          </shadow>
-                                        </value>
+                                      <block type="math_number" id="rm_init_primary_digit_value">
+                                        <field name="NUM">0</field>
                                       </block>
                                     </value>
+                                    <next>
+                                      <block type="variables_set" id="rm_init_last_differs_prediction">
+                                        <field name="VAR" id="rm_last_differs_prediction">Last Differs Prediction</field>
+                                        <value name="VALUE">
+                                          <block type="math_number" id="rm_init_last_differs_prediction_value">
+                                            <field name="NUM">-1</field>
+                                          </block>
+                                        </value>
+                                      </block>
+                                    </next>
                                   </block>
                                 </next>
                               </block>
@@ -192,12 +198,16 @@
           <block type="variables_set" id="rm_refresh_primary_digit">
             <field name="VAR" id="rm_primary_digit">Primary Differs Digit</field>
             <value name="VALUE">
-              <block type="digit_frequency_analysis" id="rm_before_primary_digit">
-                <field name="RANK">most</field>
+              <block type="rotating_differ_prediction" id="rm_before_primary_digit">
                 <value name="COUNT">
                   <shadow type="math_number" id="rm_before_primary_digit_count">
                     <field name="NUM">100</field>
                   </shadow>
+                </value>
+                <value name="PREVIOUS_DIGIT">
+                  <block type="variables_get" id="rm_before_previous_differs_digit">
+                    <field name="VAR" id="rm_last_differs_prediction">Last Differs Prediction</field>
+                  </block>
                 </value>
               </block>
             </value>
@@ -525,28 +535,57 @@
                   </block>
                 </statement>
                 <next>
-                  <block type="smart_purchase_contract" id="rm_dynamic_purchase">
-                    <field name="DURATIONTYPE_LIST">t</field>
-                    <value name="CONTRACT_TYPE">
-                      <block type="variables_get" id="rm_purchase_contract_type">
-                        <field name="VAR" id="rm_contract_type">Contract Type</field>
+                  <block type="controls_if" id="rm_remember_differs_prediction">
+                    <value name="IF0">
+                      <block type="logic_compare" id="rm_is_differs_contract">
+                        <field name="OP">EQ</field>
+                        <value name="A">
+                          <block type="variables_get" id="rm_remember_contract_type">
+                            <field name="VAR" id="rm_contract_type">Contract Type</field>
+                          </block>
+                        </value>
+                        <value name="B">
+                          <block type="text" id="rm_differs_contract_text">
+                            <field name="TEXT">DIGITDIFF</field>
+                          </block>
+                        </value>
                       </block>
                     </value>
-                    <value name="AMOUNT">
-                      <block type="variables_get" id="rm_purchase_amount">
-                        <field name="VAR" id="rm_stake">Stake</field>
+                    <statement name="DO0">
+                      <block type="variables_set" id="rm_store_last_differs_prediction">
+                        <field name="VAR" id="rm_last_differs_prediction">Last Differs Prediction</field>
+                        <value name="VALUE">
+                          <block type="variables_get" id="rm_store_current_prediction">
+                            <field name="VAR" id="rm_prediction">Prediction</field>
+                          </block>
+                        </value>
                       </block>
-                    </value>
-                    <value name="DURATION">
-                      <block type="variables_get" id="rm_purchase_duration">
-                        <field name="VAR" id="rm_duration">Duration</field>
+                    </statement>
+                    <next>
+                      <block type="smart_purchase_contract" id="rm_dynamic_purchase">
+                        <field name="DURATIONTYPE_LIST">t</field>
+                        <value name="CONTRACT_TYPE">
+                          <block type="variables_get" id="rm_purchase_contract_type">
+                            <field name="VAR" id="rm_contract_type">Contract Type</field>
+                          </block>
+                        </value>
+                        <value name="AMOUNT">
+                          <block type="variables_get" id="rm_purchase_amount">
+                            <field name="VAR" id="rm_stake">Stake</field>
+                          </block>
+                        </value>
+                        <value name="DURATION">
+                          <block type="variables_get" id="rm_purchase_duration">
+                            <field name="VAR" id="rm_duration">Duration</field>
+                          </block>
+                        </value>
+                        <value name="PREDICTION">
+                          <block type="variables_get" id="rm_purchase_prediction">
+                            <field name="VAR" id="rm_prediction">Prediction</field>
+                          </block>
+                        </value>
                       </block>
-                    </value>
-                    <value name="PREDICTION">
-                      <block type="variables_get" id="rm_purchase_prediction">
-                        <field name="VAR" id="rm_prediction">Prediction</field>
-                      </block>
-                    </value>
+                    </next>
                   </block>
                 </next>
               </block>
