@@ -11,6 +11,7 @@ const DURATION_TYPE_OPTIONS = [
 ];
 
 window.Blockly.Blocks.smart_purchase_contract = {
+    purchase_capability: true,
     init() {
         this.jsonInit(this.definition());
         this.setNextStatement(false);
@@ -115,6 +116,24 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.smart_purchase_contract =
     return `
         (function () {
             var contractType = String(${contract_type} || 'DIGITDIFF').toUpperCase();
+            var supportedContractTypes = [
+                'DIGITDIFF',
+                'DIGITOVER',
+                'DIGITUNDER',
+                'DIGITMATCH',
+                'DIGITEVEN',
+                'DIGITODD',
+                'CALL',
+                'PUT'
+            ];
+            if (!supportedContractTypes.includes(contractType)) {
+                Bot.notify({
+                    className: 'journal__text--warn',
+                    message: 'Unknown contract type "' + contractType + '". Falling back to DIGITDIFF.',
+                    sound: '',
+                });
+                contractType = 'DIGITDIFF';
+            }
             var amountValue = +(Number(${amount}).toFixed(${decimal_places}));
             var durationValue = Number(${duration}) || 1;
             var predictionValue = Number(${prediction});

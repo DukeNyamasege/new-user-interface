@@ -13,6 +13,13 @@ import { LogTypes } from '../../constants/messages';
 import { error_message_map } from '../../utils/error-config';
 import { saveWorkspaceToRecent } from '../../utils/local-storage';
 import { observer as globalObserver } from '../../utils/observer';
+import {
+    getBlocksForRequiredType,
+    getCanonicalRequiredBlockType,
+    hasRequiredBlockType,
+    isPurchaseBlockType,
+    PURCHASE_BLOCK_TYPES,
+} from '../../utils/required-blocks';
 import { removeLimitedBlocks } from '../../utils/workspace';
 import BlockConversion from '../backward-compatibility';
 import DBotStore from '../dbot-store';
@@ -84,14 +91,16 @@ export const validateErrorOnBlockDelete = () => {
     const blockY = blockRect?.top || 0;
     const mandatory_trade_option_block = getSelectedTradeType();
     const required_block_types = [mandatory_trade_option_block, 'trade_definition', 'purchase', 'before_purchase'];
-    if (required_block_types?.includes(window.Blockly?.getSelected()?.type)) {
+    const selected_block_type = window.Blockly?.getSelected()?.type;
+    const canonical_block_type = getCanonicalRequiredBlockType(selected_block_type);
+    if (required_block_types?.includes(canonical_block_type)) {
         if (
             blockY >= translate_Y - translate_offset &&
             blockY <= translate_Y + translate_offset &&
             blockX >= translate_X - translate_offset &&
             blockX <= translate_X + translate_offset
         ) {
-            globalObserver.emit('ui.log.error', error_message_map?.()?.[window.Blockly?.getSelected()?.type]?.default);
+            globalObserver.emit('ui.log.error', error_message_map?.()?.[canonical_block_type]?.default);
         }
     }
 };
@@ -227,6 +236,8 @@ const createPurchaseBlock = (xml, purchase_type) => {
     return purchase_block;
 };
 
+const PURCHASE_BLOCK_SELECTOR = PURCHASE_BLOCK_TYPES.map(block_type => `block[type="${block_type}"]`).join(', ');
+
 const appendBlockToStatement = (xml, statement, block) => {
     const first_block = getDirectChild(statement, 'block');
 
@@ -255,9 +266,9 @@ const ensureMandatoryPurchaseCondition = xml => {
     const root = xml.nodeType === 9 ? xml.documentElement : xml;
     if (root?.nodeName?.toLowerCase() !== 'xml') return xml;
 
-    Array.from(xml.querySelectorAll('block[type="before_purchase"], block[type="purchase"]')).forEach(block_node => {
-        block_node.removeAttribute('disabled');
-    });
+    Array.from(xml.querySelectorAll(`block[type="before_purchase"], ${PURCHASE_BLOCK_SELECTOR}`)).forEach(block_node =>
+        block_node.removeAttribute('disabled')
+    );
 
     let before_purchase_block = xml.querySelector('block[type="before_purchase"]');
     if (!before_purchase_block) {
@@ -268,7 +279,9 @@ const ensureMandatoryPurchaseCondition = xml => {
         root.appendChild(before_purchase_block);
     }
 
-    const has_purchase_inside_before_purchase = Boolean(before_purchase_block.querySelector('block[type="purchase"]'));
+    const has_purchase_inside_before_purchase = Array.from(before_purchase_block.querySelectorAll('block')).some(
+        block_node => isPurchaseBlockType(block_node.getAttribute('type'))
+    );
     if (has_purchase_inside_before_purchase) return xml;
 
     let purchase_statement = getDirectChild(before_purchase_block, 'statement', 'name', 'BEFOREPURCHASE_STACK');
@@ -298,7 +311,7 @@ const normalizeBotXml = xml => {
 
     const has_modern_dbot_blocks = Boolean(
         xml.querySelector(
-            'block[type="trade_definition"], block[type="before_purchase"], block[type="purchase"], block[type="after_purchase"], block[type="trade_again"]'
+            `block[type="trade_definition"], block[type="before_purchase"], ${PURCHASE_BLOCK_SELECTOR}, block[type="after_purchase"], block[type="trade_again"]`
         )
     );
     const has_legacy_binary_blocks = Boolean(xml.querySelector('block[type="trade"], block[type="tradeOptions"]'));
@@ -376,6 +389,12 @@ export const load = async ({
             error: error_message,
         };
     };
+
+    if (typeof block_string !== 'string' || !block_string.trim()) {
+        return showInvalidStrategyError({
+            load_error_message: 'The XML file is empty or its text content could not be read.',
+        });
+    }
 
     // Check if XML can be parsed correctly.
     try {
@@ -477,6 +496,8 @@ export const load = async ({
         setLoading(false);
         setOpenButtonDisabled(false);
     }
+
+    return { success: true };
 };
 
 export const loadBlocks = (xml, drop_event, event_group, workspace) => {
@@ -623,48 +644,28 @@ export const addDomAsBlock = (el_block, parent_block = null) => {
     return block;
 };
 
-const getAllRequiredBlocks = (workspace, required_block_types) => {
-    return workspace.getAllBlocks().filter(block => {
-        if (required_block_types.includes(block.type)) {
-            return (
-                (block.childBlocks_.length === 0 && required_block_types.includes(block.category_)) ||
-                block.parentBlock_ === null
-            );
-        }
-    });
-};
-
 const getMissingBlocks = (workspace, required_block_types) => {
-    return required_block_types.filter(blockType => {
-        return !workspace.getAllBlocks().some(block => block.type === blockType);
+    const blocks = workspace.getAllBlocks();
+    return required_block_types.filter(block_type => !hasRequiredBlockType(blocks, block_type));
+};
+
+const getDisabledBlocks = (workspace, required_block_types) =>
+    required_block_types.flatMap(required_block_type => {
+        const matching_blocks = getBlocksForRequiredType(workspace.getAllBlocks(), required_block_type);
+        if (!matching_blocks.length || matching_blocks.some(block => !block.disabled)) return [];
+        return [matching_blocks[0]];
     });
-};
-
-const getDisabledBlocks = required_blocks_check => {
-    const workspace = window.Blockly.derivWorkspace;
-    const required_block_types = [getSelectedTradeType(workspace), ...config().mandatoryMainBlocks];
-    const disabled_blocks = Object.fromEntries(
-        workspace
-            .getAllBlocks()
-            .filter(block => required_block_types.includes(block.type))
-            .map(block => [block.type, block.disabled])
-    );
-    const mandatory_blocks = ['before_purchase', 'purchase', 'trade_definition', 'trade_definition_tradeoptions'];
-    const has_disabled_blocks = mandatory_blocks.some(type => disabled_blocks[type]);
-
-    return has_disabled_blocks
-        ? required_blocks_check.filter(block => block.disabled || block.childBlocks_?.some(child => child.disabled))
-        : [];
-};
 
 const throwNewErrorMessage = (error_blocks, key) => {
     return error_blocks.forEach(block => {
+        const block_type = getCanonicalRequiredBlockType(block?.type || block);
         if (key === 'misplaced' && block)
-            globalObserver.emit('ui.log.error', error_message_map?.()?.[block?.type]?.[key]);
-        else if (key === 'missing' && block) globalObserver.emit('ui.log.error', error_message_map?.()?.[block]?.[key]);
+            globalObserver.emit('ui.log.error', error_message_map?.()?.[block_type]?.[key]);
+        else if (key === 'missing' && block)
+            globalObserver.emit('ui.log.error', error_message_map?.()?.[block_type]?.[key]);
         else if (key === 'disabled' && block) {
             let parent_block_error = false;
-            const parent_error_message = error_message_map?.()?.[block.type]?.[key];
+            const parent_error_message = error_message_map?.()?.[block_type]?.[key];
             if (block.disabled && parent_error_message) {
                 globalObserver.emit('ui.log.error', parent_error_message);
                 parent_block_error = true;
@@ -685,10 +686,8 @@ export const isAllRequiredBlocksEnabled = workspace => {
     const { mandatoryMainBlocks } = config();
     const required_block_types = [mandatory_trade_option_block, ...mandatoryMainBlocks];
 
-    const required_blocks_check = getAllRequiredBlocks(workspace, required_block_types);
-
     const missing_blocks = getMissingBlocks(workspace, required_block_types);
-    const disabled_blocks = getDisabledBlocks(required_blocks_check);
+    const disabled_blocks = getDisabledBlocks(workspace, required_block_types);
 
     if (missing_blocks) throwNewErrorMessage(missing_blocks, 'missing');
     if (disabled_blocks) throwNewErrorMessage(disabled_blocks, 'disabled');

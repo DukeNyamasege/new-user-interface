@@ -488,7 +488,7 @@ const BotCard = observer(({ bot, stats }: { bot: TBot; stats: TBotStats | undefi
             const xml_text = await res.text();
             const workspace = window.Blockly?.derivWorkspace;
             if (!workspace) throw new Error('Workspace not ready');
-            await load({
+            const load_result = await load({
                 block_string: xml_text,
                 file_name: bot.name,
                 workspace,
@@ -497,6 +497,7 @@ const BotCard = observer(({ bot, stats }: { bot: TBot; stats: TBotStats | undefi
                 strategy_id: null,
                 showIncompatibleStrategyDialog: false,
             });
+            if (load_result?.error) throw new Error(load_result.error);
             setActiveBot('best-bot', bot.id, bot.name);
             try {
                 toolbar.setStrategyProtected(true);
@@ -506,8 +507,16 @@ const BotCard = observer(({ bot, stats }: { bot: TBot; stats: TBotStats | undefi
             setTimeout(() => {
                 const ws = window.Blockly?.derivWorkspace;
                 if (ws) {
-                    ws.getAllBlocks(false).forEach((block: any) => {
-                        if (['before_purchase', 'after_purchase', 'purchase', 'trade_again'].includes(block.type)) {
+                    ws.getAllBlocks(false).forEach(block => {
+                        if (
+                            [
+                                'before_purchase',
+                                'after_purchase',
+                                'purchase',
+                                'smart_purchase_contract',
+                                'trade_again',
+                            ].includes(block.type)
+                        ) {
                             block.setCollapsed(true);
                         }
                     });
@@ -577,7 +586,7 @@ const BotCard = observer(({ bot, stats }: { bot: TBot; stats: TBotStats | undefi
 });
 
 const BestBots = () => {
-    const [statsMap, setStatsMap] = useState<Record<string, TBotStats>>({});
+    const [statsMap] = useState<Record<string, TBotStats>>({});
     const botsFolder = getBestBotsFolder();
     const [bots, setBots] = useState<TBot[]>(() => getBestBotsForFolder(botsFolder));
 

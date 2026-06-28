@@ -573,9 +573,6 @@
                 <field name="NUM">0</field>
               </block>
             </value>
-            <next>
-              <block type="trade_again" id="rm_after_trade_again_win"></block>
-            </next>
           </block>
         </statement>
         <statement name="ELSE">
@@ -586,11 +583,11 @@
                 <field name="NUM">1</field>
               </block>
             </value>
-            <next>
-              <block type="trade_again" id="rm_after_trade_again_loss"></block>
-            </next>
           </block>
         </statement>
+        <next>
+          <block type="trade_again" id="rm_after_trade_again"></block>
+        </next>
       </block>
     </statement>
   </block>
