@@ -1,32 +1,17 @@
 const express = require('express');
-const { pool } = require('../db');
+const {
+    BestBotStatsServiceError,
+    getBestBotStat,
+    getBestBotStats,
+    upsertBestBotStat,
+} = require('../best-bot-stats-supabase-service');
 const router = express.Router();
 
 // GET best bot statistics
 router.get('/', async (req, res, next) => {
     try {
-        const result = await pool.query(`
-      SELECT 
-        bot_id,
-        total_runs,
-        profits,
-        losses,
-        profit_amount,
-        loss_amount,
-        CASE 
-          WHEN total_runs > 0 THEN ROUND((profits::numeric / total_runs) * 100, 2)
-          ELSE 0 
-        END as win_rate,
-        CASE 
-          WHEN total_runs > 0 THEN ROUND((losses::numeric / total_runs) * 100, 2)
-          ELSE 0 
-        END as loss_rate
-      FROM bot_stats
-      ORDER BY profits DESC, total_runs DESC
-      LIMIT 20
-    `);
-
-        res.json(result.rows);
+        const rows = await getBestBotStats();
+        res.json(rows);
     } catch (error) {
         next(error);
     }
@@ -35,29 +20,12 @@ router.get('/', async (req, res, next) => {
 // GET single bot stats
 router.get('/:botId', async (req, res, next) => {
     try {
-        const result = await pool.query(
-            `SELECT 
-        bot_id,
-        total_runs,
-        profits,
-        losses,
-        profit_amount,
-        loss_amount,
-        CASE 
-          WHEN total_runs > 0 THEN ROUND((profits::numeric / total_runs) * 100, 2)
-          ELSE 0 
-        END as win_rate
-      FROM bot_stats
-      WHERE bot_id = $1`,
-            [req.params.botId]
-        );
-
-        if (result.rows.length === 0) {
+        const row = await getBestBotStat(req.params.botId);
+        res.json(row);
+    } catch (error) {
+        if (error instanceof BestBotStatsServiceError && error.status === 404) {
             return res.status(404).json({ error: 'Bot stats not found' });
         }
-
-        res.json(result.rows[0]);
-    } catch (error) {
         next(error);
     }
 });
@@ -67,21 +35,16 @@ router.post('/:botId', async (req, res, next) => {
     try {
         const { total_runs, profits, losses, profit_amount, loss_amount } = req.body;
 
-        const result = await pool.query(
-            `INSERT INTO bot_stats (bot_id, total_runs, profits, losses, profit_amount, loss_amount)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT (bot_id) DO UPDATE SET
-         total_runs = $2,
-         profits = $3,
-         losses = $4,
-         profit_amount = $5,
-         loss_amount = $6,
-         updated_at = CURRENT_TIMESTAMP
-       RETURNING *`,
-            [req.params.botId, total_runs || 0, profits || 0, losses || 0, profit_amount, loss_amount]
-        );
+        const row = await upsertBestBotStat({
+            botId: req.params.botId,
+            total_runs,
+            profits,
+            losses,
+            profit_amount,
+            loss_amount,
+        });
 
-        res.json(result.rows[0]);
+        res.json(row);
     } catch (error) {
         next(error);
     }
