@@ -60,6 +60,18 @@ export const getDisplayMaskedLoginId = (maskedLoginId: string): string => {
     return maskedLoginId;
 };
 
+export const getMaskedLoginId = (loginid: string): string => {
+    if (!loginid) return '';
+    const value = String(loginid);
+    const mask = '****';
+
+    if (value.length <= 6) {
+        return `${value.slice(0, 2)}${mask}`;
+    }
+
+    return `${value.slice(0, 2)}${mask}${value.slice(-4)}`;
+};
+
 export const getJournalAccountLabel = (loginid: string, currency?: string): string | undefined => {
     if (!loginid) return currency;
 

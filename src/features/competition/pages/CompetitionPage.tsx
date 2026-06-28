@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import LeaderboardTable from '@/features/competition/components/LeaderboardTable';
 import { useCompetition } from '@/features/competition/hooks/useCompetition';
@@ -6,18 +6,18 @@ import { useLeaderboard } from '@/features/competition/hooks/useLeaderboard';
 import { getDerivCompetitionAuth } from '@/features/competition/services/deriv-auth';
 import type { DerivCompetitionAccount } from '@/features/competition/types/competition.types';
 import { useStore } from '@/hooks/useStore';
-import { getDisplayLoginId, getDisplayMaskedLoginId } from '@/utils/account-helpers';
+import {
+    getDisplayLoginId,
+    getDisplayMaskedLoginId,
+    getMaskedLoginId,
+} from '@/utils/account-helpers';
 import '../styles/competition.scss';
 
 const COMPETITION_API_UNAVAILABLE = 'Competition API route was not found.';
-const MINIMUM_COMPETITION_BALANCE = 20;
 
 type EligibleCompetitionAccount = DerivCompetitionAccount & {
     current_balance: number;
 };
-
-const getBelowMinimumBalanceMessage = (balance: number, currency: string) =>
-    `Only eligible competition accounts above 20 USD can join the competition. Your current balance is ${currency} ${balance.toFixed(2)}. Top up and try again.`;
 
 const CompetitionPage = observer(() => {
     const store = useStore();
@@ -27,18 +27,20 @@ const CompetitionPage = observer(() => {
         participantSnapshot,
         isLoading,
         isJoining,
+        isRefreshingBalance,
         error,
         refreshCompetition,
         createPendingProfile,
         connectAccount,
+        refreshParticipantBalance,
         resetParticipantEntry,
     } = useCompetition();
-    const { entries, isLoading: isLeaderboardLoading, error: leaderboardError } = useLeaderboard();
+    const { entries, isLoading: isLeaderboardLoading, error: leaderboardError, refreshLeaderboard } = useLeaderboard();
     const [eligibleAccount, setEligibleAccount] = useState<EligibleCompetitionAccount | null>(null);
-    const [bestRealAccountBalance, setBestRealAccountBalance] = useState<EligibleCompetitionAccount | null>(null);
     const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
     const [username, setUsername] = useState('');
     const [formError, setFormError] = useState('');
+    const lastSyncedBalanceRef = useRef<string>('');
     const combinedError = error || leaderboardError || '';
     const competitionApiUnavailable = combinedError.includes(COMPETITION_API_UNAVAILABLE);
     const leaderboardEmptyMessage = competitionApiUnavailable
@@ -63,22 +65,19 @@ const CompetitionPage = observer(() => {
                         current_balance: Number(await derivAuth.getBalance(account.loginid)),
                     }))
                 );
-
+                const activeEligibleAccount =
+                    accountsWithBalances.find(account => account.loginid === store?.client?.loginid) || null;
                 const bestEligibleAccount =
-                    accountsWithBalances
-                        .filter(account => account.current_balance >= MINIMUM_COMPETITION_BALANCE)
-                        .sort((left, right) => right.current_balance - left.current_balance)[0] || null;
+                    activeEligibleAccount ||
+                    accountsWithBalances.sort((left, right) => right.current_balance - left.current_balance)[0] ||
+                    null;
 
                 if (isMounted) {
                     setEligibleAccount(bestEligibleAccount);
-                    setBestRealAccountBalance(
-                        accountsWithBalances.sort((left, right) => right.current_balance - left.current_balance)[0] || null
-                    );
                 }
             } catch {
                 if (isMounted) {
                     setEligibleAccount(null);
-                    setBestRealAccountBalance(null);
                 }
             }
         };
@@ -88,11 +87,63 @@ const CompetitionPage = observer(() => {
         return () => {
             isMounted = false;
         };
-    }, [derivAuth, store?.client?.is_logged_in]);
+    }, [derivAuth, store?.client?.account_list, store?.client?.is_logged_in, store?.client?.loginid]);
 
-    const ineligibleBalanceMessage = bestRealAccountBalance
-        ? getBelowMinimumBalanceMessage(bestRealAccountBalance.current_balance, bestRealAccountBalance.currency)
-        : 'Only eligible competition accounts above 20 USD can join the competition. Top up and try again.';
+    useEffect(() => {
+        if (!participantSnapshot?.participant?.id || !participantSnapshot.participant.masked_account_id) {
+            return;
+        }
+
+        const currentLoginId = store?.client?.loginid || '';
+        if (!currentLoginId) {
+            return;
+        }
+
+        const linkedMaskedAccountId = participantSnapshot.participant.masked_account_id;
+        if (getMaskedLoginId(currentLoginId) !== linkedMaskedAccountId) {
+            return;
+        }
+
+        const currentBalance = Number(store?.client?.getDisplayBalanceAmount(currentLoginId) || 0);
+        if (!Number.isFinite(currentBalance)) {
+            return;
+        }
+
+        const balanceFingerprint = `${currentLoginId}:${currentBalance.toFixed(2)}`;
+        if (lastSyncedBalanceRef.current === balanceFingerprint || isRefreshingBalance) {
+            return;
+        }
+
+        lastSyncedBalanceRef.current = balanceFingerprint;
+        const syncTimeout = window.setTimeout(() => {
+            void refreshParticipantBalance({
+                participantId: participantSnapshot.participant.id,
+                accountId: currentLoginId,
+                currentBalance,
+            })
+                .then(() => refreshLeaderboard({ silent: true }))
+                .catch(() => {
+                    lastSyncedBalanceRef.current = '';
+                });
+        }, 400);
+
+        return () => {
+            window.clearTimeout(syncTimeout);
+        };
+    }, [
+        isRefreshingBalance,
+        participantSnapshot,
+        refreshLeaderboard,
+        refreshParticipantBalance,
+        store?.client,
+        store?.client?.account_list,
+        store?.client?.balance,
+        store?.client?.loginid,
+    ]);
+
+    const ineligibleAccountMessage = store?.client?.is_logged_in
+        ? 'Log in with a real Deriv account, or the approved special account, to join the competition.'
+        : 'Log in with a real Deriv account, or the approved special account, to join the competition.';
 
     const handleCreateProfile = async () => {
         const normalized = username.trim().toLowerCase();
@@ -103,7 +154,7 @@ const CompetitionPage = observer(() => {
         }
 
         if (!eligibleAccount) {
-            setFormError(ineligibleBalanceMessage);
+            setFormError(ineligibleAccountMessage);
             return;
         }
 
@@ -135,7 +186,7 @@ const CompetitionPage = observer(() => {
         }
 
         if (!eligibleAccount) {
-            setFormError(ineligibleBalanceMessage);
+            setFormError(ineligibleAccountMessage);
             return;
         }
 
@@ -175,9 +226,6 @@ const CompetitionPage = observer(() => {
     const joinState = participantSnapshot?.participant.registration_status || 'not_joined';
     const showUsernameStep = !participantSnapshot;
     const showAccountStep = participantSnapshot?.participant.registration_status === 'pending';
-    const ineligibleAccountMessage = store?.client?.is_logged_in
-        ? ineligibleBalanceMessage
-        : 'Log in with an eligible Deriv account above 20 USD to join the competition.';
 
     return (
         <div className='competition-page competition-page--fullscreen'>

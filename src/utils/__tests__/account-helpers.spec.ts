@@ -7,6 +7,7 @@ import {
     getAccountId,
     getAccountType,
     getDeviceType,
+    getMaskedLoginId,
     getJournalAccountLabel,
     isDemoAccount,
     isVirtualAccount,
@@ -183,6 +184,11 @@ describe('account-helpers', () => {
         it('should display masked dot loginids as masked rot loginids', () => {
             expect(getDisplayMaskedLoginId('DO****7422')).toBe('RO****7422');
             expect(getDisplayMaskedLoginId('CR****2345')).toBe('CR****2345');
+        });
+
+        it('should create masked loginids that match the backend format', () => {
+            expect(getMaskedLoginId('DOT91317422')).toBe('DO****7422');
+            expect(getMaskedLoginId('CR12345')).toBe('CR****45');
         });
     });
 

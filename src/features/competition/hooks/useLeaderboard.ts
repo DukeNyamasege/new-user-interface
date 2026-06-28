@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { LeaderboardEntry } from '@/features/competition/types/competition.types';
 
 type LeaderboardState = {
@@ -79,10 +79,8 @@ export const useLeaderboard = (slug = DEFAULT_COMPETITION_SLUG) => {
         error: null,
     });
 
-    useEffect(() => {
-        let isMounted = true;
-
-        const fetchLeaderboard = async (options?: { silent?: boolean }) => {
+    const refreshLeaderboard = useCallback(
+        async (options?: { silent?: boolean }) => {
             const silent = options?.silent;
 
             if (!silent) {
@@ -93,9 +91,7 @@ export const useLeaderboard = (slug = DEFAULT_COMPETITION_SLUG) => {
                 const response = await fetch(buildCompetitionUrl(`/competitions/${slug}/leaderboard`));
 
                 if (!response.ok) {
-                    throw new Error(
-                        await parseLeaderboardError(response, 'Unable to load the competition leaderboard.')
-                    );
+                    throw new Error(await parseLeaderboardError(response, 'Unable to load the competition leaderboard.'));
                 }
 
                 const payload = await parseLeaderboardJson<{ entries?: LeaderboardEntry[] }>(
@@ -103,20 +99,12 @@ export const useLeaderboard = (slug = DEFAULT_COMPETITION_SLUG) => {
                     'Competition leaderboard response could not be read.'
                 );
 
-                if (!isMounted) {
-                    return;
-                }
-
                 setState({
                     entries: (payload.entries || []) as LeaderboardEntry[],
                     isLoading: false,
                     error: null,
                 });
             } catch (error) {
-                if (!isMounted) {
-                    return;
-                }
-
                 setState(prev => ({
                     entries: silent ? prev.entries : [],
                     isLoading: false,
@@ -126,18 +114,28 @@ export const useLeaderboard = (slug = DEFAULT_COMPETITION_SLUG) => {
                     ),
                 }));
             }
-        };
+        },
+        [slug]
+    );
 
-        void fetchLeaderboard();
+    useEffect(() => {
+        let isMounted = true;
+
+        void refreshLeaderboard();
         const intervalId = window.setInterval(() => {
-            void fetchLeaderboard({ silent: true });
-        }, 15000);
+            if (isMounted) {
+                void refreshLeaderboard({ silent: true });
+            }
+        }, 5000);
 
         return () => {
             isMounted = false;
             window.clearInterval(intervalId);
         };
-    }, [slug]);
+    }, [refreshLeaderboard]);
 
-    return state;
+    return {
+        ...state,
+        refreshLeaderboard,
+    };
 };
