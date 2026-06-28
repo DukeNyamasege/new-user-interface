@@ -6,7 +6,7 @@ import { useLeaderboard } from '@/features/competition/hooks/useLeaderboard';
 import { getDerivCompetitionAuth } from '@/features/competition/services/deriv-auth';
 import type { DerivCompetitionAccount } from '@/features/competition/types/competition.types';
 import { useStore } from '@/hooks/useStore';
-import { getDisplayLoginId } from '@/utils/account-helpers';
+import { getDisplayLoginId, getDisplayMaskedLoginId } from '@/utils/account-helpers';
 import '../styles/competition.scss';
 
 const COMPETITION_API_UNAVAILABLE = 'Competition API route was not found.';
@@ -189,7 +189,7 @@ const CompetitionPage = observer(() => {
                             <span className='competition-shell__status'>
                                 {participantSnapshot.participant.username}
                                 {participantSnapshot.participant.masked_account_id
-                                    ? ` - ${participantSnapshot.participant.masked_account_id}`
+                                    ? ` - ${getDisplayMaskedLoginId(participantSnapshot.participant.masked_account_id)}`
                                     : ''}
                             </span>
                         ) : null}
@@ -324,7 +324,7 @@ const CompetitionPage = observer(() => {
                                     <div className='competition-empty competition-empty--summary'>
                                         {participantSnapshot.participant.username}
                                         {participantSnapshot.participant.masked_account_id
-                                            ? ` - ${participantSnapshot.participant.masked_account_id}`
+                                            ? ` - ${getDisplayMaskedLoginId(participantSnapshot.participant.masked_account_id)}`
                                             : ''}
                                     </div>
                                     <button

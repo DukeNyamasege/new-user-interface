@@ -1,4 +1,5 @@
 import type { ParticipantSnapshot } from '@/features/competition/types/competition.types';
+import { getDisplayMaskedLoginId } from '@/utils/account-helpers';
 
 const formatMoney = (amount?: number | null, currency = 'USD') => {
     if (amount === null || amount === undefined) {
@@ -38,7 +39,7 @@ const ParticipantCard = ({ participantSnapshot, canRefresh, isRefreshing, onRefr
                 </div>
                 <div>
                     <dt>Account</dt>
-                    <dd>{participant.masked_account_id || 'Pending connection'}</dd>
+                    <dd>{getDisplayMaskedLoginId(participant.masked_account_id || '') || 'Pending connection'}</dd>
                 </div>
                 <div>
                     <dt>Status</dt>

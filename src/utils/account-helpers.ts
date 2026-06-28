@@ -51,6 +51,15 @@ export const getDisplayLoginId = (loginid: string): string => {
     return loginid;
 };
 
+export const getDisplayMaskedLoginId = (maskedLoginId: string): string => {
+    if (!maskedLoginId) return '';
+    if (maskedLoginId.startsWith('DO')) {
+        return `RO${maskedLoginId.slice(2)}`;
+    }
+
+    return maskedLoginId;
+};
+
 export const getJournalAccountLabel = (loginid: string, currency?: string): string | undefined => {
     if (!loginid) return currency;
 

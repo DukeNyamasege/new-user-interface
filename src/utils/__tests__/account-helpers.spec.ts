@@ -3,6 +3,7 @@
 import {
     ACCOUNT_TYPE_KEY,
     getDisplayLoginId,
+    getDisplayMaskedLoginId,
     getAccountId,
     getAccountType,
     getDeviceType,
@@ -177,6 +178,11 @@ describe('account-helpers', () => {
         it('should display dot loginids as rot loginids', () => {
             expect(getDisplayLoginId('DOT91317422')).toBe('ROT91317422');
             expect(getDisplayLoginId('CR12345')).toBe('CR12345');
+        });
+
+        it('should display masked dot loginids as masked rot loginids', () => {
+            expect(getDisplayMaskedLoginId('DO****7422')).toBe('RO****7422');
+            expect(getDisplayMaskedLoginId('CR****2345')).toBe('CR****2345');
         });
     });
 
