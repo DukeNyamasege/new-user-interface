@@ -325,6 +325,7 @@ const hasBlockOfType = (targetType, workspace) => {
 export const checkBlocksForProposalRequest = () => {
     const workspace = window.Blockly.derivWorkspace;
     const has_payout_block = hasBlockOfType('payout', workspace);
+    const has_smart_dynamic_purchase = hasBlockOfType('smart_purchase_contract', workspace);
 
     // Code for the future for case when basis: 'payout':
     // * Since basis : '${block.type === 'trade_definition_tradeoptions' ? 'stake' : 'payout'}'
@@ -333,7 +334,7 @@ export const checkBlocksForProposalRequest = () => {
     // const is_basis_payout = !hasBlockOfType('trade_definition_tradeoptions', workspace);
 
     return {
-        has_payout_block,
+        has_payout_block: has_payout_block || has_smart_dynamic_purchase,
         is_basis_payout: false,
     };
 };

@@ -80,7 +80,10 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.tri_mode_signal_value = b
             if (signal === 21) return 5;
             return 0;
         })(Number(${signal}))`,
-        DURATION: `(Number(${signal}) > 0 ? 1 : 0)`,
+        DURATION: `(function (signal) {
+            if (signal === 30 || signal === 31) return 3;
+            return signal > 0 ? 1 : 0;
+        })(Number(${signal}))`,
     };
 
     return [expressions[value_type] || '0', window.Blockly.JavaScript.javascriptGenerator.ORDER_FUNCTION_CALL];

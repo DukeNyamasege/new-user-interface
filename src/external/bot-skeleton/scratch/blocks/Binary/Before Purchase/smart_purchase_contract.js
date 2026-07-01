@@ -113,6 +113,14 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.smart_purchase_contract =
         ) || '0';
     const duration_type = block.getFieldValue('DURATIONTYPE_LIST') || 't';
 
+    window.Blockly.JavaScript.javascriptGenerator.definitions_.tri_mode_recovery_state = `var BinaryBotPrivateTriModeRecoveryState = {
+        baseStake: 1,
+        consecutiveLosses: 0,
+        cumulativeLoss: 0,
+        lastProcessedReference: '',
+        activeRecoveryStake: 0
+    };`;
+
     return `
         (function () {
             var contractType = String(${contract_type} || 'DIGITOVER').toUpperCase();
@@ -132,37 +140,166 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.smart_purchase_contract =
                 });
                 contractType = 'DIGITOVER';
             }
-            var amountValue = +(Number(${amount}).toFixed(${decimal_places}));
+            var baseStakeValue = +(Number(${amount}).toFixed(${decimal_places}));
             var durationValue = Number(${duration}) || 1;
             var predictionValue = Number(${prediction});
             var predictionContractTypes = ['DIGITOVER', 'DIGITUNDER'];
             var requiresPrediction = predictionContractTypes.indexOf(contractType) !== -1;
-            Bot.notify({
-                className: 'journal__text--info',
-                message:
-                    'Purchase request: ' +
-                    contractType +
-                    ' | stake ' +
-                    amountValue +
-                    ' ${currency} | duration ' +
-                    durationValue +
-                    ' ${duration_type}' +
-                    (requiresPrediction ? ' | prediction ' + predictionValue : ''),
-                sound: '',
-            });
-            Bot.start({
-                limitations        : BinaryBotPrivateLimitations,
-                duration           : durationValue,
-                duration_unit      : '${duration_type}',
-                currency           : '${currency}',
-                amount             : amountValue,
-                prediction         : requiresPrediction ? predictionValue : undefined,
-                barrierOffset      : undefined,
-                secondBarrierOffset: undefined,
-                basis              : 'stake',
-                preserve_duration  : true,
-            });
-            Bot.purchase(contractType);
+            var proposalAttemptLimit = 20;
+            var proposalWaitSeconds = 0.25;
+            var decimalFactor = Math.pow(10, ${decimal_places});
+            var recoveryState = BinaryBotPrivateTriModeRecoveryState;
+            var useRecovery = recoveryState.consecutiveLosses >= 2 && recoveryState.cumulativeLoss > 0;
+            recoveryState.baseStake = baseStakeValue;
+            var createTradeOptions = function (stakeValue) {
+                return {
+                    limitations        : BinaryBotPrivateLimitations,
+                    contractTypes      : [contractType],
+                    duration           : durationValue,
+                    duration_unit      : '${duration_type}',
+                    currency           : '${currency}',
+                    amount             : stakeValue,
+                    prediction         : requiresPrediction ? predictionValue : undefined,
+                    barrierOffset      : undefined,
+                    secondBarrierOffset: undefined,
+                    basis              : 'stake',
+                    preserve_duration  : true,
+                };
+            };
+            var requestProposalAndMaybeRecover = function (attempt) {
+                var askPrice = 0;
+                var payoutValue = 0;
+                var profitRatio = 0;
+                var requiredStake = 0;
+
+                try {
+                    askPrice = Number(Bot.getAskPrice(contractType));
+                    payoutValue = Number(Bot.getPayout(contractType));
+                } catch (error) {
+                    askPrice = 0;
+                    payoutValue = 0;
+                }
+
+                if (!(askPrice > 0) || !(payoutValue > askPrice)) {
+                    if (attempt >= proposalAttemptLimit) {
+                        Bot.notify({
+                            className: 'journal__text--warn',
+                            message:
+                                'Proposal data was not ready for ' +
+                                contractType +
+                                '. Skipping this purchase cycle so the next tick can try again safely.',
+                            sound: '',
+                        });
+                        return;
+                    }
+                    sleep(proposalWaitSeconds);
+                    requestProposalAndMaybeRecover(attempt + 1);
+                    return;
+                }
+
+                if (useRecovery) {
+                    profitRatio = (payoutValue - askPrice) / askPrice;
+                    if (!(profitRatio > 0)) {
+                        Bot.notify({
+                            className: 'journal__text--warn',
+                            message:
+                                'Recovery mode could not calculate a valid payout ratio for ' +
+                                contractType +
+                                '. Falling back to the base stake.',
+                            sound: '',
+                        });
+                        useRecovery = false;
+                    } else {
+                        requiredStake = recoveryState.cumulativeLoss / profitRatio;
+                        requiredStake = Math.ceil(requiredStake * decimalFactor) / decimalFactor;
+                        recoveryState.activeRecoveryStake = requiredStake;
+                        Bot.notify({
+                            className: 'journal__text--info',
+                            message:
+                                'Recovery mode active after ' +
+                                recoveryState.consecutiveLosses +
+                                ' consecutive losses. Target recovery ' +
+                                recoveryState.cumulativeLoss +
+                                ' ${currency}; next stake ' +
+                                requiredStake +
+                                ' ${currency} on ' +
+                                contractType +
+                                '.',
+                            sound: '',
+                        });
+                        Bot.start(createTradeOptions(requiredStake));
+                        confirmFinalProposalAndPurchase(0, requiredStake);
+                        return;
+                    }
+                }
+
+                recoveryState.activeRecoveryStake = 0;
+                Bot.notify({
+                    className: 'journal__text--info',
+                    message:
+                        'Purchase request: ' +
+                        contractType +
+                        ' | stake ' +
+                        baseStakeValue +
+                        ' ${currency} | duration ' +
+                        durationValue +
+                        ' ${duration_type}' +
+                        (requiresPrediction ? ' | prediction ' + predictionValue : '') +
+                        (recoveryState.consecutiveLosses > 0
+                            ? ' | recovery waiting until 2 consecutive losses'
+                            : ''),
+                    sound: '',
+                });
+                Bot.purchase(contractType);
+            };
+            var confirmFinalProposalAndPurchase = function (attempt, stakeValue) {
+                var askPrice = 0;
+                var payoutValue = 0;
+
+                try {
+                    askPrice = Number(Bot.getAskPrice(contractType));
+                    payoutValue = Number(Bot.getPayout(contractType));
+                } catch (error) {
+                    askPrice = 0;
+                    payoutValue = 0;
+                }
+
+                if (!(askPrice > 0) || !(payoutValue > askPrice)) {
+                    if (attempt >= proposalAttemptLimit) {
+                        Bot.notify({
+                            className: 'journal__text--warn',
+                            message:
+                                'Recovery proposal for ' +
+                                contractType +
+                                ' was not ready in time. Skipping this purchase cycle to avoid a wrong stake.',
+                            sound: '',
+                        });
+                        return;
+                    }
+                    sleep(proposalWaitSeconds);
+                    confirmFinalProposalAndPurchase(attempt + 1, stakeValue);
+                    return;
+                }
+
+                Bot.notify({
+                    className: 'journal__text--info',
+                    message:
+                        'Purchase request: ' +
+                        contractType +
+                        ' | recovery stake ' +
+                        stakeValue +
+                        ' ${currency} | duration ' +
+                        durationValue +
+                        ' ${duration_type}' +
+                        (requiresPrediction ? ' | prediction ' + predictionValue : '') +
+                        ' | target recovers cumulative losses only.',
+                    sound: '',
+                });
+                Bot.purchase(contractType);
+            };
+
+            Bot.start(createTradeOptions(baseStakeValue));
+            requestProposalAndMaybeRecover(0);
         })();
     \n`;
 };

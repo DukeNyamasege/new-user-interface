@@ -173,11 +173,17 @@ export default Engine =>
                 'amount',
                 'barrierOffset',
                 'basis',
+                'contractTypes',
                 'duration',
                 'duration_unit',
                 'prediction',
                 'secondBarrierOffset',
                 'underlying_symbol',
-            ].some(value => this.trade_option[value] !== trade_option[value]);
+            ].some(value => {
+                if (value === 'contractTypes') {
+                    return JSON.stringify(this.trade_option[value] || []) !== JSON.stringify(trade_option[value] || []);
+                }
+                return this.trade_option[value] !== trade_option[value];
+            });
         }
     };

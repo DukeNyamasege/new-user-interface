@@ -78,6 +78,10 @@ describe('Tri-Mode Blockly workspace import', () => {
         expect(generated_code).toContain('Bot.getRecentTickAnalysisData(historySize)');
         expect(generated_code).toContain('Purchase request:');
         expect(generated_code).toContain('preserve_duration');
+        expect(generated_code).toContain('Bot.getAskPrice(contractType)');
+        expect(generated_code).toContain('Bot.getPayout(contractType)');
+        expect(generated_code).toContain('Tri-Mode recovery updated after loss');
+        expect(generated_code).toContain('contractTypes      : [contractType]');
         expect(generated_code.indexOf('Bot.getRecentTickAnalysisData(historySize)')).toBeLessThan(
             generated_code.indexOf('Bot.purchase(contractType)')
         );
@@ -85,7 +89,7 @@ describe('Tri-Mode Blockly workspace import', () => {
         workspace.dispose();
     });
 
-    it('analyses fresh history before every signal and follows the exact six-contract sequence', () => {
+    it('analyses fresh history before every signal and only returns a contract when the active trigger is confirmed', () => {
         const workspace = new window.Blockly.Workspace();
         const analysis = workspace.newBlock('tri_mode_regime_signal');
         const history = workspace.newBlock('math_number');
@@ -98,26 +102,63 @@ describe('Tri-Mode Blockly workspace import', () => {
         const generator = window.Blockly.JavaScript.javascriptGenerator;
         generator.init(workspace);
         const notify = jest.fn();
-        const getRecentTickAnalysisData = jest.fn(() => ({
-            digits: Array.from({ length: 100 }, (_, index) => index % 10),
-            ticks: Array.from({ length: 100 }, (_, index) => 100 + index * 0.01),
-        }));
         const bot = {
-            getRecentTickAnalysisData,
+            getRecentTickAnalysisData: jest.fn(),
             notify,
         };
-        const evaluate = (step: number) => {
+        const evaluate = (step: number, historyData: { digits: number[]; ticks: number[] }) => {
             sequence_step.setFieldValue(String(step), 'NUM');
+            bot.getRecentTickAnalysisData.mockReturnValue(historyData);
             const [code] = generator.forBlock.tri_mode_regime_signal(analysis);
             return new Function('Bot', `return ${code};`)(bot);
         };
 
-        expect([0, 1, 2, 3, 4, 5, 6].map(evaluate)).toEqual([20, 21, 22, 23, 30, 31, 20]);
-        expect(getRecentTickAnalysisData).toHaveBeenCalledTimes(7);
-        expect(getRecentTickAnalysisData).toHaveBeenCalledWith(100);
+        expect(
+            evaluate(0, {
+                digits: [6, 8, 9, 5, 7, 8, 6, 3, 2, 1],
+                ticks: [100, 100.1, 100.2, 100.3],
+            })
+        ).toBe(20);
+        expect(
+            evaluate(1, {
+                digits: [0, 1, 2, 3, 4, 5, 1, 6, 7, 9],
+                ticks: [100, 100.1, 100.2, 100.3],
+            })
+        ).toBe(21);
+        expect(
+            evaluate(2, {
+                digits: [4, 6, 8, 0, 2, 4, 7, 1, 3, 5],
+                ticks: [100, 100.1, 100.2, 100.3],
+            })
+        ).toBe(22);
+        expect(
+            evaluate(3, {
+                digits: [1, 3, 5, 7, 9, 1, 0, 2, 4, 6],
+                ticks: [100, 100.1, 100.2, 100.3],
+            })
+        ).toBe(23);
+        expect(
+            evaluate(4, {
+                digits: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                ticks: [100.4, 100.3, 100.2, 100.1],
+            })
+        ).toBe(30);
+        expect(
+            evaluate(5, {
+                digits: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                ticks: [100.1, 100.2, 100.3, 100.4],
+            })
+        ).toBe(31);
+        expect(
+            evaluate(0, {
+                digits: [6, 8, 9, 5, 7, 8, 6, 4, 2, 1],
+                ticks: [100, 100.1, 100.2, 100.3],
+            })
+        ).toBe(0);
+        expect(bot.getRecentTickAnalysisData).toHaveBeenCalledWith(100);
         expect(notify).toHaveBeenCalledWith(
             expect.objectContaining({
-                message: expect.stringContaining('Direct Deriv analysis before purchase'),
+                message: expect.stringContaining('Trigger matched'),
             })
         );
 
@@ -144,9 +185,97 @@ describe('Tri-Mode Blockly workspace import', () => {
         const [contract_code] = generator.forBlock.tri_mode_signal_value(value_block);
         value_block.setFieldValue('PREDICTION', 'VALUE_TYPE');
         const [prediction_code] = generator.forBlock.tri_mode_signal_value(value_block);
+        value_block.setFieldValue('DURATION', 'VALUE_TYPE');
+        const [duration_code] = generator.forBlock.tri_mode_signal_value(value_block);
 
         expect(new Function(`return ${contract_code};`)()).toBe(expected_contract);
         expect(new Function(`return ${prediction_code};`)()).toBe(expected_prediction);
+        expect(new Function(`return ${duration_code};`)()).toBe(signal >= 30 ? 3 : 1);
+
+        workspace.dispose();
+    });
+
+    it('calculates an exact recovery stake after two consecutive losses and otherwise keeps the base stake', () => {
+        const workspace = new window.Blockly.Workspace();
+        const contract_type_block = workspace.newBlock('text');
+        contract_type_block.setFieldValue('CALL', 'TEXT');
+        const amount_block = workspace.newBlock('math_number');
+        amount_block.setFieldValue('1', 'NUM');
+        const duration_block = workspace.newBlock('math_number');
+        duration_block.setFieldValue('3', 'NUM');
+        const prediction_block = workspace.newBlock('math_number');
+        prediction_block.setFieldValue('0', 'NUM');
+        const purchase_block = workspace.newBlock('smart_purchase_contract');
+        purchase_block.getInput('CONTRACT_TYPE')?.connection?.connect(contract_type_block.outputConnection);
+        purchase_block.getInput('AMOUNT')?.connection?.connect(amount_block.outputConnection);
+        purchase_block.getInput('DURATION')?.connection?.connect(duration_block.outputConnection);
+        purchase_block.getInput('PREDICTION')?.connection?.connect(prediction_block.outputConnection);
+
+        const generator = window.Blockly.JavaScript.javascriptGenerator;
+        generator.init(workspace);
+        const code = generator.forBlock.smart_purchase_contract(purchase_block);
+
+        const start = jest.fn();
+        const purchase = jest.fn();
+        const notify = jest.fn();
+        const getAskPrice = jest.fn(() => 1);
+        const getPayout = jest.fn(() => 1.95);
+        const sleep = jest.fn();
+
+        (globalThis as typeof globalThis & {
+            BinaryBotPrivateLimitations?: unknown;
+            BinaryBotPrivateTriModeRecoveryState?: {
+                baseStake: number;
+                consecutiveLosses: number;
+                cumulativeLoss: number;
+                lastProcessedReference: string;
+                activeRecoveryStake: number;
+            };
+        }).BinaryBotPrivateLimitations = {};
+        (globalThis as typeof globalThis & {
+            BinaryBotPrivateTriModeRecoveryState: {
+                baseStake: number;
+                consecutiveLosses: number;
+                cumulativeLoss: number;
+                lastProcessedReference: string;
+                activeRecoveryStake: number;
+            };
+        }).BinaryBotPrivateTriModeRecoveryState = {
+            baseStake: 1,
+            consecutiveLosses: 2,
+            cumulativeLoss: 2,
+            lastProcessedReference: 'abc',
+            activeRecoveryStake: 0,
+        };
+
+        new Function('Bot', 'sleep', code)({
+            start,
+            purchase,
+            notify,
+            getAskPrice,
+            getPayout,
+        }, sleep);
+
+        expect(start).toHaveBeenNthCalledWith(
+            1,
+            expect.objectContaining({
+                amount: 1,
+                contractTypes: ['CALL'],
+            })
+        );
+        expect(start).toHaveBeenNthCalledWith(
+            2,
+            expect.objectContaining({
+                amount: 2.11,
+                contractTypes: ['CALL'],
+            })
+        );
+        expect(purchase).toHaveBeenCalledWith('CALL');
+        expect(notify).toHaveBeenCalledWith(
+            expect.objectContaining({
+                message: expect.stringContaining('Recovery mode active after 2 consecutive losses'),
+            })
+        );
 
         workspace.dispose();
     });

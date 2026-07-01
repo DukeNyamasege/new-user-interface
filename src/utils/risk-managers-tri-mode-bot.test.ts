@@ -93,15 +93,30 @@ describe('Risk Managers Tri-Mode bot asset', () => {
         expect(smart_purchase_source).toContain('.indexOf(contractType)');
         expect(smart_purchase_source).toContain('Purchase request:');
         expect(smart_purchase_source).toContain('preserve_duration  : true');
+        expect(smart_purchase_source).toContain('Bot.getAskPrice(contractType)');
+        expect(smart_purchase_source).toContain('Bot.getPayout(contractType)');
+        expect(smart_purchase_source).toContain('recoveryState.consecutiveLosses >= 2');
+        expect(smart_purchase_source).toContain('target recovers cumulative losses only');
+        expect(smart_purchase_source).toContain('contractTypes      : [contractType]');
         expect(trade_engine_source).toContain('&& !should_preserve_duration');
         expect(tri_mode_signal_source).toContain('Bot.getRecentTickAnalysisData(historySize)');
         expect(tri_mode_signal_source).toContain("['OVER 4', 'UNDER 5', 'EVEN', 'ODD', 'RISE', 'FALL']");
+        expect(tri_mode_signal_source).toContain('Tri-Mode recovery updated after loss');
+        expect(tri_mode_signal_source).toContain('Tri-Mode recovery reset after a winning trade');
+        expect(tri_mode_signal_source).toContain('cumulative recovery target');
+        expect(tri_mode_signal_source).toContain('need the latest three digits to all stay below 4');
+        expect(tri_mode_signal_source).toContain('need the latest three digits to all stay above 5');
+        expect(tri_mode_signal_source).toContain('need three consecutive odd digits first');
+        expect(tri_mode_signal_source).toContain('need three consecutive even digits first');
+        expect(tri_mode_signal_source).toContain('need the last three tick moves to all fall first');
+        expect(tri_mode_signal_source).toContain('need the last three tick moves to all rise first');
         expect(tri_mode_value_source).toContain("return 'DIGITOVER'");
         expect(tri_mode_value_source).toContain("return 'DIGITUNDER'");
         expect(tri_mode_value_source).toContain("return 'DIGITEVEN'");
         expect(tri_mode_value_source).toContain("return 'DIGITODD'");
         expect(tri_mode_value_source).toContain("return 'CALL'");
         expect(tri_mode_value_source).toContain("return 'PUT'");
+        expect(tri_mode_value_source).toContain('return 3;');
     });
 
     it('uses one directly editable fixed stake with no Martingale or balance sizing', () => {
