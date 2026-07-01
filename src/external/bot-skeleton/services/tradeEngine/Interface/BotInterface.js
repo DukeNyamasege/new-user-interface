@@ -1,4 +1,5 @@
 import { observer as globalObserver } from '../../../utils/observer';
+import { findCurrentProposal, getProposalNumericValue } from '../trade/proposal-utils';
 import { createDetails } from '../utils/helpers';
 
 const getBotInterface = tradeEngine => {
@@ -9,8 +10,8 @@ const getBotInterface = tradeEngine => {
         start: (...args) => tradeEngine.start(...args),
         stop: (...args) => tradeEngine.stop(...args),
         purchase: contract_type => tradeEngine.purchase(contract_type),
-        getAskPrice: contract_type => Number(getProposal(contract_type, tradeEngine).ask_price),
-        getPayout: contract_type => Number(getProposal(contract_type, tradeEngine).payout),
+        getAskPrice: contract_type => getProposalNumericValue(getProposal(contract_type, tradeEngine), 'ask_price'),
+        getPayout: contract_type => getProposalNumericValue(getProposal(contract_type, tradeEngine), 'payout'),
         getPurchaseReference: () => tradeEngine.getPurchaseReference(),
         isSellAvailable: () => tradeEngine.isSellAtMarketAvailable(),
         sellAtMarket: () => tradeEngine.sellAtMarket(),
@@ -22,11 +23,11 @@ const getBotInterface = tradeEngine => {
 };
 
 const getProposal = (contract_type, tradeEngine) => {
-    return tradeEngine.data.proposals.find(
-        proposal =>
-            proposal.contract_type === contract_type &&
-            proposal.purchase_reference === tradeEngine.getPurchaseReference()
-    );
+    return findCurrentProposal({
+        proposals: tradeEngine?.data?.proposals,
+        contract_type,
+        purchase_reference: tradeEngine?.getPurchaseReference?.(),
+    });
 };
 
 const getSellPrice = tradeEngine => {

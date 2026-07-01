@@ -2,6 +2,7 @@ import { getLocalizedErrorMessage } from '@/constants/backend-error-messages';
 import { api_base } from '../../api/api-base';
 import { doUntilDone, tradeOptionToProposal } from '../utils/helpers';
 import { clearProposals, proposalsReady } from './state/actions';
+import { getProposalPurchaseDetails } from './proposal-utils';
 
 export default Engine =>
     class Proposal extends Engine {
@@ -49,10 +50,12 @@ export default Engine =>
                 throw new Error(getLocalizedErrorMessage('SelectedProposalNotExist'));
             }
 
-            return {
-                id: to_buy.id,
-                askPrice: to_buy.ask_price,
-            };
+            const purchase_details = getProposalPurchaseDetails(to_buy);
+            if (!purchase_details) {
+                throw new Error(getLocalizedErrorMessage('ProposalsNotReady'));
+            }
+
+            return purchase_details;
         }
 
         renewProposalsOnPurchase() {
