@@ -25,6 +25,9 @@ window.Blockly.Blocks.smart_purchase_contract = {
                 duration_unit: '%3',
             }),
             message2: localize('Prediction {{ prediction }}', { prediction: '%1' }),
+            message3: localize('Start exact recovery after {{ loss_count }} consecutive losses', {
+                loss_count: '%1',
+            }),
             args0: [
                 {
                     type: 'input_value',
@@ -55,13 +58,18 @@ window.Blockly.Blocks.smart_purchase_contract = {
                     check: 'Number',
                 },
             ],
+            args3: [
+                {
+                    type: 'input_value',
+                    name: 'RECOVERY_AFTER',
+                    check: 'Number',
+                },
+            ],
             previousStatement: null,
             colour: window.Blockly.Colours.Special1.colour,
             colourSecondary: window.Blockly.Colours.Special1.colourSecondary,
             colourTertiary: window.Blockly.Colours.Special1.colourTertiary,
-            tooltip: localize(
-                'Purchases Over, Under, Even, Odd, Rise, or Fall using the supplied fixed stake.'
-            ),
+            tooltip: localize('Purchases Over, Under, Even, Odd, Rise, or Fall using the supplied fixed stake.'),
             category: window.Blockly.Categories.Before_Purchase,
         };
     },
@@ -112,6 +120,12 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.smart_purchase_contract =
             window.Blockly.JavaScript.javascriptGenerator.ORDER_ATOMIC
         ) || '0';
     const duration_type = block.getFieldValue('DURATIONTYPE_LIST') || 't';
+    const recovery_after =
+        window.Blockly.JavaScript.javascriptGenerator.valueToCode(
+            block,
+            'RECOVERY_AFTER',
+            window.Blockly.JavaScript.javascriptGenerator.ORDER_ATOMIC
+        ) || '2';
 
     window.Blockly.JavaScript.javascriptGenerator.definitions_.tri_mode_recovery_state = `var BinaryBotPrivateTriModeRecoveryState = {
         baseStake: 1,
@@ -149,7 +163,9 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.smart_purchase_contract =
             var proposalWaitSeconds = 0.25;
             var decimalFactor = Math.pow(10, ${decimal_places});
             var recoveryState = BinaryBotPrivateTriModeRecoveryState;
-            var useRecovery = recoveryState.consecutiveLosses >= 2 && recoveryState.cumulativeLoss > 0;
+            var recoveryAfterLosses = Math.max(2, Math.floor(Number(${recovery_after}) || 2));
+            var useRecovery =
+                recoveryState.consecutiveLosses >= recoveryAfterLosses && recoveryState.cumulativeLoss > 0;
             recoveryState.baseStake = baseStakeValue;
             var createTradeOptions = function (stakeValue) {
                 return {
@@ -246,7 +262,7 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.smart_purchase_contract =
                         ' ${duration_type}' +
                         (requiresPrediction ? ' | prediction ' + predictionValue : '') +
                         (recoveryState.consecutiveLosses > 0
-                            ? ' | recovery waiting until 2 consecutive losses'
+                            ? ' | recovery waiting until ' + recoveryAfterLosses + ' consecutive losses'
                             : ''),
                     sound: '',
                 });

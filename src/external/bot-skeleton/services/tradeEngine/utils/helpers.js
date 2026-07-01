@@ -2,8 +2,8 @@ import { findValueByKeyRecursively, formatTime, getRoundedNumber, isEmptyObject 
 import { getLocalizedErrorMessage } from '@/constants/backend-error-messages';
 import { config } from '@/external/bot-skeleton/constants';
 import { localize } from '@deriv-com/translations';
-import { getSymbolRequestField, removeUndefinedFields } from '../../api/legacy-request';
 import { observer as globalObserver } from '../../../utils/observer';
+import { getSymbolRequestField, removeUndefinedFields } from '../../api/legacy-request';
 import { error as logError } from './broadcast';
 
 export const tradeOptionToProposal = (trade_option, purchase_reference) =>
@@ -295,21 +295,34 @@ export const doUntilDone = (promiseFn, errors_to_ignore, api_base) => {
     });
 };
 
-export const createDetails = contract => {
-    const { sell_price: sellPrice, buy_price: buyPrice, currency } = contract;
-    const profit = getRoundedNumber(sellPrice - buyPrice, currency);
-    const result = profit < 0 ? 'loss' : 'win';
+export const createDetails = (contract = {}) => {
+    const { sell_price: sellPrice, buy_price: buyPrice, currency } = contract || {};
+    const hasFinalPrices =
+        sellPrice !== undefined &&
+        sellPrice !== null &&
+        sellPrice !== '' &&
+        buyPrice !== undefined &&
+        buyPrice !== null &&
+        buyPrice !== '' &&
+        Number.isFinite(Number(sellPrice)) &&
+        Number.isFinite(Number(buyPrice));
+    const profit = hasFinalPrices ? getRoundedNumber(Number(sellPrice) - Number(buyPrice), currency) : 0;
+    const result = hasFinalPrices ? (profit < 0 ? 'loss' : 'win') : '';
+    const formatContractTime = timestamp =>
+        timestamp === undefined || timestamp === null || timestamp === ''
+            ? ''
+            : formatTime(parseInt(`${timestamp}000`), 'HH:mm:ss');
 
     return [
-        contract.transaction_ids.buy,
-        +contract.buy_price,
-        +contract.sell_price,
+        contract.transaction_ids?.buy ?? contract.contract_id ?? '',
+        Number(contract.buy_price) || 0,
+        Number(contract.sell_price) || 0,
         profit,
-        contract.contract_type,
-        formatTime(parseInt(`${contract.entry_tick_time}000`), 'HH:mm:ss'),
-        +contract.entry_tick,
-        formatTime(parseInt(`${contract.exit_tick_time}000`), 'HH:mm:ss'),
-        +contract.exit_tick,
+        contract.contract_type || '',
+        formatContractTime(contract.entry_tick_time),
+        Number(contract.entry_tick) || 0,
+        formatContractTime(contract.exit_tick_time),
+        Number(contract.exit_tick) || 0,
         +(contract.barrier ? contract.barrier : 0),
         result,
     ];

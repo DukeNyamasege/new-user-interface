@@ -2,6 +2,7 @@ import { getRoundedNumber } from '@/components/shared';
 import { api_base } from '../../api/api-base';
 import { contract as broadcastContract, contractStatus } from '../utils/broadcast';
 import { openContractReceived, sell } from './state/actions';
+import { areContractIdsEqual, normalizeOpenContract } from './open-contract-utils';
 
 const CLOSED_CONTRACT_STATUSES = new Set(['sold', 'won', 'lost', 'cancelled']);
 
@@ -71,23 +72,11 @@ export default Engine =>
         }
 
         normalizeContract(contract) {
-            if (!contract) return contract;
-
-            const normalizedStatus = String(contract.status || '').toLowerCase();
-            if (contract.is_sold || !CLOSED_CONTRACT_STATUSES.has(normalizedStatus)) {
-                return contract;
-            }
-
-            // Some accounts report the final state via status before toggling is_sold.
-            // Normalize that shape so the bot and UI can advance consistently.
-            return {
-                ...contract,
-                is_sold: 1,
-            };
+            return normalizeOpenContract(contract, this.data?.contract, CLOSED_CONTRACT_STATUSES);
         }
 
         expectedContractId(contractId) {
-            return this.contractId && contractId === this.contractId;
+            return Boolean(this.contractId && areContractIdsEqual(contractId, this.contractId));
         }
 
         getSellPrice() {

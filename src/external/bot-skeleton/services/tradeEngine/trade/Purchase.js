@@ -1,12 +1,12 @@
-import { LogTypes } from '../../../constants/messages';
 import { assertApiTokenScope } from '@/utils/api-token-permissions';
-import { api_base } from '../../api/api-base';
+import { LogTypes } from '../../../constants/messages';
 import { observer as globalObserver } from '../../../utils/observer';
+import { api_base } from '../../api/api-base';
 import { contract as broadcastContract, contractStatus, info, log } from '../utils/broadcast';
 import { doUntilDone, getUUID, recoverFromError, tradeOptionToBuy } from '../utils/helpers';
-import { getValidatedBuyResponse } from './purchase-utils';
 import { purchaseSuccessful } from './state/actions';
 import { BEFORE_PURCHASE } from './state/constants';
+import { getValidatedBuyResponse } from './purchase-utils';
 
 let delayIndex = 0;
 let purchase_reference;
@@ -174,6 +174,9 @@ export default Engine =>
                 },
             };
 
+            // Keep a complete local snapshot before the first open-contract update arrives.
+            // Some Deriv updates omit transaction_ids, so OpenContract can merge them from here.
+            this.data.contract = baseContract;
             broadcastContract(baseContract);
 
             api_base.api

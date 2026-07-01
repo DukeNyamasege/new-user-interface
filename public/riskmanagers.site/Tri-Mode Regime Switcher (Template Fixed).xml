@@ -229,6 +229,11 @@
                                 <field name="VAR" id="tm_prediction">Prediction</field>
                               </block>
                             </value>
+                            <value name="RECOVERY_AFTER">
+                              <shadow type="math_number" id="tm_recovery_after_losses">
+                                <field name="NUM">2</field>
+                              </shadow>
+                            </value>
                           </block>
                         </next>
                       </block>

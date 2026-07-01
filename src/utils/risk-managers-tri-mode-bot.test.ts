@@ -75,11 +75,10 @@ describe('Risk Managers Tri-Mode bot asset', () => {
         expect(before_purchase?.querySelectorAll('block[type="tri_mode_regime_signal"]')).toHaveLength(1);
         expect(before_purchase?.querySelectorAll('block[type="tri_mode_signal_value"]')).toHaveLength(3);
         expect(before_purchase?.querySelector('value[name="HISTORY"] field[name="NUM"]')?.textContent).toBe('100');
+        expect(before_purchase?.querySelector('value[name="RECOVERY_AFTER"] field[name="NUM"]')?.textContent).toBe('2');
         expect(after_purchase?.querySelectorAll('block[type="trade_again"]')).toHaveLength(1);
         expect(
-            after_purchase?.querySelector(
-                'block[id="tm_advance_sequence"] > next > block[type="trade_again"]'
-            )
+            after_purchase?.querySelector('block[id="tm_advance_sequence"] > next > block[type="trade_again"]')
         ).not.toBeNull();
     });
 
@@ -95,7 +94,7 @@ describe('Risk Managers Tri-Mode bot asset', () => {
         expect(smart_purchase_source).toContain('preserve_duration  : true');
         expect(smart_purchase_source).toContain('Bot.getAskPrice(contractType)');
         expect(smart_purchase_source).toContain('Bot.getPayout(contractType)');
-        expect(smart_purchase_source).toContain('recoveryState.consecutiveLosses >= 2');
+        expect(smart_purchase_source).toContain('recoveryState.consecutiveLosses >= recoveryAfterLosses');
         expect(smart_purchase_source).toContain('target recovers cumulative losses only');
         expect(smart_purchase_source).toContain('contractTypes      : [contractType]');
         expect(trade_engine_source).toContain('&& !should_preserve_duration');

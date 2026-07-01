@@ -1,6 +1,7 @@
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
 import { formatDate, isEnded } from '@/components/shared';
 import { LogTypes } from '@/external/bot-skeleton';
+import { contractsReferToSameTrade, hasContractIdentity, mergeContractUpdate } from '@/utils/contract-identity';
 import { ProposalOpenContract } from '@deriv/api-types';
 import { TPortfolioPosition, TStores } from '@deriv/stores/types';
 import { TContractInfo } from '../components/summary/summary-card.types';
@@ -11,6 +12,13 @@ import RootStore from './root-store';
 type TTransaction = {
     type: string;
     data?: string | TContractInfo;
+};
+
+type TContractDisplayUpdate = TContractInfo & {
+    entry_spot_time?: number | string;
+    entry_tick_display_value?: number | string;
+    exit_spot_time?: number | string;
+    exit_tick_display_value?: number | string;
 };
 
 type TElement = {
@@ -57,7 +65,13 @@ export default class TransactionsStore {
     is_transaction_details_modal_open = false;
 
     get transactions(): TTransaction[] {
-        if (this.core?.client?.loginid) return this.elements[this.core?.client?.loginid] ?? [];
+        if (this.core?.client?.loginid) {
+            return (this.elements[this.core.client.loginid] ?? []).filter(
+                transaction =>
+                    transaction.type !== transaction_elements.CONTRACT ||
+                    (typeof transaction.data === 'object' && hasContractIdentity(transaction.data))
+            );
+        }
         return [];
     }
 
@@ -111,27 +125,12 @@ export default class TransactionsStore {
     }
 
     pushTransaction(data: TContractInfo) {
+        if (!data || !hasContractIdentity(data)) return;
+
         const is_completed = isEnded(data as ProposalOpenContract);
         const { run_id } = this.root_store.run_panel;
-        const current_account = this.core?.client?.loginid as string;
-        const entry_spot = (data as any).entry_tick_display_value ?? data.entry_tick ?? data.entry_spot;
-        const exit_spot = (data as any).exit_tick_display_value ?? data.exit_tick ?? data.exit_spot;
-        const entry_tick_time = data.entry_tick_time ?? (data as any).entry_spot_time;
-        const exit_tick_time = data.exit_tick_time ?? (data as any).exit_spot_time;
-
-        const contract: TContractInfo = {
-            ...data,
-            entry_spot,
-            exit_spot,
-            is_completed,
-            run_id,
-            date_start: formatDate(data.date_start, 'YYYY-M-D HH:mm:ss [GMT]'),
-            entry_tick: data.entry_tick ?? entry_spot,
-            entry_tick_time: entry_tick_time && formatDate(entry_tick_time, 'YYYY-M-D HH:mm:ss [GMT]'),
-            exit_tick: data.exit_tick ?? exit_spot,
-            exit_tick_time: exit_tick_time && formatDate(exit_tick_time, 'YYYY-M-D HH:mm:ss [GMT]'),
-            profit: is_completed ? data.profit : 0,
-        };
+        const current_account = this.core?.client?.loginid;
+        if (!current_account) return;
 
         if (!this.elements[current_account]) {
             this.elements = {
@@ -140,14 +139,38 @@ export default class TransactionsStore {
             };
         }
 
-        const same_contract_index = this.elements[current_account]?.findIndex(c => {
-            if (typeof c.data === 'string') return false;
-            return (
-                c.type === transaction_elements.CONTRACT &&
-                c.data?.transaction_ids &&
-                c.data.transaction_ids.buy === data.transaction_ids?.buy
-            );
+        const same_contract_index = this.elements[current_account]?.findIndex(transaction => {
+            if (transaction.type !== transaction_elements.CONTRACT || typeof transaction.data !== 'object') {
+                return false;
+            }
+            return contractsReferToSameTrade(transaction.data, data);
         });
+        const existing_contract =
+            same_contract_index >= 0 && typeof this.elements[current_account]?.[same_contract_index]?.data === 'object'
+                ? (this.elements[current_account][same_contract_index].data as TContractInfo)
+                : undefined;
+        const merged_data = mergeContractUpdate(existing_contract, data);
+        const display_data = merged_data as TContractDisplayUpdate;
+        const entry_spot =
+            display_data.entry_tick_display_value ?? merged_data.entry_tick ?? merged_data.entry_spot;
+        const exit_spot =
+            display_data.exit_tick_display_value ?? merged_data.exit_tick ?? merged_data.exit_spot;
+        const entry_tick_time = merged_data.entry_tick_time ?? display_data.entry_spot_time;
+        const exit_tick_time = merged_data.exit_tick_time ?? display_data.exit_spot_time;
+
+        const contract: TContractInfo = {
+            ...merged_data,
+            entry_spot,
+            exit_spot,
+            is_completed,
+            run_id,
+            date_start: formatDate(merged_data.date_start, 'YYYY-M-D HH:mm:ss [GMT]'),
+            entry_tick: merged_data.entry_tick ?? entry_spot,
+            entry_tick_time: entry_tick_time && formatDate(entry_tick_time, 'YYYY-M-D HH:mm:ss [GMT]'),
+            exit_tick: merged_data.exit_tick ?? exit_spot,
+            exit_tick_time: exit_tick_time && formatDate(exit_tick_time, 'YYYY-M-D HH:mm:ss [GMT]'),
+            profit: is_completed ? merged_data.profit : 0,
+        };
 
         if (same_contract_index === -1) {
             // Render a divider if the "run_id" for this contract is different.

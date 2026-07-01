@@ -10,6 +10,7 @@ import { TContractInfo } from '@/components/summary/summary-card.types';
 import { contract_stages } from '@/constants/contract-stage';
 import { transaction_elements } from '@/constants/transactions';
 import { useStore } from '@/hooks/useStore';
+import { getContractRowKey } from '@/utils/contract-identity';
 // import { DerivLightEmptyCardboardBoxIcon } from '@/components/shared_ui/figma-icons';
 import { Localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
@@ -152,7 +153,7 @@ const Transactions = observer(({ is_drawer_open }: TTransactions) => {
                             keyMapper={row => {
                                 switch (row.type) {
                                     case transaction_elements.CONTRACT: {
-                                        return row.data.transaction_ids.buy;
+                                        return getContractRowKey(row.data);
                                     }
                                     case transaction_elements.DIVIDER: {
                                         return row.data;

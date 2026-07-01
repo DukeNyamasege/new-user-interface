@@ -81,6 +81,7 @@ describe('Tri-Mode Blockly workspace import', () => {
         expect(generated_code).toContain('Bot.getAskPrice(contractType)');
         expect(generated_code).toContain('Bot.getPayout(contractType)');
         expect(generated_code).toContain('Tri-Mode recovery updated after loss');
+        expect(generated_code).toContain('recoveryAfterLosses');
         expect(generated_code).toContain('contractTypes      : [contractType]');
         expect(generated_code.indexOf('Bot.getRecentTickAnalysisData(historySize)')).toBeLessThan(
             generated_code.indexOf('Bot.purchase(contractType)')
@@ -205,11 +206,14 @@ describe('Tri-Mode Blockly workspace import', () => {
         duration_block.setFieldValue('3', 'NUM');
         const prediction_block = workspace.newBlock('math_number');
         prediction_block.setFieldValue('0', 'NUM');
+        const recovery_after_block = workspace.newBlock('math_number');
+        recovery_after_block.setFieldValue('2', 'NUM');
         const purchase_block = workspace.newBlock('smart_purchase_contract');
         purchase_block.getInput('CONTRACT_TYPE')?.connection?.connect(contract_type_block.outputConnection);
         purchase_block.getInput('AMOUNT')?.connection?.connect(amount_block.outputConnection);
         purchase_block.getInput('DURATION')?.connection?.connect(duration_block.outputConnection);
         purchase_block.getInput('PREDICTION')?.connection?.connect(prediction_block.outputConnection);
+        purchase_block.getInput('RECOVERY_AFTER')?.connection?.connect(recovery_after_block.outputConnection);
 
         const generator = window.Blockly.JavaScript.javascriptGenerator;
         generator.init(workspace);
@@ -222,25 +226,29 @@ describe('Tri-Mode Blockly workspace import', () => {
         const getPayout = jest.fn(() => 1.95);
         const sleep = jest.fn();
 
-        (globalThis as typeof globalThis & {
-            BinaryBotPrivateLimitations?: unknown;
-            BinaryBotPrivateTriModeRecoveryState?: {
-                baseStake: number;
-                consecutiveLosses: number;
-                cumulativeLoss: number;
-                lastProcessedReference: string;
-                activeRecoveryStake: number;
-            };
-        }).BinaryBotPrivateLimitations = {};
-        (globalThis as typeof globalThis & {
-            BinaryBotPrivateTriModeRecoveryState: {
-                baseStake: number;
-                consecutiveLosses: number;
-                cumulativeLoss: number;
-                lastProcessedReference: string;
-                activeRecoveryStake: number;
-            };
-        }).BinaryBotPrivateTriModeRecoveryState = {
+        (
+            globalThis as typeof globalThis & {
+                BinaryBotPrivateLimitations?: unknown;
+                BinaryBotPrivateTriModeRecoveryState?: {
+                    baseStake: number;
+                    consecutiveLosses: number;
+                    cumulativeLoss: number;
+                    lastProcessedReference: string;
+                    activeRecoveryStake: number;
+                };
+            }
+        ).BinaryBotPrivateLimitations = {};
+        (
+            globalThis as typeof globalThis & {
+                BinaryBotPrivateTriModeRecoveryState: {
+                    baseStake: number;
+                    consecutiveLosses: number;
+                    cumulativeLoss: number;
+                    lastProcessedReference: string;
+                    activeRecoveryStake: number;
+                };
+            }
+        ).BinaryBotPrivateTriModeRecoveryState = {
             baseStake: 1,
             consecutiveLosses: 2,
             cumulativeLoss: 2,
@@ -248,13 +256,16 @@ describe('Tri-Mode Blockly workspace import', () => {
             activeRecoveryStake: 0,
         };
 
-        new Function('Bot', 'sleep', code)({
-            start,
-            purchase,
-            notify,
-            getAskPrice,
-            getPayout,
-        }, sleep);
+        new Function('Bot', 'sleep', code)(
+            {
+                start,
+                purchase,
+                notify,
+                getAskPrice,
+                getPayout,
+            },
+            sleep
+        );
 
         expect(start).toHaveBeenNthCalledWith(
             1,
