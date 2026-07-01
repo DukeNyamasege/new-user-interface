@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { LeaderboardEntry } from '@/features/competition/types/competition.types';
+import { sanitizeLeaderboardEntry } from '@/features/competition/utils/competitionSafety';
 
 type LeaderboardState = {
     entries: LeaderboardEntry[];
@@ -100,7 +101,7 @@ export const useLeaderboard = (slug = DEFAULT_COMPETITION_SLUG) => {
                 );
 
                 setState({
-                    entries: (payload.entries || []) as LeaderboardEntry[],
+                    entries: ((payload.entries || []) as LeaderboardEntry[]).map(sanitizeLeaderboardEntry),
                     isLoading: false,
                     error: null,
                 });

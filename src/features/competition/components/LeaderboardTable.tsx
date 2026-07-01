@@ -1,3 +1,4 @@
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 import type { LeaderboardEntry } from '@/features/competition/types/competition.types';
 import { formatCompetitionMoney } from '@/features/competition/utils/formatCompetitionMoney';
 import { getDisplayMaskedLoginId } from '@/utils/account-helpers';
@@ -30,6 +31,47 @@ type LeaderboardTableProps = {
 
 const MAX_VISIBLE_ROWS = 50;
 const AWARD_CUTOFF = 20;
+
+type LeaderboardRowBoundaryProps = {
+    children: ReactNode;
+    columnCount: number;
+    fallbackRank: number;
+    isAwardZone: boolean;
+};
+
+type LeaderboardRowBoundaryState = {
+    hasError: boolean;
+};
+
+class LeaderboardRowBoundary extends Component<LeaderboardRowBoundaryProps, LeaderboardRowBoundaryState> {
+    state: LeaderboardRowBoundaryState = { hasError: false };
+
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+        console.error('[Competition][LeaderboardRowBoundary] Failed to render leaderboard row:', error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <tr className={`competition-leaderboard__row--empty${this.props.isAwardZone ? ' competition-leaderboard__row--award' : ''}`}>
+                    <td>
+                        <div className='competition-rank'>
+                            <strong>{this.props.fallbackRank}</strong>
+                            <span>{'\u2022'}</span>
+                        </div>
+                    </td>
+                    <td colSpan={this.props.columnCount - 1}>This participant entry could not be displayed.</td>
+                </tr>
+            );
+        }
+
+        return this.props.children;
+    }
+}
 
 const LeaderboardTable = ({ entries, competitionIsLive, emptyMessage = 'No competition entries yet.' }: LeaderboardTableProps) => {
     const visibleEntries = entries.slice(0, MAX_VISIBLE_ROWS);
@@ -81,38 +123,44 @@ const LeaderboardTable = ({ entries, competitionIsLive, emptyMessage = 'No compe
                             const isAwardZone = index < AWARD_CUTOFF;
 
                             return (
-                                <tr
+                                <LeaderboardRowBoundary
                                     key={entry.participant_id}
-                                    className={`competition-leaderboard__row--${tone}${isAwardZone ? ' competition-leaderboard__row--award' : ''}`}
+                                    columnCount={competitionIsLive ? 7 : 5}
+                                    fallbackRank={entry.current_rank || index + 1}
+                                    isAwardZone={isAwardZone}
                                 >
-                                    <td>
-                                        <div className={`competition-rank competition-rank--${index + 1}`}>
-                                            <strong>{entry.current_rank || index + 1}</strong>
-                                            <span>{getRankMovement(entry.current_rank, entry.previous_rank)}</span>
-                                        </div>
-                                    </td>
-                                    <td>{entry.username}</td>
-                                    <td>{getDisplayMaskedLoginId(entry.masked_account_id || '') || 'Pending verification'}</td>
-                                    {competitionIsLive ? (
-                                        <>
-                                            <td>{formatCompetitionMoney(entry.starting_balance, entry.account_currency || 'USD')}</td>
-                                            <td>{formatCompetitionMoney(entry.current_balance, entry.account_currency || 'USD')}</td>
-                                            <td className={`competition-metric competition-metric--${tone}`}>
-                                                {formatCompetitionMoney(entry.adjusted_profit, entry.account_currency || 'USD')}
-                                            </td>
-                                            <td className={`competition-metric competition-metric--${tone}`}>
-                                                {formatGrowth(entry.growth_percentage)}
-                                            </td>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <td>{formatCompetitionMoney(entry.current_balance, entry.account_currency || 'USD')}</td>
-                                            <td className={`competition-metric competition-metric--${tone}`}>
-                                                {formatGrowth(entry.growth_percentage)}
-                                            </td>
-                                        </>
-                                    )}
-                                </tr>
+                                    <tr
+                                        className={`competition-leaderboard__row--${tone}${isAwardZone ? ' competition-leaderboard__row--award' : ''}`}
+                                    >
+                                        <td>
+                                            <div className={`competition-rank competition-rank--${index + 1}`}>
+                                                <strong>{entry.current_rank || index + 1}</strong>
+                                                <span>{getRankMovement(entry.current_rank, entry.previous_rank)}</span>
+                                            </div>
+                                        </td>
+                                        <td>{entry.username}</td>
+                                        <td>{getDisplayMaskedLoginId(entry.masked_account_id || '') || 'Pending verification'}</td>
+                                        {competitionIsLive ? (
+                                            <>
+                                                <td>{formatCompetitionMoney(entry.starting_balance, entry.account_currency || 'USD')}</td>
+                                                <td>{formatCompetitionMoney(entry.current_balance, entry.account_currency || 'USD')}</td>
+                                                <td className={`competition-metric competition-metric--${tone}`}>
+                                                    {formatCompetitionMoney(entry.adjusted_profit, entry.account_currency || 'USD')}
+                                                </td>
+                                                <td className={`competition-metric competition-metric--${tone}`}>
+                                                    {formatGrowth(entry.growth_percentage)}
+                                                </td>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <td>{formatCompetitionMoney(entry.current_balance, entry.account_currency || 'USD')}</td>
+                                                <td className={`competition-metric competition-metric--${tone}`}>
+                                                    {formatGrowth(entry.growth_percentage)}
+                                                </td>
+                                            </>
+                                        )}
+                                    </tr>
+                                </LeaderboardRowBoundary>
                             );
                         })}
                         {hasEntries

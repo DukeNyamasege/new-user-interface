@@ -5,6 +5,8 @@ import { useCompetition } from '@/features/competition/hooks/useCompetition';
 import { useLeaderboard } from '@/features/competition/hooks/useLeaderboard';
 import { getDerivCompetitionAuth } from '@/features/competition/services/deriv-auth';
 import type { DerivCompetitionAccount } from '@/features/competition/types/competition.types';
+import { formatCompetitionMoney } from '@/features/competition/utils/formatCompetitionMoney';
+import { sanitizeDerivCompetitionAccount } from '@/features/competition/utils/competitionSafety';
 import { useStore } from '@/hooks/useStore';
 import {
     getDisplayLoginId,
@@ -58,11 +60,11 @@ const CompetitionPage = observer(() => {
         const loadEligibleAccount = async () => {
             try {
                 const accounts = await derivAuth.getAccounts();
-                const realAccounts = accounts.filter(account => derivAuth.isRealAccount(account));
+                const realAccounts = accounts.map(sanitizeDerivCompetitionAccount).filter(account => derivAuth.isRealAccount(account));
                 const accountsWithBalances = await Promise.all(
                     realAccounts.map(async account => ({
                         ...account,
-                        current_balance: Number(await derivAuth.getBalance(account.loginid)),
+                        current_balance: Number(await derivAuth.getBalance(account.loginid)) || 0,
                     }))
                 );
                 const activeEligibleAccount =
@@ -315,7 +317,7 @@ const CompetitionPage = observer(() => {
                                 <div className='competition-join-minimal'>
                                     <div className='competition-note'>
                                         {eligibleAccount
-                                            ? `We'll automatically link your eligible account ${getDisplayLoginId(eligibleAccount.loginid)} (${eligibleAccount.currency} ${eligibleAccount.current_balance.toFixed(2)}).`
+                                            ? `We'll automatically link your eligible account ${getDisplayLoginId(eligibleAccount.loginid)} (${formatCompetitionMoney(eligibleAccount.current_balance, eligibleAccount.currency)}).`
                                             : ineligibleAccountMessage}
                                     </div>
                                     <input
@@ -348,7 +350,7 @@ const CompetitionPage = observer(() => {
                                 <div className='competition-account-list'>
                                     <div className='competition-note'>
                                         {eligibleAccount
-                                            ? `Only your eligible account ${getDisplayLoginId(eligibleAccount.loginid)} (${eligibleAccount.currency} ${eligibleAccount.current_balance.toFixed(2)}) can be linked.`
+                                            ? `Only your eligible account ${getDisplayLoginId(eligibleAccount.loginid)} (${formatCompetitionMoney(eligibleAccount.current_balance, eligibleAccount.currency)}) can be linked.`
                                             : ineligibleAccountMessage}
                                     </div>
                                     {formError || error ? (

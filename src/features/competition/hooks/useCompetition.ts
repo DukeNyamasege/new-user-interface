@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { CompetitionRecord, ParticipantSnapshot } from '@/features/competition/types/competition.types';
+import { sanitizeCompetitionRecord, sanitizeParticipantSnapshot } from '@/features/competition/utils/competitionSafety';
 
 const DEFAULT_COMPETITION_SLUG = 'giftbaris-2026-july';
 const storageKey = (slug: string) => `competition:participant:${slug}`;
@@ -103,10 +104,10 @@ export const useCompetition = (slug = DEFAULT_COMPETITION_SLUG) => {
                 throw new Error(await parseCompetitionError(competitionResponse, 'Unable to load the competition.'));
             }
 
-            const competitionPayload = await parseCompetitionJson<CompetitionRecord>(
+            const competitionPayload = sanitizeCompetitionRecord(await parseCompetitionJson<CompetitionRecord>(
                 competitionResponse,
                 'Competition response could not be read.'
-            );
+            ));
 
             let participantSnapshot = state.participantSnapshot;
 
@@ -115,10 +116,10 @@ export const useCompetition = (slug = DEFAULT_COMPETITION_SLUG) => {
                     buildCompetitionUrl(`/competitions/${slug}/participants/${participantId}`)
                 );
                 if (participantResponse.ok) {
-                    participantSnapshot = await parseCompetitionJson<ParticipantSnapshot>(
+                    participantSnapshot = sanitizeParticipantSnapshot(await parseCompetitionJson<ParticipantSnapshot>(
                         participantResponse,
                         'Participant snapshot response could not be read.'
-                    );
+                    ));
                 }
             }
 
@@ -162,10 +163,10 @@ export const useCompetition = (slug = DEFAULT_COMPETITION_SLUG) => {
                 );
             }
 
-            const payload = await parseCompetitionJson<ParticipantSnapshot>(
+            const payload = sanitizeParticipantSnapshot(await parseCompetitionJson<ParticipantSnapshot>(
                 response,
                 'Competition profile response could not be read.'
-            );
+            ));
 
             localStorage.setItem(storageKey(slug), payload.participant.id);
             setState(prev => ({
@@ -212,10 +213,10 @@ export const useCompetition = (slug = DEFAULT_COMPETITION_SLUG) => {
                 throw new Error(await parseCompetitionError(response, 'Unable to connect this Deriv account.'));
             }
 
-            const payload = await parseCompetitionJson<ParticipantSnapshot>(
+            const payload = sanitizeParticipantSnapshot(await parseCompetitionJson<ParticipantSnapshot>(
                 response,
                 'Competition account response could not be read.'
-            );
+            ));
 
             setState(prev => ({
                 ...prev,
@@ -289,10 +290,10 @@ export const useCompetition = (slug = DEFAULT_COMPETITION_SLUG) => {
                 throw new Error(await parseCompetitionError(response, 'Unable to refresh your competition balance.'));
             }
 
-            const payload = await parseCompetitionJson<ParticipantSnapshot>(
+            const payload = sanitizeParticipantSnapshot(await parseCompetitionJson<ParticipantSnapshot>(
                 response,
                 'Competition balance response could not be read.'
-            );
+            ));
 
             setState(prev => ({
                 ...prev,
@@ -330,7 +331,7 @@ export const useCompetition = (slug = DEFAULT_COMPETITION_SLUG) => {
 
             setState(prev => ({
                 ...prev,
-                competition: payload.competition as CompetitionRecord,
+                competition: sanitizeCompetitionRecord(payload.competition as CompetitionRecord),
                 isJoining: false,
             }));
             await refreshCompetition();
