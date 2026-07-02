@@ -47,6 +47,7 @@ export default class TransactionsStore {
             transactions: computed,
             onBotContractEvent: action.bound,
             pushTransaction: action.bound,
+            syncJournalWithTransactions: action.bound,
             clear: action.bound,
             registerReactions: action.bound,
             recoverPendingContracts: action.bound,
@@ -118,6 +119,16 @@ export default class TransactionsStore {
 
             journal.pushMessage(settlement_parts.join(' | '), MessageTypes.NOTIFY, 'journal__text--analysis');
         }
+    }
+
+    syncJournalWithTransactions() {
+        const current_account = this.core?.client?.loginid;
+        if (!current_account) return;
+
+        (this.elements[current_account] ?? []).forEach(transaction => {
+            if (transaction.type !== transaction_elements.CONTRACT || typeof transaction.data !== 'object') return;
+            this.pushContractJournalMessage(transaction.data as TContractInfo);
+        });
     }
 
     get transactions(): TTransaction[] {
@@ -259,6 +270,7 @@ export default class TransactionsStore {
         }
 
         this.elements = { ...this.elements }; // force update
+        this.syncJournalWithTransactions();
     }
 
     clear() {
@@ -296,6 +308,7 @@ export default class TransactionsStore {
             elements => {
                 if (!client.loginid) return;
                 this.schedulePersistTransactions(client.loginid as string, elements ?? []);
+                this.syncJournalWithTransactions();
             }
         );
 

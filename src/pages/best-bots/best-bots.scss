@@ -13,10 +13,12 @@
 
     &__grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(28rem, 1fr));
-        gap: 2.8rem 2rem;
+        grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr));
+        gap: 2rem 1.8rem;
         width: 100%;
         margin: 0 auto;
+        align-items: stretch;
+        align-content: start;
 
         @include mobile-or-tablet-screen {
             grid-template-columns: 1fr;
@@ -42,8 +44,9 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 1.3rem;
-    min-height: 25.6rem;
+    gap: 1.15rem;
+    min-height: 0;
+    height: 100%;
     padding: 1.6rem 1.6rem 1.4rem;
     border: 1px solid var(--bb-card-border);
     border-top: 3px solid #5968ff;
@@ -79,14 +82,15 @@
     &--dark {
         --bb-card-border: rgb(96 112 255 / 0.28);
         --bb-card-shadow: 0 1.4rem 3.4rem rgb(0 0 0 / 0.38);
-        --bb-card-text: #f4f6ff;
-        --bb-card-muted: #afb7d1;
-        --bb-card-surface: linear-gradient(180deg, rgb(241 243 251 / 0.98), rgb(228 233 247 / 0.98));
-        --bb-card-guide-bg: rgb(255 255 255 / 0.75);
-        --bb-card-guide-border: rgb(255 137 110 / 0.2);
-        --bb-card-guide-text: #35415d;
+        --bb-card-text: #eef3ff;
+        --bb-card-muted: #b4bfd8;
+        --bb-card-surface: linear-gradient(180deg, rgb(22 28 43 / 0.98), rgb(30 37 56 / 0.98));
+        --bb-card-guide-bg: rgb(255 255 255 / 0.08);
+        --bb-card-guide-border: rgb(255 137 110 / 0.26);
+        --bb-card-guide-text: #edf2ff;
         --bb-card-copy-bg: rgb(89 125 255 / 0.08);
         --bb-card-copy-border: rgb(89 125 255 / 0.34);
+        --bb-card-copy-icon: #b8c7ff;
     }
 
     &--premium {
@@ -104,6 +108,20 @@
         --bb-card-copy-border: rgb(255 190 24 / 0.24);
         --bb-card-copy-icon: #4672ff;
         border-top-color: #f5b000;
+    }
+
+    &--premium.bb-card--dark {
+        --bb-card-border: rgb(255 186 32 / 0.4);
+        --bb-card-shadow: 0 1.6rem 4rem rgb(0 0 0 / 0.42);
+        --bb-card-text: #fff4d5;
+        --bb-card-muted: #f0ddb0;
+        --bb-card-surface: linear-gradient(180deg, rgb(53 38 7 / 0.98), rgb(76 52 7 / 0.98));
+        --bb-card-guide-bg: rgb(255 255 255 / 0.08);
+        --bb-card-guide-border: rgb(255 211 96 / 0.2);
+        --bb-card-guide-text: #fff3d0;
+        --bb-card-copy-bg: rgb(255 190 24 / 0.12);
+        --bb-card-copy-border: rgb(255 211 96 / 0.24);
+        --bb-card-copy-icon: #ffe099;
     }
 
     &__header {
@@ -181,22 +199,22 @@
     &__name {
         margin: 0;
         color: var(--bb-card-text);
-        font-size: 3rem;
+        font-size: 2.1rem;
         font-weight: 800;
         line-height: 1.1;
         letter-spacing: -0.03em;
 
         @include mobile-or-tablet-screen {
-            font-size: 2.4rem;
+            font-size: 1.92rem;
         }
     }
 
     &__desc {
-        min-height: 5.8rem;
+        min-height: 6rem;
         margin: 0;
         color: var(--bb-card-muted);
-        font-size: 1.28rem;
-        line-height: 1.55;
+        font-size: 1.22rem;
+        line-height: 1.6;
     }
 
     &__performance {
@@ -220,14 +238,14 @@
 
         strong {
             color: var(--bb-card-text);
-            font-size: 1.44rem;
+            font-size: 1.38rem;
             font-weight: 800;
             line-height: 1.1;
         }
 
         span {
             color: var(--bb-card-muted);
-            font-size: 1.08rem;
+            font-size: 1.02rem;
             font-weight: 600;
         }
     }
@@ -241,7 +259,7 @@
 
     &__profit-label {
         color: var(--bb-card-muted);
-        font-size: 1.14rem;
+        font-size: 1.08rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.08em;
@@ -249,7 +267,7 @@
 
     &__profit-value {
         color: #00a85a;
-        font-size: 1.55rem;
+        font-size: 1.5rem;
         font-weight: 800;
         white-space: nowrap;
     }
