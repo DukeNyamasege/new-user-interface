@@ -175,11 +175,7 @@ const AppWrapper = observer(() => {
 
     let tab_value: number | string = active_tab;
     const getDefaultLandingTab = () => {
-        if (isRiskManagersDomain && show_competition) {
-            return DBOT_TABS.COMPETITION;
-        }
-
-        return show_manual_trading ? MANUAL_TRADING : DBOT_TABS.BEST_BOTS;
+        return DBOT_TABS.BEST_BOTS;
     };
     const GetHashedValue = (tab: number) => {
         tab_value = location.hash?.split('#')[1];

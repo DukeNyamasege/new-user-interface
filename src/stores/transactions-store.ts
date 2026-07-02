@@ -1,6 +1,6 @@
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
 import { formatDate, isEnded } from '@/components/shared';
-import { LogTypes } from '@/external/bot-skeleton';
+import { LogTypes, MessageTypes } from '@/external/bot-skeleton';
 import { contractsReferToSameTrade, hasContractIdentity, mergeContractUpdate } from '@/utils/contract-identity';
 import { ProposalOpenContract } from '@deriv/api-types';
 import { TPortfolioPosition, TStores } from '@deriv/stores/types';
@@ -63,6 +63,62 @@ export default class TransactionsStore {
     recovered_transactions: number[] = [];
     is_called_proposal_open_contract = false;
     is_transaction_details_modal_open = false;
+
+    hasJournalMessageForContract(contract_id?: number, matcher?: (message: string) => boolean) {
+        if (!contract_id) return false;
+
+        return this.root_store.journal.unfiltered_messages.some(entry => {
+            if (typeof entry.message !== 'string') return false;
+            if (!entry.message.includes(String(contract_id))) return false;
+            return matcher ? matcher(entry.message) : true;
+        });
+    }
+
+    pushContractJournalMessage(contract: TContractInfo, existing_contract?: TContractInfo) {
+        const { journal } = this.root_store;
+        const contract_id = Number(contract.contract_id);
+        const buy_id = contract.transaction_ids?.buy ?? '';
+        const has_completed_now = !!contract.is_completed;
+        const was_completed_before = !!existing_contract?.is_completed;
+        const contract_status = String(contract.status || '').toLowerCase();
+        const contract_currency = String(contract.currency || this.core?.client?.currency || '');
+        const profit = Number(contract.profit ?? 0);
+
+        if (
+            !existing_contract &&
+            contract_id &&
+            !this.hasJournalMessageForContract(contract_id, message => message.includes('opened'))
+        ) {
+            const open_message = [
+                `Contract opened: ${contract_id}`,
+                buy_id ? `Buy ID: ${buy_id}` : '',
+                contract.display_name ? `Market: ${contract.display_name}` : '',
+                contract.contract_type ? `Type: ${contract.contract_type}` : '',
+            ]
+                .filter(Boolean)
+                .join(' | ');
+
+            journal.pushMessage(open_message, MessageTypes.NOTIFY, 'journal__text--analysis');
+        }
+
+        if (
+            contract_id &&
+            has_completed_now &&
+            !was_completed_before &&
+            !this.hasJournalMessageForContract(contract_id, message => message.includes('settled'))
+        ) {
+            const settlement_label =
+                contract_status === 'won' ? 'Won' : contract_status === 'lost' ? 'Lost' : contract_status || 'Closed';
+            const settlement_parts = [
+                `Contract settled: ${contract_id}`,
+                `Status: ${settlement_label}`,
+                Number.isFinite(profit) ? `Profit/Loss: ${profit} ${contract_currency}` : '',
+                contract.exit_spot ? `Exit spot: ${contract.exit_spot}` : '',
+            ].filter(Boolean);
+
+            journal.pushMessage(settlement_parts.join(' | '), MessageTypes.NOTIFY, 'journal__text--analysis');
+        }
+    }
 
     get transactions(): TTransaction[] {
         if (this.core?.client?.loginid) {
@@ -151,10 +207,8 @@ export default class TransactionsStore {
                 : undefined;
         const merged_data = mergeContractUpdate(existing_contract, data);
         const display_data = merged_data as TContractDisplayUpdate;
-        const entry_spot =
-            display_data.entry_tick_display_value ?? merged_data.entry_tick ?? merged_data.entry_spot;
-        const exit_spot =
-            display_data.exit_tick_display_value ?? merged_data.exit_tick ?? merged_data.exit_spot;
+        const entry_spot = display_data.entry_tick_display_value ?? merged_data.entry_tick ?? merged_data.entry_spot;
+        const exit_spot = display_data.exit_tick_display_value ?? merged_data.exit_tick ?? merged_data.exit_spot;
         const entry_tick_time = merged_data.entry_tick_time ?? display_data.entry_spot_time;
         const exit_tick_time = merged_data.exit_tick_time ?? display_data.exit_spot_time;
 
@@ -171,6 +225,8 @@ export default class TransactionsStore {
             exit_tick_time: exit_tick_time && formatDate(exit_tick_time, 'YYYY-M-D HH:mm:ss [GMT]'),
             profit: is_completed ? merged_data.profit : 0,
         };
+
+        this.pushContractJournalMessage(contract, existing_contract);
 
         if (same_contract_index === -1) {
             // Render a divider if the "run_id" for this contract is different.

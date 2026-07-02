@@ -55,7 +55,7 @@
         <field name="NOTIFICATION_SOUND">silent</field>
         <value name="MESSAGE">
           <shadow type="text" id="$Nzsky-$,{Pow0Zh~GJP">
-            <field name="TEXT">@sammykhizz2</field>
+            <field name="TEXT">Riskmanagers.site</field>
           </shadow>
         </value>
         <next>
@@ -365,7 +365,7 @@
                         <field name="TEXT"></field>
                       </shadow>
                       <block type="text" id="hj1twW6kQTlf@?36#%h1">
-                        <field name="TEXT">Trade session completed ✅ from sammykhizzpro-Bot </field>
+                        <field name="TEXT">Trade session completed ✅ from Riskmanagers.site Bot </field>
                       </block>
                     </value>
                     <next>
@@ -494,7 +494,7 @@
             <field name="TEXT">abc</field>
           </shadow>
           <block type="text" id="|KgK#QmsbTf{z?UM7aFM">
-            <field name="TEXT">To be loaded on https://sammykhizz.trade</field>
+            <field name="TEXT">To be loaded on Riskmanagers.site</field>
           </block>
         </value>
         <next>
