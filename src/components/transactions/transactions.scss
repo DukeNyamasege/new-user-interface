@@ -3,7 +3,7 @@
 
 .transactions {
     $transaction: &;
-    $grid-template-columns: minmax(4.8rem, 0.75fr) minmax(8.8rem, 1.25fr) minmax(9.6rem, 1.15fr);
+    $grid-template-columns: minmax(4.6rem, 0.72fr) minmax(7.2rem, 1.08fr) minmax(7.8rem, 1fr);
 
     flex-direction: column;
     background: var(--rm-shell-section);
@@ -92,6 +92,8 @@
         border-bottom: 1px solid var(--rm-shell-section-border);
         width: 100%;
         display: grid;
+        box-sizing: border-box;
+        min-width: 0;
 
         @include typeface(--small-left-bold-black, none);
 
@@ -164,6 +166,9 @@
         grid-template-rows: auto auto;
         grid-template-areas: ('trade-type entry-spot stake' 'trade-type exit-spot  profit');
         padding: 0.8rem 0;
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
 
         @include rtl {
             direction: rtl;
@@ -300,12 +305,26 @@
         align-items: center;
         color: var(--rm-shell-panel-text);
         min-width: 0;
+        overflow: hidden;
     }
 
     &__spot-value {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    &__stake,
+    &__profit {
+        white-space: nowrap;
+        text-overflow: ellipsis;
+
+        .dc-text,
+        .dc-money {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
     }
 
     &__profit {

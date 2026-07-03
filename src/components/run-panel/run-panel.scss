@@ -138,19 +138,31 @@
 
         flex-direction: column;
         height: 100%;
+        min-width: 0;
+        padding: 0.6rem 0.4rem;
+        text-align: center;
 
         &-title {
             min-height: 1.8rem;
             margin-bottom: 4px;
             color: var(--run-panel-text);
+            max-width: 100%;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            line-height: 1.25;
 
             @include typeface(--small-center-bold-black, none);
         }
 
         &-content {
-            height: 18px;
+            min-height: 1.8rem;
+            height: auto;
             margin-bottom: 4px;
             color: var(--run-panel-text);
+            max-width: 100%;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            line-height: 1.25;
 
             @include typeface(--small-center-normal-black, none);
         }
@@ -160,7 +172,9 @@
         @include flex-center(flex-start, flex-end);
 
         flex-direction: column;
-        width: min(35rem, 100%);
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
         background-color: var(--run-panel-surface-2);
         color: var(--run-panel-text);
 
@@ -178,8 +192,8 @@
         &--info {
             @include flex-center(center, flex-start);
 
-            width: 33%;
-            padding: 16px 0 2px;
+            width: 100%;
+            padding: 1.2rem 1.6rem 0.2rem;
             cursor: pointer;
             color: var(--run-panel-text-muted);
             -webkit-tap-highlight-color: transparent;
@@ -199,7 +213,8 @@
         &--tiles {
             width: 100%;
             display: grid;
-            grid-template: 64px 64px / 1fr 1fr 1fr;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-auto-rows: minmax(6.4rem, auto);
 
             @include mobile-or-tablet-screen {
                 grid-template: 5rem 5rem / repeat(3, minmax(0, 1fr));
