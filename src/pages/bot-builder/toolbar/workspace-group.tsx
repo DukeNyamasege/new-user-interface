@@ -22,7 +22,16 @@ import ToolbarIcon from './toolbar-icon';
 const WorkspaceGroup = observer(() => {
     const { dashboard, toolbar, load_modal, save_modal } = useStore();
     const { setPreviewOnPopup, setChartModalVisibility } = dashboard;
-    const { has_redo_stack, has_undo_stack, onResetClick, onSortClick, onUndoClick, onZoomInOutClick } = toolbar;
+    const {
+        has_redo_stack,
+        has_undo_stack,
+        is_strategy_protected,
+        notifyProtectedAction,
+        onResetClick,
+        onSortClick,
+        onUndoClick,
+        onZoomInOutClick,
+    } = toolbar;
     const { toggleSaveModal } = save_modal;
     const { toggleLoadModal } = load_modal;
     const { isDesktop } = useDevice();
@@ -69,7 +78,7 @@ const WorkspaceGroup = observer(() => {
                             className='toolbar__icon'
                             id='db-toolbar__save-button'
                             data-testid='dt_toolbar_save_button'
-                            onClick={toggleSaveModal}
+                            onClick={is_strategy_protected ? () => notifyProtectedAction() : toggleSaveModal}
                         >
                             <LabelPairedFloppyDiskMdRegularIcon />
                         </span>

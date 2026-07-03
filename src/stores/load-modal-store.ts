@@ -10,6 +10,7 @@ import {
 } from '@/external/bot-skeleton';
 import { inject_workspace_options, updateXmlValues } from '@/external/bot-skeleton/scratch/utils';
 import { isDbotRTL } from '@/external/bot-skeleton/utils/workspace';
+import { clearActiveBot } from '@/utils/bot-tracker';
 import { TStores } from '@deriv/stores/types';
 import { localize } from '@deriv-com/translations';
 import { TStrategy } from 'Types';
@@ -189,6 +190,8 @@ export default class LoadModalStore {
             strategy_id: null,
             showIncompatibleStrategyDialog: null,
         });
+        this.root_store.toolbar.setStrategyProtected(false);
+        clearActiveBot();
 
         const { active_tab } = this.root_store.dashboard;
         if (active_tab === 1) this.toggleLoadModal();
@@ -305,6 +308,8 @@ export default class LoadModalStore {
                 show_snackbar: is_show_notification,
             });
             window.Blockly.derivWorkspace.strategy_to_load = strategy.xml;
+            this.root_store.toolbar.setStrategyProtected(false);
+            clearActiveBot();
         }
     };
 
@@ -353,6 +358,8 @@ export default class LoadModalStore {
                 window.Blockly.derivWorkspace.strategy_to_load = xml;
             }
         });
+        this.root_store.toolbar.setStrategyProtected(false);
+        clearActiveBot();
         this.is_open_button_loading = false;
     };
 
@@ -523,6 +530,8 @@ export default class LoadModalStore {
         derivWorkspace.cleanUp();
         derivWorkspace.clearUndo();
         derivWorkspace.current_strategy_id = strategy_id;
+        this.root_store.toolbar.setStrategyProtected(false);
+        clearActiveBot();
 
         /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
         /* [/AI] */

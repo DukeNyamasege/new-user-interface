@@ -174,7 +174,7 @@ const BotIdeas = observer(() => {
                 strategy_id: null,
                 showIncompatibleStrategyDialog: false,
             });
-            toolbar.setStrategyProtected(true);
+            toolbar.setStrategyProtected(false);
             setActiveTab(DBOT_TABS.BOT_BUILDER);
         } catch (err: unknown) {
             setLoadError(err instanceof Error ? err.message : 'Failed to load bot.');

@@ -56,6 +56,11 @@ export default class SaveModalStore implements ISaveModalStore {
     bot_name = '';
 
     toggleSaveModal = (): void => {
+        if (this.root_store.toolbar.is_strategy_protected) {
+            this.root_store.toolbar.notifyProtectedAction();
+            return;
+        }
+
         if (!this.is_save_modal_open) {
             this.setButtonStatus(button_status.NORMAL);
         }
@@ -132,6 +137,10 @@ export default class SaveModalStore implements ISaveModalStore {
 
     onConfirmSave = async ({ is_local, save_as_collection, bot_name }: IOnConfirmProps) => {
         const { load_modal, dashboard, google_drive } = this.root_store;
+        if (this.root_store.toolbar.is_strategy_protected) {
+            this.root_store.toolbar.notifyProtectedAction();
+            return;
+        }
         const { loadStrategyToBuilder, selected_strategy } = load_modal;
         const { active_tab } = dashboard;
         const is_bot_builder_tab = active_tab === DBOT_TABS.BOT_BUILDER;

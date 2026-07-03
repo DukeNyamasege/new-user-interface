@@ -4,7 +4,7 @@ import { getBestBotsFileUrl, getBestBotsFolder } from '@/components/shared';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { load, save_types } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
-import { setActiveBot } from '@/utils/bot-tracker';
+import { isPremiumProtectedBot, setActiveBot } from '@/utils/bot-tracker';
 import './best-bots.scss';
 
 type TBot = {
@@ -535,8 +535,12 @@ const BotCard = observer(({ bot, stats }: { bot: TBot; stats: TBotStats | undefi
             });
             if (load_result?.error) throw new Error(load_result.error);
             setActiveBot('best-bot', bot.id, bot.name);
+            const is_protected_bot = isPremiumProtectedBot(bot.id);
             try {
-                toolbar.setStrategyProtected(true);
+                toolbar.setStrategyProtected(
+                    is_protected_bot,
+                    is_protected_bot ? 'This is a premium bot and cannot be downloaded.' : undefined
+                );
             } catch {
                 // Keep loading the bot even if toolbar protection is unavailable.
             }
@@ -548,12 +552,17 @@ const BotCard = observer(({ bot, stats }: { bot: TBot; stats: TBotStats | undefi
                             [
                                 'before_purchase',
                                 'after_purchase',
+                                'during_purchase',
                                 'purchase',
                                 'smart_purchase_contract',
                                 'trade_again',
                             ].includes(block.type)
                         ) {
                             block.setCollapsed(true);
+                            if (is_protected_bot) {
+                                block.contextMenu = false;
+                                block.setMovable(false);
+                            }
                         }
                     });
                 }

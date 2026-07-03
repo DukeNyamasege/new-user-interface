@@ -1,5 +1,7 @@
 import { action, makeObservable, observable } from 'mobx';
 import { config, load, runGroupedEvents } from '@/external/bot-skeleton';
+import { clearActiveBot } from '@/utils/bot-tracker';
+import { localize } from '@deriv-com/translations';
 import RootStore from './root-store';
 
 interface IToolbarStore {
@@ -9,6 +11,8 @@ interface IToolbarStore {
     has_undo_stack: boolean;
     has_redo_stack: boolean;
     is_reset_button_clicked: boolean;
+    is_strategy_protected: boolean;
+    strategy_protection_message: string;
     onResetClick: () => void;
     closeResetDialog: () => void;
     onResetOkButtonClick: () => void;
@@ -18,6 +22,8 @@ interface IToolbarStore {
     resetDefaultStrategy: () => void;
     setHasUndoStack: () => void;
     setHasRedoStack: () => void;
+    setStrategyProtected: (is_protected: boolean, message?: string) => void;
+    notifyProtectedAction: (message?: string) => void;
 }
 
 export default class ToolbarStore implements IToolbarStore {
@@ -31,6 +37,8 @@ export default class ToolbarStore implements IToolbarStore {
             has_undo_stack: observable,
             has_redo_stack: observable,
             is_reset_button_clicked: observable,
+            is_strategy_protected: observable,
+            strategy_protection_message: observable,
             onResetClick: action.bound,
             closeResetDialog: action.bound,
             onResetOkButtonClick: action.bound,
@@ -38,6 +46,8 @@ export default class ToolbarStore implements IToolbarStore {
             resetDefaultStrategy: action.bound,
             setHasUndoStack: action.bound,
             setHasRedoStack: action.bound,
+            setStrategyProtected: action.bound,
+            notifyProtectedAction: action.bound,
         });
 
         this.root_store = root_store;
@@ -49,6 +59,8 @@ export default class ToolbarStore implements IToolbarStore {
     has_undo_stack = false;
     has_redo_stack = false;
     is_reset_button_clicked = false;
+    is_strategy_protected = false;
+    strategy_protection_message = localize('This is a premium bot and cannot be downloaded.');
 
     setResetButtonState = (is_reset_button_clicked: boolean): void => {
         this.is_reset_button_clicked = is_reset_button_clicked;
@@ -88,6 +100,8 @@ export default class ToolbarStore implements IToolbarStore {
         });
         workspace.strategy_to_load = workspace.cached_xml.main;
         this.setResetButtonState(false);
+        this.setStrategyProtected(false);
+        clearActiveBot();
     };
 
     onSortClick = () => {
@@ -122,5 +136,14 @@ export default class ToolbarStore implements IToolbarStore {
 
     setHasRedoStack = (): void => {
         this.has_redo_stack = window.Blockly.derivWorkspace?.redoStack_?.length > 0;
+    };
+
+    setStrategyProtected = (is_protected: boolean, message?: string): void => {
+        this.is_strategy_protected = is_protected;
+        this.strategy_protection_message = message || localize('This is a premium bot and cannot be downloaded.');
+    };
+
+    notifyProtectedAction = (message?: string): void => {
+        this.root_store.run_panel.showContractUpdateErrorDialog(message || this.strategy_protection_message);
     };
 }

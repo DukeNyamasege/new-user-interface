@@ -3,6 +3,7 @@ import { config } from '../constants/config';
 import { api_base } from '../services/api/api-base';
 import ApiHelpers from '../services/api/api-helpers';
 import Interpreter from '../services/tradeEngine/utils/interpreter';
+import { isActivePremiumProtectedBot } from '@/utils/bot-tracker';
 import { compareXml, observer as globalObserver } from '../utils';
 import { getSavedWorkspaces, saveWorkspaceToRecent } from '../utils/local-storage';
 import { isDbotRTL } from '../utils/workspace';
@@ -20,6 +21,15 @@ class DBot {
         this.symbol = null;
         this.is_bot_running = false;
     }
+
+    static protectedBlockTypes = [
+        'before_purchase',
+        'after_purchase',
+        'during_purchase',
+        'purchase',
+        'smart_purchase_contract',
+        'trade_again',
+    ];
 
     /**
      * Initialises the workspace and mounts it to a container element (app_contents).
@@ -152,6 +162,18 @@ class DBot {
                         const block = this.workspace.getBlockById(event.blockId);
                         if (is_mobile && block && event.element == 'collapsed') {
                             block.contextMenu = false;
+                        }
+                        if (
+                            block &&
+                            event.element === 'collapsed' &&
+                            event.newValue === false &&
+                            isActivePremiumProtectedBot() &&
+                            DBot.protectedBlockTypes.includes(block.type)
+                        ) {
+                            setTimeout(() => {
+                                block.setCollapsed(true);
+                                block.contextMenu = false;
+                            }, 0);
                         }
                     }
                 });
@@ -656,6 +678,13 @@ class DBot {
                 if (force_check && (block.is_error_highlighted || block.hasErrorHighlightedDescendant())) {
                     let current_collapsed_block = block;
                     while (current_collapsed_block) {
+                        if (
+                            isActivePremiumProtectedBot() &&
+                            DBot.protectedBlockTypes.includes(current_collapsed_block.type)
+                        ) {
+                            current_collapsed_block = current_collapsed_block.getParent();
+                            continue;
+                        }
                         current_collapsed_block.setCollapsed(false);
                         current_collapsed_block = current_collapsed_block.getParent();
                     }
