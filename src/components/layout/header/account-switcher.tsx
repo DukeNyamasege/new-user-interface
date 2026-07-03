@@ -7,7 +7,7 @@ import Text from '@/components/shared_ui/text';
 import { api_base } from '@/external/bot-skeleton/services/api/api-base';
 import { useApiBase } from '@/hooks/useApiBase';
 import { useStore } from '@/hooks/useStore';
-import { isDemoAccount } from '@/utils/account-helpers';
+import { isDemoAccount, shouldShowUsdAccountIcon } from '@/utils/account-helpers';
 import {
     DISPLAY_CURRENCIES,
     formatDisplayBalanceValue,
@@ -280,7 +280,10 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                     }}
                 >
                     <span className='acc-info__id' aria-hidden='true'>
-                        <CurrencyIcon currency={isVirtual ? undefined : 'usd'} isVirtual={isVirtual} />
+                        <CurrencyIcon
+                            currency={loginid && shouldShowUsdAccountIcon(loginid) ? 'usd' : undefined}
+                            isVirtual={!loginid || !shouldShowUsdAccountIcon(loginid)}
+                        />
                     </span>
                     <div className='acc-info__content'>
                         {(typeof balance !== 'undefined' || !currency) && (
@@ -419,7 +422,10 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                                     }}
                                 >
                                     <span className='acc-dropdown__account-icon'>
-                                        <CurrencyIcon isVirtual />
+                                        <CurrencyIcon
+                                            currency={shouldShowUsdAccountIcon(account.loginid) ? 'usd' : undefined}
+                                            isVirtual={!shouldShowUsdAccountIcon(account.loginid)}
+                                        />
                                     </span>
                                     <span className='acc-dropdown__account-info'>
                                         <Text as='span' size='xs' weight='bold' className='acc-dropdown__currency'>

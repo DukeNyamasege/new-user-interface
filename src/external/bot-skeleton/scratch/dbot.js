@@ -267,13 +267,26 @@ class DBot {
      * Runs the bot. Does a sanity check before attempting to generate the
      * JavaScript code that's fed to the interpreter.
      */
-    runBot() {
+    async runBot() {
         if (api_base.is_stopping) return;
 
         try {
             api_base.is_stopping = false;
+            if (!this.interpreter?.bot?.tradeEngine) {
+                this.interpreter = Interpreter();
+            }
+
+            if (this.symbol) {
+                await this.interpreter.bot.tradeEngine.watchTicks(this.symbol);
+            }
+
             const code = this.generateCode();
-            if (!this.interpreter.bot.tradeEngine.checkTicksPromiseExists()) this.interpreter = Interpreter();
+            if (!this.interpreter.bot.tradeEngine.checkTicksPromiseExists()) {
+                this.interpreter = Interpreter();
+                if (this.symbol) {
+                    await this.interpreter.bot.tradeEngine.watchTicks(this.symbol);
+                }
+            }
 
             this.is_bot_running = true;
 
@@ -364,6 +377,18 @@ class DBot {
             }
             
             `;
+    }
+
+    pauseBot() {
+        if (this.interpreter?.pause) {
+            this.interpreter.pause();
+        }
+    }
+
+    resumeBot() {
+        if (this.interpreter?.resume) {
+            this.interpreter.resume();
+        }
     }
 
     /**

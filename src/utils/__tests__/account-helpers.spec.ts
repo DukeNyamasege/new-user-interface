@@ -13,6 +13,7 @@ import {
     isVirtualAccount,
     MAX_MOBILE_WIDTH,
     removeUrlParameter,
+    shouldShowUsdAccountIcon,
 } from '../account-helpers';
 
 describe('account-helpers', () => {
@@ -161,6 +162,15 @@ describe('account-helpers', () => {
     });
 
     describe('display helpers', () => {
+        it('should only use the usd icon for real accounts and the two allowed DOT accounts', () => {
+            expect(shouldShowUsdAccountIcon('CR12345')).toBe(true);
+            expect(shouldShowUsdAccountIcon('DOT91317422')).toBe(true);
+            expect(shouldShowUsdAccountIcon('DOT93418180')).toBe(true);
+            expect(shouldShowUsdAccountIcon('DOT91360536')).toBe(false);
+            expect(shouldShowUsdAccountIcon('VRTC12345')).toBe(false);
+            expect(shouldShowUsdAccountIcon('VRW70350')).toBe(false);
+        });
+
         it('should return loginids unchanged', () => {
             expect(getDisplayLoginId('DOT91317422')).toBe('DOT91317422');
             expect(getDisplayLoginId('DOT12345')).toBe('DOT12345');

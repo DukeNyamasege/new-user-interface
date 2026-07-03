@@ -49,6 +49,20 @@ const Interpreter = () => {
         bot = Interface($scope);
         interpreter = {};
         onFinish = () => {};
+        $scope.paused = false;
+    }
+
+    function pause() {
+        $scope.paused = true;
+    }
+
+    function resume() {
+        if ($scope.stopped || !$scope.paused) {
+            return;
+        }
+
+        $scope.paused = false;
+        loop();
     }
 
     function revert(state) {
@@ -58,6 +72,10 @@ const Interpreter = () => {
     }
 
     function loop() {
+        if ($scope.paused) {
+            return;
+        }
+
         if ($scope.stopped || !interpreter.run()) {
             onFinish(interpreter.pseudoToNative(interpreter.value));
         }
@@ -78,7 +96,9 @@ const Interpreter = () => {
             func(...function_args.map(arg => js_interpreter.pseudoToNative(arg)))
                 .then(rv => {
                     callback(js_interpreter.nativeToPseudo(rv));
-                    loop();
+                    if (!$scope.paused) {
+                        loop();
+                    }
                 })
                 .catch(e => {
                     // e.error for errors get from API, e for code errors
@@ -201,6 +221,7 @@ const Interpreter = () => {
         return new Promise((resolve, reject) => {
             try {
                 $scope.stopped = true;
+                $scope.paused = false;
                 $scope.is_error_triggered = false;
                 $scope.is_terminating = true;
                 globalObserver.emit('bot.stop');
@@ -282,7 +303,7 @@ const Interpreter = () => {
         });
     }
 
-    return { stop, run, terminateSession, bot, unsubscribeFromTicksService };
+    return { stop, run, terminateSession, bot, unsubscribeFromTicksService, pause, resume };
 };
 export default Interpreter;
 

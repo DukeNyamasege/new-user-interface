@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 /* [AI] - Analytics removed - utility functions moved to @/utils/account-helpers */
-import { isVirtualAccount } from '@/utils/account-helpers';
+import { isVirtualAccount, shouldShowUsdAccountIcon } from '@/utils/account-helpers';
 /* [/AI] */
 import { CurrencyIcon } from '@/components/currency/currency-icon';
 import { addComma, getDecimalPlaces } from '@/components/shared';
@@ -38,7 +38,12 @@ const useActiveAccount = ({
                   ? addComma(parseFloat(directBalance).toFixed(getDecimalPlaces(activeAccount.currency)))
                   : addComma(parseFloat('0').toFixed(getDecimalPlaces(activeAccount.currency))),
             currencyLabel: isVirtual ? 'Demo' : activeAccount?.currency,
-            icon: <CurrencyIcon currency={isVirtual ? undefined : 'usd'} isVirtual={isVirtual} />,
+            icon: (
+                <CurrencyIcon
+                    currency={shouldShowUsdAccountIcon(activeAccount.loginid) ? 'usd' : undefined}
+                    isVirtual={!shouldShowUsdAccountIcon(activeAccount.loginid)}
+                />
+            ),
             isVirtual: isVirtual,
             isActive: activeAccount?.loginid === activeLoginid,
         };

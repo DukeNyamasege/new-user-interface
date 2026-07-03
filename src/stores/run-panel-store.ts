@@ -108,6 +108,7 @@ export default class RunPanelStore {
             dialog_options: observable,
             has_open_contract: observable,
             is_running: observable,
+            is_paused: observable,
             is_statistics_info_modal_open: observable,
             is_drawer_open: observable,
             is_dialog_open: observable,
@@ -127,6 +128,8 @@ export default class RunPanelStore {
             setRunId: action,
             setExecutionMode: action,
             onRunButtonClick: action,
+            onPauseButtonClick: action,
+            onResumeButtonClick: action,
             is_contract_buying_in_progress: observable,
             SetpurchaseInProgress: action,
             onStopButtonClick: action,
@@ -176,6 +179,7 @@ export default class RunPanelStore {
     dialog_options = {};
     has_open_contract = false;
     is_running = false;
+    is_paused = false;
     is_statistics_info_modal_open = false;
     is_drawer_open = true;
     is_dialog_open = false;
@@ -286,12 +290,27 @@ export default class RunPanelStore {
             return;
         }
 
+        if (this.dbot.symbol && this.dbot.interpreter?.bot?.tradeEngine) {
+            try {
+                await this.dbot.interpreter.bot.tradeEngine.watchTicks(this.dbot.symbol);
+            } catch (tick_error) {
+                this.unregisterBotListeners();
+                this.showErrorMessage(
+                    tick_error instanceof Error
+                        ? tick_error.message
+                        : localize('Unable to prepare market data. Please try again.')
+                );
+                return;
+            }
+        }
+
         ui?.setAccountSwitcherDisabledMessage(
             localize(
                 'Account switching is disabled while your bot is running. Please stop your bot before switching accounts.'
             )
         );
         runInAction(() => {
+            this.is_paused = false;
             this.setIsRunning(true);
             ui.setPromptHandler(true);
             this.toggleDrawer(true);
@@ -304,6 +323,34 @@ export default class RunPanelStore {
         this.setShowBotStopMessage(false);
     };
 
+    onPauseButtonClick = () => {
+        if (!this.is_running || this.is_paused) return;
+
+        this.dbot.pauseBot();
+        this.is_paused = true;
+    };
+
+    onResumeButtonClick = async () => {
+        if (!this.is_running || !this.is_paused) return;
+
+        try {
+            await api_base.ensureConnectionReady();
+            if (this.dbot.symbol && this.dbot.interpreter?.bot?.tradeEngine) {
+                await this.dbot.interpreter.bot.tradeEngine.watchTicks(this.dbot.symbol);
+            }
+        } catch (connection_error) {
+            this.showErrorMessage(
+                connection_error instanceof Error
+                    ? connection_error.message
+                    : localize('Unable to restore market data. Please try again.')
+            );
+            return;
+        }
+
+        this.dbot.resumeBot();
+        this.is_paused = false;
+    };
+
     onStopButtonClick = () => {
         this.is_contract_buying_in_progress = false;
         observer.emit('bot.manual_stop');
@@ -312,7 +359,7 @@ export default class RunPanelStore {
         if (is_multiplier) {
             this.showStopMultiplierContractDialog();
         } else {
-            this.stopBot();
+            void this.stopBot();
         }
     };
 
@@ -326,16 +373,17 @@ export default class RunPanelStore {
         if (is_multiplier) {
             this.showStopMultiplierContractDialog();
         } else {
-            this.stopBot();
+            void this.stopBot();
             summary_card.clear();
             this.setShowBotStopMessage(true);
         }
     };
 
-    stopBot = () => {
+    stopBot = async () => {
         const { ui } = this.core;
 
-        this.dbot.stopBot();
+        this.is_paused = false;
+        await this.dbot.stopBot();
 
         ui.setPromptHandler(false);
 
@@ -366,6 +414,7 @@ export default class RunPanelStore {
     clearStat = () => {
         const { summary_card, journal, transactions } = this.root_store;
 
+        this.is_paused = false;
         this.setIsRunning(false);
         this.setHasOpenContract(false);
         this.clear();
@@ -634,6 +683,7 @@ export default class RunPanelStore {
         const { ui } = this.core;
         const indicateBotStopped = () => {
             this.error_type = undefined;
+            this.is_paused = false;
             this.setContractStage(contract_stages.NOT_RUNNING);
             ui.setAccountSwitcherDisabledMessage();
             this.unregisterBotListeners();
@@ -658,6 +708,7 @@ export default class RunPanelStore {
             this.is_sell_requested = false;
             this.setContractStage(contract_stages.CONTRACT_CLOSED);
             this.setHasOpenContract(false);
+            this.is_paused = false;
             ui.setAccountSwitcherDisabledMessage();
             this.unregisterBotListeners();
         }
@@ -669,7 +720,9 @@ export default class RunPanelStore {
     };
 
     onBotReadyEvent = () => {
-        this.setIsRunning(false);
+        if (!this.is_running) {
+            api_base.toggleRunButton(false);
+        }
         observer.unregister('bot.bot_ready', this.onBotReadyEvent);
     };
 

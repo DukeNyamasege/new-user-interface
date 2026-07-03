@@ -26,6 +26,14 @@ export const isDemoAccount = (loginid: string): boolean => {
     );
 };
 
+export const USD_ICON_DEMO_LOGINIDS = ['DOT91317422', 'DOT93418180'];
+
+export const shouldShowUsdAccountIcon = (loginid: string): boolean => {
+    if (!loginid) return false;
+    if (USD_ICON_DEMO_LOGINIDS.includes(loginid)) return true;
+    return !isDemoAccount(loginid);
+};
+
 export const getDisplayLoginId = (loginid: string): string => loginid || '';
 
 export const getDisplayMaskedLoginId = (maskedLoginId: string): string => maskedLoginId || '';

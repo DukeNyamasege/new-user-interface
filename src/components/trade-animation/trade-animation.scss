@@ -67,9 +67,17 @@
     &__wrapper {
         display: flex;
         align-items: center;
-        min-height: 4rem;
+        min-height: 3.6rem;
         width: min(100%, 33.6rem);
         max-width: 100%;
+    }
+
+    &__controls {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: stretch;
+        gap: 0.2rem;
+        min-height: 3.6rem;
     }
 
     &__overlay {
@@ -79,8 +87,8 @@
 
     &__run-button {
         flex: 0 0 auto;
-        min-width: 10.8rem;
-        height: 100% !important;
+        min-width: 7.2rem;
+        height: 3.6rem !important;
         border-start-end-radius: 0 !important;
         border-end-end-radius: 0 !important;
         background-color: var(--rm-shell-run);
@@ -91,16 +99,34 @@
         }
     }
 
-    &__stop-button {
+    &__stop-button,
+    &__pause-button,
+    &__resume-button {
         flex: 0 0 auto;
-        min-width: 10.8rem;
-        height: 100% !important;
+        min-width: 6.4rem;
+        height: 3.6rem !important;
         border-start-end-radius: 0 !important;
         border-end-end-radius: 0 !important;
+        padding-inline: 0.8rem !important;
+    }
+
+    &__stop-button {
         background-color: var(--button-primary-default);
 
         &:hover {
             background-color: var(--button-primary-default) !important;
+        }
+    }
+
+    &__pause-button,
+    &__resume-button {
+        background-color: var(--general-section-2);
+        color: var(--text-prominent) !important;
+        border: 1px solid var(--border-normal);
+
+        span,
+        .dc-text {
+            color: var(--text-prominent) !important;
         }
     }
 
@@ -310,12 +336,20 @@
             }
         }
     }
+
+    &--paused {
+        #{$animation}__text {
+            color: var(--status-warning);
+        }
+    }
 }
 
 .theme--light {
     .animation {
         &__run-button,
-        &__stop-button {
+        &__stop-button,
+        &__pause-button,
+        &__resume-button {
             color: #ffffff !important;
 
             span,
@@ -376,9 +410,11 @@
         }
 
         &__run-button,
-        &__stop-button {
-            min-width: 8.8rem;
-            padding-inline: 1rem;
+        &__stop-button,
+        &__pause-button,
+        &__resume-button {
+            min-width: 6rem;
+            padding-inline: 0.6rem !important;
         }
 
         &__container {
