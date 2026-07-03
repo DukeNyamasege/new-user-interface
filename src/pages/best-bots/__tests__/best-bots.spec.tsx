@@ -29,6 +29,7 @@ describe('Best Bots domain catalogs', () => {
             id: 'double-under-bot',
             name: 'Double Under bot',
             file: 'Double Under bot.xml',
+            guide_file: 'Mighty_Double_Under_Bot_Quick_Guide.pdf',
             is_premium: true,
             priority: 1,
         });

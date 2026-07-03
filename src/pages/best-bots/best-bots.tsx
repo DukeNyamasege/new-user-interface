@@ -11,6 +11,7 @@ type TBot = {
     id: string;
     name: string;
     file: string;
+    guide_file?: string;
     description: string;
     emoji: string;
     is_premium?: boolean;
@@ -30,6 +31,7 @@ type TBotManifestEntry = {
     id?: string;
     name?: string;
     file: string;
+    guide_file?: string;
     description?: string;
     emoji?: string;
     is_premium?: boolean;
@@ -67,6 +69,7 @@ const createManifestBot = (entry: TBotManifestEntry): TBot => {
         id: entry.id || toBotId(entry.file),
         name,
         file: entry.file,
+        guide_file: entry.guide_file,
         description:
             entry.description ||
             `${name} loads into Bot Builder and executes through the standard purchase conditions.`,
@@ -81,6 +84,7 @@ const RISK_MANAGERS_BOTS: TBot[] = [
         id: 'double-under-bot',
         name: 'Double Under bot',
         file: 'Double Under bot.xml',
+        guide_file: 'Mighty_Double_Under_Bot_Quick_Guide.pdf',
         description:
             'Risk Managers digit bot that trades Under 8 in normal mode, switches to Under 7 after a loss, and waits for two-tick direction confirmation before entries.',
         emoji: 'VIP',
@@ -513,6 +517,7 @@ const BotCard = observer(({ bot, stats }: { bot: TBot; stats: TBotStats | undefi
     const [loaded, setLoaded] = useState(false);
     const [error, setError] = useState(false);
     const [copied, setCopied] = useState(false);
+    const guideUrl = bot.guide_file ? getBestBotsFileUrl(bot.guide_file) : '';
 
     const handleLoad = async () => {
         setLoading(true);
@@ -648,10 +653,23 @@ const BotCard = observer(({ bot, stats }: { bot: TBot; stats: TBotStats | undefi
             </div>
 
             <div className='bb-card__actions'>
-                <div className='bb-card__guide'>
-                    <span className='bb-card__guide-icon' />
-                    Guide
-                </div>
+                {guideUrl ? (
+                    <a
+                        className='bb-card__guide'
+                        href={guideUrl}
+                        target='_blank'
+                        rel='noreferrer'
+                        aria-label={`${bot.name} guide`}
+                    >
+                        <span className='bb-card__guide-icon' />
+                        Guide
+                    </a>
+                ) : (
+                    <div className='bb-card__guide'>
+                        <span className='bb-card__guide-icon' />
+                        Guide
+                    </div>
+                )}
                 <button
                     className={`bb-card__btn${loaded ? ' bb-card__btn--loaded' : ''}${
                         error ? ' bb-card__btn--error' : ''
