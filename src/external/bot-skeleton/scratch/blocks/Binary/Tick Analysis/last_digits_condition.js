@@ -45,8 +45,6 @@ window.Blockly.Blocks.last_digits_condition = {
         this.setOutput(true, 'Boolean');
         this.setOutputShape(window.Blockly.OUTPUT_SHAPE_ROUND);
         this.setColour(window.Blockly.Colours.Base.colour);
-        this.setColourSecondary(window.Blockly.Colours.Base.colourSecondary);
-        this.setColourTertiary(window.Blockly.Colours.Base.colourTertiary);
         this.setTooltip(localize('Checks if the last N digits all meet the selected condition'));
         this.category = window.Blockly.Categories.Tick_Analysis;
 
