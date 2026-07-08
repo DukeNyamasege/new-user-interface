@@ -11,7 +11,7 @@ import { getBestBotsForFolder } from '../best-bots';
 
 describe('Best Bots domain catalogs', () => {
     it('uses Termica-branded names for the TermicaFX folder', () => {
-        const bots = getBestBotsForFolder('termicafx.site');
+        const bots = getBestBotsForFolder('derivhhub.com');
 
         expect(bots).toHaveLength(15);
         expect(bots.every(bot => bot.name.toLowerCase().includes('termica'))).toBe(true);

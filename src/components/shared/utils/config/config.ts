@@ -324,11 +324,11 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
     }),
     // ── Additional production domain ─────────────────────────────────────────
     ...createHostedDomainEntries({
-        primaryDomain: 'termicafx.site',
-        aliases: ['www.termicafx.site', 'derivhhub.site', 'www.derivhhub.site'],
+        primaryDomain: 'derivhhub.com',
+        aliases: ['derivhhub.site', 'www.derivhhub.site'],
         clientId: '33h4ThjleZotVMiKQ1gE7',
         appId: '124217',
-        redirectUri: 'https://termicafx.site/',
+        redirectUri: 'https://derivhhub.com/',
         botsFolder: 'optimumtraders.site',
         includeLegacyAppIdInOAuth: true,
         features: {

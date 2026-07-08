@@ -57,7 +57,7 @@ export const domainLoaderConfig: Record<string, DomainLoaderConfig> = {
         LOCALHOST_LOADER_COLORS,
         'Trade Smarter. Manage Risk Better.'
     ),
-    'termicafx.site': createLoaderConfig('termicafx.site', 'Termica FX', {
+    'derivhhub.com': createLoaderConfig('derivhhub.com', 'Termica FX', {
         primaryColor: '#00ff88',
         secondaryColor: '#00aaff',
         accentColor: '#ffd700',

@@ -8,11 +8,11 @@ import {
 } from '../config';
 
 describe('DOMAIN_CONFIG', () => {
-    it('returns the configured TermicaFX auth and bot folder settings', () => {
-        expect(getDomainConfigForHost('termicafx.site')).toMatchObject({
+    it('returns the configured Derivhhub auth and bot folder settings', () => {
+        expect(getDomainConfigForHost('derivhhub.com')).toMatchObject({
             clientId: '33h4ThjleZotVMiKQ1gE7',
             appId: '124217',
-            redirectUri: 'https://termicafx.site/',
+            redirectUri: 'https://derivhhub.com/',
             botsFolder: 'optimumtraders.site',
             includeLegacyAppIdInOAuth: true,
             useLegacyOAuthLogin: false,
@@ -275,9 +275,16 @@ describe('DOMAIN_CONFIG', () => {
         expect(getDomainConfigForHost('derivhhub.site')).toMatchObject({
             clientId: '33h4ThjleZotVMiKQ1gE7',
             appId: '124217',
-            redirectUri: 'https://termicafx.site/',
+            redirectUri: 'https://derivhhub.com/',
             botsFolder: 'optimumtraders.site',
-            canonicalHost: 'termicafx.site',
+            canonicalHost: 'derivhhub.com',
+        });
+        expect(getDomainConfigForHost('www.derivhhub.site')).toMatchObject({
+            clientId: '33h4ThjleZotVMiKQ1gE7',
+            appId: '124217',
+            redirectUri: 'https://derivhhub.com/',
+            botsFolder: 'optimumtraders.site',
+            canonicalHost: 'derivhhub.com',
         });
         expect(getDomainConfigForHost('primempire.site')).toMatchObject({
             clientId: '33DtjQWnmdxRkogkgAOtP',
@@ -294,7 +301,7 @@ describe('DOMAIN_CONFIG', () => {
     });
 
     it('builds the Best Bots file URL from the configured bot folder', () => {
-        expect(buildBestBotsFileUrl('termicafx.site', 'My Bot.xml')).toBe('/termicafx.site/My%20Bot.xml');
+        expect(buildBestBotsFileUrl('derivhhub.com', 'My Bot.xml')).toBe('/derivhhub.com/My%20Bot.xml');
     });
 
     it.each([

@@ -17,7 +17,7 @@ type TPlatform = {
 const isDomainAllowed = (domain_name: string) => {
     const custom_domains = [
         'riskmanagers.site',
-        'termicafx.site',
+        'derivhhub.com',
         'mrzetuzetu.site',
         'masterhunter.site',
         'husseinfx.site',
