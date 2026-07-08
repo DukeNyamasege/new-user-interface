@@ -22,13 +22,17 @@ const isDomainAllowed = (domain_name: string) => {
         'masterhunter.site',
         'husseinfx.site',
         'levynetrading.site',
+        'novaderiv.site',
         'tradinghubs.site',
         'mafiahub.site',
         'easytraders.site',
         'dollarmaster.site',
+        'profitempire.site',
         'primempire.site',
+        'mkulimamdogo.site',
         'kicktrade.site',
         'dollarsigns.site',
+        'derivhhub.site',
     ];
 
     const hostname = domain_name.split(':')[0].toLowerCase();

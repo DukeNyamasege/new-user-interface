@@ -63,6 +63,12 @@ export const domainLoaderConfig: Record<string, DomainLoaderConfig> = {
         accentColor: '#ffd700',
         backgroundColor: '#030712',
     }),
+    'derivhhub.site': createLoaderConfig('derivhhub.site', 'Termica FX', {
+        primaryColor: '#00ff88',
+        secondaryColor: '#00aaff',
+        accentColor: '#ffd700',
+        backgroundColor: '#030712',
+    }),
     'masterhunter.site': createLoaderConfig('masterhunter.site', 'Master Hunter', {
         primaryColor: '#22c55e',
         secondaryColor: '#14b8a6',
@@ -76,6 +82,12 @@ export const domainLoaderConfig: Record<string, DomainLoaderConfig> = {
         backgroundColor: '#020617',
     }),
     'levynetrading.site': createLoaderConfig('levynetrading.site', 'Levyne Trading', {
+        primaryColor: '#a78bfa',
+        secondaryColor: '#06b6d4',
+        accentColor: '#ffffff',
+        backgroundColor: '#100824',
+    }),
+    'novaderiv.site': createLoaderConfig('novaderiv.site', 'Levyne Trading', {
         primaryColor: '#a78bfa',
         secondaryColor: '#06b6d4',
         accentColor: '#ffffff',
@@ -105,11 +117,23 @@ export const domainLoaderConfig: Record<string, DomainLoaderConfig> = {
         accentColor: '#ffffff',
         backgroundColor: '#111006',
     }),
+    'profitempire.site': createLoaderConfig('profitempire.site', 'Prime Empire', {
+        primaryColor: '#e879f9',
+        secondaryColor: '#f97316',
+        accentColor: '#fdf4ff',
+        backgroundColor: '#16051c',
+    }),
     'primempire.site': createLoaderConfig('primempire.site', 'Prime Empire', {
         primaryColor: '#e879f9',
         secondaryColor: '#f97316',
         accentColor: '#fdf4ff',
         backgroundColor: '#16051c',
+    }),
+    'mkulimamdogo.site': createLoaderConfig('mkulimamdogo.site', 'Mkulima Mdogo', {
+        primaryColor: '#84cc16',
+        secondaryColor: '#16a34a',
+        accentColor: '#fef9c3',
+        backgroundColor: '#101706',
     }),
     'kicktrade.site': createLoaderConfig('kicktrade.site', 'Kicktrade', {
         primaryColor: '#2dd4bf',

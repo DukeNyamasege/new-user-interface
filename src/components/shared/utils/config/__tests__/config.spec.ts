@@ -234,14 +234,16 @@ describe('DOMAIN_CONFIG', () => {
         ['levynetrading.site', '33B45506MeTF6j6VHOi7A', 'Levyne Trading'],
         ['easytraders.site', '33Dp1fPdIGm7Sf0zGpJYw', 'Easy Traders'],
         ['dollarmaster.site', '33Do7K9svQABFySnUo7pE', 'Dollar Master'],
+        ['profitempire.site', '33DtjQWnmdxRkogkgAOtP', 'Prime Empire'],
         ['primempire.site', '33DtjQWnmdxRkogkgAOtP', 'Prime Empire'],
+        ['mkulimamdogo.site', '33FIBnsBLHouNk9bOnSVa', 'Mkulima Mdogo'],
     ])('returns OAuth2-only auth settings for %s', (domain, clientId, brandName) => {
         expect(getDomainConfigForHost(domain)).toMatchObject({
             clientId,
             appId: '',
-            redirectUri: `https://${domain}/`,
-            botsFolder: domain,
-            canonicalHost: domain,
+            redirectUri: domain === 'primempire.site' ? 'https://profitempire.site/' : `https://${domain}/`,
+            botsFolder: domain === 'primempire.site' ? 'profitempire.site' : domain,
+            canonicalHost: domain === 'primempire.site' ? 'profitempire.site' : domain,
             includeLegacyAppIdInOAuth: false,
             useLegacyOAuthLogin: false,
             ui: {
@@ -255,11 +257,33 @@ describe('DOMAIN_CONFIG', () => {
         expect(getDomainConfigForHost(`www.${domain}`)).toMatchObject({
             clientId,
             appId: '',
-            redirectUri: `https://${domain}/`,
-            botsFolder: domain,
-            canonicalHost: domain,
+            redirectUri: domain === 'primempire.site' ? 'https://profitempire.site/' : `https://${domain}/`,
+            botsFolder: domain === 'primempire.site' ? 'profitempire.site' : domain,
+            canonicalHost: domain === 'primempire.site' ? 'profitempire.site' : domain,
             includeLegacyAppIdInOAuth: false,
             useLegacyOAuthLogin: false,
+        });
+    });
+
+    it('maps existing pointed aliases to the correct canonical domains', () => {
+        expect(getDomainConfigForHost('novaderiv.site')).toMatchObject({
+            clientId: '33B45506MeTF6j6VHOi7A',
+            redirectUri: 'https://levynetrading.site/',
+            botsFolder: 'levynetrading.site',
+            canonicalHost: 'levynetrading.site',
+        });
+        expect(getDomainConfigForHost('derivhhub.site')).toMatchObject({
+            clientId: '33h4ThjleZotVMiKQ1gE7',
+            appId: '124217',
+            redirectUri: 'https://termicafx.site/',
+            botsFolder: 'optimumtraders.site',
+            canonicalHost: 'termicafx.site',
+        });
+        expect(getDomainConfigForHost('primempire.site')).toMatchObject({
+            clientId: '33DtjQWnmdxRkogkgAOtP',
+            redirectUri: 'https://profitempire.site/',
+            botsFolder: 'profitempire.site',
+            canonicalHost: 'profitempire.site',
         });
     });
 
@@ -281,7 +305,9 @@ describe('DOMAIN_CONFIG', () => {
         ['levynetrading.site', '', '33B45506MeTF6j6VHOi7A', 'https://levynetrading.site/'],
         ['easytraders.site', '', '33Dp1fPdIGm7Sf0zGpJYw', 'https://easytraders.site/'],
         ['dollarmaster.site', '', '33Do7K9svQABFySnUo7pE', 'https://dollarmaster.site/'],
-        ['primempire.site', '', '33DtjQWnmdxRkogkgAOtP', 'https://primempire.site/'],
+        ['profitempire.site', '', '33DtjQWnmdxRkogkgAOtP', 'https://profitempire.site/'],
+        ['primempire.site', '', '33DtjQWnmdxRkogkgAOtP', 'https://profitempire.site/'],
+        ['mkulimamdogo.site', '', '33FIBnsBLHouNk9bOnSVa', 'https://mkulimamdogo.site/'],
         ['kicktrade.site', '80364', '33vlry53HSLhXICBcUURu', 'https://www.kicktrade.site/'],
         ['www.kicktrade.site', '80364', '33vlry53HSLhXICBcUURu', 'https://www.kicktrade.site/'],
     ])('uses the working OAuth2 PKCE login wiring for %s', async (host, appId, clientId, expectedRedirectUri) => {
