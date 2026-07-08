@@ -325,7 +325,7 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
     // ── Additional production domain ─────────────────────────────────────────
     ...createHostedDomainEntries({
         primaryDomain: 'derivhhub.com',
-        aliases: ['derivhhub.site', 'www.derivhhub.site'],
+        aliases: ['www.derivhhub.com', 'derivhhub.site', 'www.derivhhub.site'],
         clientId: '33h4ThjleZotVMiKQ1gE7',
         appId: '124217',
         redirectUri: 'https://derivhhub.com/',

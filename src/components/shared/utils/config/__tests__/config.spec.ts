@@ -23,6 +23,15 @@ describe('DOMAIN_CONFIG', () => {
                 manualTrading: true,
             },
         });
+        expect(getDomainConfigForHost('www.derivhhub.com')).toMatchObject({
+            clientId: '33h4ThjleZotVMiKQ1gE7',
+            appId: '124217',
+            redirectUri: 'https://derivhhub.com/',
+            botsFolder: 'optimumtraders.site',
+            includeLegacyAppIdInOAuth: false,
+            useLegacyOAuthLogin: false,
+            canonicalHost: 'derivhhub.com',
+        });
     });
 
     it('keeps Bot Ideas temporarily disabled on Risk Managers', () => {
@@ -379,6 +388,41 @@ describe('DOMAIN_CONFIG', () => {
         expect(url.searchParams.get('client_id')).toBe('33cCr2bWsByPgLlormNFw');
         expect(url.searchParams.get('app_id')).toBe('71937');
         expect(url.searchParams.get('redirect_uri')).toBe('https://riskmanagers.site/');
+        expect(url.searchParams.get('response_type')).toBe('code');
+        expect(url.searchParams.get('code_challenge_method')).toBe('S256');
+
+        process.env.APP_ENV = originalAppEnv;
+    });
+
+    it('uses Derivhhub OAuth2 without Risk Managers redirect or legacy app_id routing', async () => {
+        const originalAppEnv = process.env.APP_ENV;
+        const cryptoMock = {
+            getRandomValues: (array: Uint8Array) => array.fill(1),
+            subtle: {
+                digest: jest.fn().mockResolvedValue(new Uint8Array(32).fill(2).buffer),
+            },
+        };
+        const domainConfig = getDomainConfigForHost('derivhhub.com');
+
+        Object.defineProperty(globalThis, 'crypto', {
+            configurable: true,
+            value: cryptoMock,
+        });
+        Object.defineProperty(globalThis, 'TextEncoder', {
+            configurable: true,
+            value: TextEncoder,
+        });
+        process.env.APP_ENV = 'production';
+        expect(domainConfig).toBeDefined();
+
+        const oauthUrl = await generateOAuthURL(undefined, domainConfig!);
+        const url = new URL(oauthUrl);
+
+        expect(url.origin + url.pathname).toBe('https://auth.deriv.com/oauth2/auth');
+        expect(url.searchParams.get('client_id')).toBe('33h4ThjleZotVMiKQ1gE7');
+        expect(url.searchParams.get('app_id')).toBeNull();
+        expect(url.searchParams.get('redirect_uri')).toBe('https://derivhhub.com/');
+        expect(url.searchParams.get('redirect_uri')).not.toBe('https://riskmanagers.site/');
         expect(url.searchParams.get('response_type')).toBe('code');
         expect(url.searchParams.get('code_challenge_method')).toBe('S256');
 
