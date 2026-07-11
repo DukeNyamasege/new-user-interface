@@ -29,6 +29,13 @@
         }
     }
 
+    &__copyright {
+        font-size: 1.2rem;
+        color: var(--rm-shell-panel-text-muted, #8899bb);
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
     &__vertical-line {
         width: 0.1rem;
         height: 1.6rem;

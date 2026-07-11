@@ -4,6 +4,7 @@ import { DBOT_TABS } from '@/constants/bot-contents';
 import { load, save_types } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
 import { API_BASE } from '@/utils/api-base';
+import DashboardHero from './dashboard-hero';
 import BotPitchForm from './components/submit-form';
 import { TBotIdea } from './types';
 import './bot-ideas.scss';
@@ -279,6 +280,7 @@ const BotIdeas = observer(() => {
 
     return (
         <div className='bot-ideas-page'>
+            <DashboardHero />
             <div className='bot-ideas-page__inner'>
                 <BotPitchForm onIdeaSubmitted={handleIdeaSubmitted} />
 

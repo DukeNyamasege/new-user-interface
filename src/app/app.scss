@@ -1,3 +1,49 @@
+// ─── RiskManagers Dark Navy Theme ─────────────────────────────────────────────
+:root {
+    // Shell background layers
+    --rm-shell-bg: #001840;
+    --rm-shell-run-panel: #001840;
+    --rm-shell-section: #071f48;
+    --rm-shell-section-2: #0a2240;
+    --rm-shell-top: #000e2b;
+    --rm-shell-top-light: #0a1a38;
+    --rm-shell-nav: #000e2b;
+
+    // Text colours
+    --rm-shell-text: #ffffff;
+    --rm-shell-header-text: #ffffff;
+    --rm-shell-panel-text: #c4cfe0;
+    --rm-shell-panel-text-muted: #8899bb;
+
+    // Accent / gold / borders
+    --rm-shell-gold: #00d4ff;
+    --rm-shell-accent: #00d4ff;
+    --rm-shell-section-border: rgba(0, 212, 255, 0.12);
+    --rm-shell-auth-blue: #0a78d4;
+    --rm-shell-auth-border: rgba(0, 212, 255, 0.25);
+    --rm-shell-button-text: #ffffff;
+}
+
+// Force dark mode colours for main content so it matches the navy shell
+body.theme--light,
+body {
+    --general-main-1: #001840;
+    --general-main-2: #071f48;
+    --general-section-1: rgba(0, 212, 255, 0.08);
+    --general-section-2: #0a2240;
+    --text-general: #ffffff;
+    --text-less-prominent: #8899bb;
+    --text-disabled: #4c6080;
+    --text-colored-background: #ffffff;
+    --border-normal: rgba(0, 212, 255, 0.12);
+    --border-hover: rgba(0, 212, 255, 0.35);
+    --button-primary-default: #0a78d4;
+    --button-primary-hover: #0d8ef0;
+    --icons: #00d4ff;
+    --icon-black-plus: #c4cfe0;
+    --shadow-menu: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
 .bot {
     --bot-content-height: calc(100vh - 140px);
     --bot-content-width: calc(100vw - 366px);

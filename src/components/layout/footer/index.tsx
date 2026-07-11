@@ -27,6 +27,8 @@ const Footer = () => {
     const openLanguageSettingModal = () => showModal('DesktopLanguagesModal');
     return (
         <footer className='app-footer'>
+            <span className='app-footer__copyright'>© {new Date().getFullYear()} RiskManagers</span>
+            <div className='app-footer__vertical-line' />
             <FullScreen />
             {isAuthorized && <LogoutFooter />}
             {/* [AI] Conditionally render language settings based on brand config */}
