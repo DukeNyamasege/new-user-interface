@@ -59,7 +59,11 @@ const JoinCompetitionForm = ({
             {!isLoggedIn ? (
                 <div className='competition-join__login-state'>
                     <p>Log in with your existing Deriv account first, then opt in to the competition.</p>
-                    <button type='button' className='competition-button competition-button--primary' onClick={handleLogin}>
+                    <button
+                        type='button'
+                        className='competition-button competition-button--primary'
+                        onClick={handleLogin}
+                    >
                         Log in to join
                     </button>
                 </div>
@@ -103,7 +107,9 @@ const JoinCompetitionForm = ({
                                 </button>
                             ))
                         ) : (
-                            <p className='competition-feedback'>No real Deriv accounts are available in this session yet.</p>
+                            <p className='competition-feedback'>
+                                No real Deriv accounts are available in this session yet.
+                            </p>
                         )}
                     </div>
                 </div>

@@ -42,7 +42,8 @@ const getAnalysisMetadata = target_block => {
 
     switch (target_block.type) {
         case 'over_under_percentage': {
-            const condition = target_block.getFieldValue('CONDITION') === 'under' ? localize('Under') : localize('Over');
+            const condition =
+                target_block.getFieldValue('CONDITION') === 'under' ? localize('Under') : localize('Over');
             const digit = getBlockValueCode(target_block, 'DIGIT');
             const count = getBlockValueCode(target_block, 'COUNT', '100');
             return {
@@ -63,14 +64,12 @@ const getAnalysisMetadata = target_block => {
             const digit = getBlockValueCode(target_block, 'DIGIT');
             const count = getBlockValueCode(target_block, 'COUNT', '1000');
             return {
-                label_expression:
-                    `'${mode} % for digit ' + Number(${digit}) + ' in last ' + Number(${count}) + ' ticks'`,
+                label_expression: `'${mode} % for digit ' + Number(${digit}) + ' in last ' + Number(${count}) + ' ticks'`,
                 value_type: 'percent',
             };
         }
         case 'rise_fall_percentage': {
-            const direction =
-                target_block.getFieldValue('DIRECTION') === 'fall' ? localize('Fall') : localize('Rise');
+            const direction = target_block.getFieldValue('DIRECTION') === 'fall' ? localize('Fall') : localize('Rise');
             const count = getBlockValueCode(target_block, 'COUNT', '1000');
             return {
                 label_expression: `'${direction} % in last ' + Number(${count}) + ' ticks'`,

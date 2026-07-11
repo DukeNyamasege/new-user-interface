@@ -18,14 +18,8 @@ type TJournal = {
 const Journal = observer(({ is_drawer_open }: TJournal) => {
     const ReportsIcon = getAssetIconComponent('IcReports');
     const { journal, run_panel } = useStore();
-    const {
-        checked_filters,
-        filterMessage,
-        filters,
-        filtered_messages,
-        is_filter_dialog_visible,
-        toggleFilterDialog,
-    } = journal;
+    const { checked_filters, filterMessage, filters, filtered_messages, is_filter_dialog_visible, toggleFilterDialog } =
+        journal;
     const { is_stop_button_visible, contract_stage } = run_panel;
 
     const filtered_messages_length = Array.isArray(filtered_messages) && filtered_messages.length;
@@ -55,8 +49,8 @@ const Journal = observer(({ is_drawer_open }: TJournal) => {
                     <DataList
                         className='journal'
                         data_source={filtered_messages}
-                        rowRenderer={(args: TJournalDataListArgs) => <JournalItem {...args} />}
-                        keyMapper={(row: TFilterMessageValues) => row.unique_id}
+                        rowRenderer={args => <JournalItem {...(args as TJournalDataListArgs)} />}
+                        keyMapper={row => (row as TFilterMessageValues).unique_id}
                     />
                 ) : show_loader ? (
                     <JournalLoader is_mobile={!isDesktop} />

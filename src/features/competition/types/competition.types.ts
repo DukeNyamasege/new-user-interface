@@ -1,11 +1,4 @@
-export type CompetitionStatus =
-    | 'draft'
-    | 'registration'
-    | 'locked'
-    | 'live'
-    | 'paused'
-    | 'completed'
-    | 'cancelled';
+export type CompetitionStatus = 'draft' | 'registration' | 'locked' | 'live' | 'paused' | 'completed' | 'cancelled';
 
 export type RegistrationStatus = 'pending' | 'verified' | 'rejected' | 'disqualified';
 

@@ -9,15 +9,17 @@ import './chart.scss';
 interface ChartWrapperProps {
     prefix?: string;
     show_digits_stats: boolean;
+    refresh_token?: string | number;
 }
 
-const ChartWrapper = observer(({ prefix = 'chart', show_digits_stats }: ChartWrapperProps) => {
+const ChartWrapper = observer(({ prefix = 'chart', show_digits_stats, refresh_token }: ChartWrapperProps) => {
     const { client } = useStore();
     const [uuid] = useState(uuidv4());
 
-    const uniqueKey = client.loginid ? `${prefix}-${client.loginid}` : `${prefix}-${uuid}`;
+    const instanceId = client.loginid ? `${prefix}-${client.loginid}` : `${prefix}-${uuid}`;
+    const uniqueKey = refresh_token ? `${instanceId}-${refresh_token}` : instanceId;
 
-    return <Chart key={uniqueKey} show_digits_stats={show_digits_stats} />;
+    return <Chart key={uniqueKey} chart_instance_id={instanceId} show_digits_stats={show_digits_stats} />;
 });
 
 export default ChartWrapper;

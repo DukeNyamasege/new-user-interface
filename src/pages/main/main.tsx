@@ -6,6 +6,7 @@ import { generateOAuthURL, getDomainRedirectUrl, isDomainFeatureEnabled } from '
 import DesktopWrapper from '@/components/shared_ui/desktop-wrapper';
 import Dialog from '@/components/shared_ui/dialog';
 import MobileWrapper from '@/components/shared_ui/mobile-wrapper';
+import RiskDisclaimerFloating from '@/components/risk-disclaimer-floating';
 import Tabs from '@/components/shared_ui/tabs/tabs';
 import TradeTypeConfirmationModal from '@/components/trade-type-confirmation-modal';
 import { DBOT_TABS, TAB_IDS } from '@/constants/bot-contents';
@@ -54,6 +55,7 @@ import Analysistool from '../analysistool';
 import Accumilatoirs from '../accumilatoirs';
 import Scanner from '../scanner';
 import TradingView from '../tradingview';
+import UpAndDown from '../up-and-down';
 import CompetitionPage from '@/features/competition/pages/CompetitionPage';
 import './main.scss';
 
@@ -96,6 +98,7 @@ const AppWrapper = observer(() => {
     const hash = [
         'bot_ideas',
         'best_bots',
+        'up_and_down',
         'dashboard',
         'bot_builder',
         'auto_trades',
@@ -524,6 +527,21 @@ const AppWrapper = observer(() => {
                             <div
                                 label={
                                     <>
+                                        <LabelPairedChartTrendUpCaptionRegularIcon
+                                            height='24px'
+                                            width='24px'
+                                            fill='#c8a45d'
+                                        />
+                                        <Localize i18n_default_text='Up&Down' />
+                                    </>
+                                }
+                                id='id-up-and-down'
+                            >
+                                <UpAndDown />
+                            </div>
+                            <div
+                                label={
+                                    <>
                                         <LabelPairedObjectsColumnCaptionRegularIcon
                                             height='24px'
                                             width='24px'
@@ -690,6 +708,7 @@ const AppWrapper = observer(() => {
                     </div>
                 </div>
             </div>
+            <RiskDisclaimerFloating />
             <DesktopWrapper>
                 <div className='main__run-strategy-wrapper'>
                     <RunStrategy />

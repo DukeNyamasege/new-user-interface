@@ -9,7 +9,9 @@ export default defineConfig({
         pluginSass({
             sassLoaderOptions: {
                 sourceMap: true,
-                sassOptions: {},
+                sassOptions: {
+                    includePaths: [path.resolve(__dirname, './src')],
+                },
             },
             exclude: /node_modules/,
         }),
@@ -36,6 +38,7 @@ export default defineConfig({
         alias: {
             react: path.resolve('./node_modules/react'),
             'react-dom': path.resolve('./node_modules/react-dom'),
+            components: path.resolve(__dirname, './src/components'),
             '@/external': path.resolve(__dirname, './src/external'),
             '@/components': path.resolve(__dirname, './src/components'),
             '@/hooks': path.resolve(__dirname, './src/hooks'),
@@ -47,20 +50,11 @@ export default defineConfig({
     output: {
         copy: [
             {
-                from: 'node_modules/@deriv-com/smartcharts-champion/dist/*',
-                to: 'js/smartcharts/[name][ext]',
+                from: path.join(__dirname, 'node_modules/@deriv-com/smartcharts-champion/dist'),
+                to: 'js/smartcharts',
                 globOptions: {
                     ignore: ['**/*.LICENSE.txt'],
                 },
-            },
-            { from: 'node_modules/@deriv-com/smartcharts-champion/dist/assets/*', to: 'assets/[name][ext]' },
-            {
-                from: 'node_modules/@deriv-com/smartcharts-champion/dist/assets/fonts/*',
-                to: 'assets/fonts/[name][ext]',
-            },
-            {
-                from: 'node_modules/@deriv-com/smartcharts-champion/dist/assets/shaders/*',
-                to: 'assets/shaders/[name][ext]',
             },
             { from: path.join(__dirname, 'public') },
         ],

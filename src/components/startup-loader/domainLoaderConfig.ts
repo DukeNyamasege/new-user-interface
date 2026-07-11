@@ -153,12 +153,7 @@ export const domainLoaderConfig: Record<string, DomainLoaderConfig> = {
         accentColor: '#ffd700',
         backgroundColor: '#030712',
     }),
-    localhost: createLoaderConfig(
-        'localhost',
-        'Dev Trading Platform',
-        LOCALHOST_LOADER_COLORS,
-        'Testing Environment'
-    ),
+    localhost: createLoaderConfig('localhost', 'Dev Trading Platform', LOCALHOST_LOADER_COLORS, 'Testing Environment'),
 };
 
 export const defaultLoaderConfig: DomainLoaderConfig = {

@@ -2,7 +2,9 @@ const { Pool } = require('pg');
 
 const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
 let databaseReady = false;
-let lastDatabaseError = hasDatabaseUrl ? 'Database connection has not been initialized yet.' : 'DATABASE_URL is not configured.';
+let lastDatabaseError = hasDatabaseUrl
+    ? 'Database connection has not been initialized yet.'
+    : 'DATABASE_URL is not configured.';
 
 const createDatabaseUnavailableError = message => {
     const error = new Error(message || 'Database is currently unavailable.');

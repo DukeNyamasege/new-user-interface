@@ -1,8 +1,4 @@
-import {
-    buildXmlImportDiagnosticsMessage,
-    getParserErrorText,
-    getUnsupportedXmlTags,
-} from './xml-import-diagnostics';
+import { buildXmlImportDiagnosticsMessage, getParserErrorText, getUnsupportedXmlTags } from './xml-import-diagnostics';
 
 describe('xml-import-diagnostics', () => {
     it('builds a detailed diagnostics message', () => {

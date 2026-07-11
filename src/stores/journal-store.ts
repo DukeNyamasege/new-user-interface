@@ -443,9 +443,7 @@ export default class JournalStore {
                     uuidv4
                 ) as TMessageItem[];
                 const should_preserve_live_messages =
-                    !!loginid &&
-                    this.active_loginid_for_messages === loginid &&
-                    this.unfiltered_messages.length > 0;
+                    !!loginid && this.active_loginid_for_messages === loginid && this.unfiltered_messages.length > 0;
 
                 this.unfiltered_messages = should_preserve_live_messages
                     ? mergeJournalEntries(this.unfiltered_messages, restored_messages)

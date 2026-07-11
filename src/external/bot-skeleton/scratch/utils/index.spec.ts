@@ -38,19 +38,20 @@ describe('normalizeBotXml', () => {
 
         const option_set_block = xml.querySelector('#set-option');
         expect(option_set_block?.getAttribute('type')).toBe('variables_set');
-        expect(option_set_block?.querySelector('value[name="VALUE"] block[type="text"] field[name="TEXT"]')?.textContent).toBe(
-            'Even Odd'
-        );
+        expect(
+            option_set_block?.querySelector('value[name="VALUE"] block[type="text"] field[name="TEXT"]')?.textContent
+        ).toBe('Even Odd');
 
         const option_compare_block = xml.querySelector('#is-option');
         expect(option_compare_block?.getAttribute('type')).toBe('logic_compare');
         expect(option_compare_block?.querySelector('field[name="OP"]')?.textContent).toBe('EQ');
-        expect(option_compare_block?.querySelector('value[name="A"] block[type="variables_get"] field[name="VAR"]')?.textContent).toBe(
-            'TRADE TYPE'
-        );
-        expect(option_compare_block?.querySelector('value[name="B"] block[type="text"] field[name="TEXT"]')?.textContent).toBe(
-            'Even Odd'
-        );
+        expect(
+            option_compare_block?.querySelector('value[name="A"] block[type="variables_get"] field[name="VAR"]')
+                ?.textContent
+        ).toBe('TRADE TYPE');
+        expect(
+            option_compare_block?.querySelector('value[name="B"] block[type="text"] field[name="TEXT"]')?.textContent
+        ).toBe('Even Odd');
     });
 
     it('converts apollo_purchase2 blocks into dynamic smart purchase blocks', () => {
@@ -96,13 +97,16 @@ describe('normalizeBotXml', () => {
         const smart_purchase = xml.querySelector('#apollo');
         expect(smart_purchase?.getAttribute('type')).toBe('smart_purchase_contract');
         expect(
-            smart_purchase?.querySelector('value[name="CONTRACT_TYPE"] block[type="text"] field[name="TEXT"]')?.textContent
+            smart_purchase?.querySelector('value[name="CONTRACT_TYPE"] block[type="text"] field[name="TEXT"]')
+                ?.textContent
         ).toBe('DIGITOVER');
         expect(
-            smart_purchase?.querySelector('value[name="AMOUNT"] block[type="variables_get"] field[name="VAR"]')?.textContent
+            smart_purchase?.querySelector('value[name="AMOUNT"] block[type="variables_get"] field[name="VAR"]')
+                ?.textContent
         ).toBe('Stake');
         expect(
-            smart_purchase?.querySelector('value[name="DURATION"] block[type="math_number"] field[name="NUM"]')?.textContent
+            smart_purchase?.querySelector('value[name="DURATION"] block[type="math_number"] field[name="NUM"]')
+                ?.textContent
         ).toBe('1');
         expect(smart_purchase?.querySelector('field[name="DURATIONTYPE_LIST"]')?.textContent).toBe('t');
         expect(

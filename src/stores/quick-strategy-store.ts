@@ -7,6 +7,8 @@ import { TFormData } from '../pages/bot-builder/quick-strategy/types';
 import { getSetting, storeSetting } from '../utils/settings';
 import RootStore from './root-store';
 
+const sanitizeXmlString = (xml_string: unknown) => String(xml_string || '').replace(/^\uFEFF/, '');
+
 export type TActiveSymbol = {
     group: string;
     text: string;
@@ -163,7 +165,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
         // Persist the selected strategy for notifications in localStorage
         storeSetting('selected_strategy_for_notofy', this.selected_strategy);
         const strategy_xml = await import(/* webpackChunkName: `[request]` */ `../xml/${selected_strategy.name}.xml`);
-        const strategy_dom = window.Blockly.utils.xml.textToDom(strategy_xml.default);
+        const strategy_dom = window.Blockly.utils.xml.textToDom(sanitizeXmlString(strategy_xml.default));
         addDynamicBlockToDOM('PREDICTION', 'last_digit_prediction', trade_type_cat, strategy_dom);
 
         const modifyValueInputs = (key: string, value: number) => {

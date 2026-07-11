@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import Cookies from 'js-cookie';
 // Updated import path - Growthbook removed, using stub implementation
 import useRemoteConfig from '@/hooks/remote-config/useRemoteConfig';
-import { URLUtils } from '@deriv-com/utils';
 
 type TLiveChatClientInformation = {
     is_client_store_initialized: boolean;
@@ -29,7 +28,7 @@ const useLiveChat = (client_information: TLiveChatClientInformation) => {
 
     const url_query_string = window.location.search;
     const url_params = new URLSearchParams(url_query_string);
-    const reset_password = URLUtils.getQueryParameter('action') === 'reset_password';
+    const reset_password = url_params.get('action') === 'reset_password';
     const should_disable_livechat = url_params.get('code') && reset_password;
 
     const { data } = useRemoteConfig(true);

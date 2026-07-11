@@ -217,7 +217,7 @@ export const ANNOUNCEMENTS: Record<string, TAnnouncement> = {
 
 export type TAnnouncementItem = {
     id: string;
-    icon: React.ReactElement;
+    icon: React.ComponentType<{ announce: boolean }>;
     title: string;
     message: string;
     date: string;

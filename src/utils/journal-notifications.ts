@@ -2,7 +2,22 @@ import { v4 as uuidv4 } from 'uuid';
 import { arrayAsMessage, messageWithButton } from '@/components/notify-item';
 import { localize } from '@deriv-com/translations';
 
-const showErrorMessageWithButton = (message, block_id, showErrorMessage, centerAndHighlightBlock) => {
+type TShowErrorMessage = (message: string) => void;
+type TCenterAndHighlightBlock = () => void;
+type TPushMessage = (message: string) => void;
+
+type TJournalNotificationPayload = {
+    message: unknown;
+    block_id: string;
+    variable_name?: string | null;
+};
+
+const showErrorMessageWithButton = (
+    message: string,
+    block_id: string,
+    showErrorMessage: TShowErrorMessage,
+    centerAndHighlightBlock: TCenterAndHighlightBlock
+) => {
     showErrorMessage(
         messageWithButton({
             unique_id: block_id,
@@ -17,11 +32,11 @@ const showErrorMessageWithButton = (message, block_id, showErrorMessage, centerA
 };
 
 export const isCustomJournalMessage = (
-    { message, block_id, variable_name },
-    showErrorMessage,
-    centerAndHighlightBlock,
-    pushMessage,
-    isStatNotification
+    { message, block_id, variable_name }: TJournalNotificationPayload,
+    showErrorMessage: TShowErrorMessage,
+    centerAndHighlightBlock: TCenterAndHighlightBlock,
+    pushMessage: TPushMessage,
+    isStatNotification: boolean
 ) => {
     // notify undefined variable block
     if (message === undefined && variable_name != null) {
@@ -89,7 +104,7 @@ export const isCustomJournalMessage = (
     return false;
 };
 
-const parseArray = message => {
+const parseArray = (message: unknown[]) => {
     return message.map((item, idx: number) => {
         return {
             id: `${Date.now()}-${idx}`,

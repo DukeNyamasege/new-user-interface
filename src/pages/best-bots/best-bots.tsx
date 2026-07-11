@@ -101,7 +101,9 @@ const RISK_MANAGERS_BOTS: TBot[] = [
         emoji: 'RM',
         priority: 2,
     },
-    ...['Percentage Over by Mr Duke.xml', 'grffy v1.xml', 'Mr Duke Speed Bot.1.xml', 'Wealth Generator.xml'].map(createRiskManagersBot),
+    ...['Percentage Over by Mr Duke.xml', 'grffy v1.xml', 'Mr Duke Speed Bot.1.xml', 'Wealth Generator.xml'].map(
+        createRiskManagersBot
+    ),
 ];
 
 const TERMICA_BOTS: TBot[] = [
@@ -626,77 +628,77 @@ const BotCard = observer(({ bot, stats }: { bot: TBot; stats: TBotStats | undefi
     return (
         <>
             <div className={cardClassName}>
-            <div className='bb-card__header'>
-                <div className='bb-card__eyebrow-row'>
-                    <span className='bb-card__eyebrow'>{cardTypeLabel}</span>
-                    {bot.is_premium && <span className='bb-card__premium-badge'>Premium</span>}
-                </div>
-                <button
-                    className={`bb-card__copy${copied ? ' bb-card__copy--copied' : ''}`}
-                    type='button'
-                    aria-label={`Copy ${bot.name}`}
-                    onClick={handleCopy}
-                >
-                    <span />
-                    <span />
-                </button>
-            </div>
-
-            <h3 className='bb-card__name'>{bot.name}</h3>
-            <p className='bb-card__desc'>{bot.description}</p>
-
-            <div className='bb-card__performance' aria-label={`${bot.name} performance`}>
-                <div className='bb-card__metric'>
-                    <strong>{totalRuns.toLocaleString()}</strong>
-                    <span>Runs</span>
-                </div>
-                <div className='bb-card__metric'>
-                    <strong>{winRate}%</strong>
-                    <span>Win rate</span>
-                </div>
-                <div className='bb-card__metric'>
-                    <strong>{profits}</strong>
-                    <span>Wins</span>
-                </div>
-                <div className='bb-card__metric'>
-                    <strong>{losses}</strong>
-                    <span>Losses</span>
-                </div>
-            </div>
-
-            <div className='bb-card__profit-line'>
-                <span className='bb-card__profit-label'>Estimated profit</span>
-                <span className='bb-card__profit-value'>{formatMoney(netAmount)}</span>
-            </div>
-
-            <div className='bb-card__actions'>
-                {guideUrl ? (
-                    <button
-                        className='bb-card__guide'
-                        type='button'
-                        aria-label={`${bot.name} guide`}
-                        onClick={toggleGuideModal}
-                    >
-                        <span className='bb-card__guide-icon' />
-                        Guide
-                    </button>
-                ) : (
-                    <div className='bb-card__guide'>
-                        <span className='bb-card__guide-icon' />
-                        Guide
+                <div className='bb-card__header'>
+                    <div className='bb-card__eyebrow-row'>
+                        <span className='bb-card__eyebrow'>{cardTypeLabel}</span>
+                        {bot.is_premium && <span className='bb-card__premium-badge'>Premium</span>}
                     </div>
-                )}
-                <button
-                    className={`bb-card__btn${loaded ? ' bb-card__btn--loaded' : ''}${
-                        error ? ' bb-card__btn--error' : ''
-                    }`}
-                    onClick={handleLoad}
-                    disabled={loading}
-                >
-                    <span>{loading ? 'Loading...' : loaded ? 'Loaded' : error ? 'Retry' : 'Load Bot'}</span>
-                    <span className='bb-card__btn-icon'>↓</span>
-                </button>
-            </div>
+                    <button
+                        className={`bb-card__copy${copied ? ' bb-card__copy--copied' : ''}`}
+                        type='button'
+                        aria-label={`Copy ${bot.name}`}
+                        onClick={handleCopy}
+                    >
+                        <span />
+                        <span />
+                    </button>
+                </div>
+
+                <h3 className='bb-card__name'>{bot.name}</h3>
+                <p className='bb-card__desc'>{bot.description}</p>
+
+                <div className='bb-card__performance' aria-label={`${bot.name} performance`}>
+                    <div className='bb-card__metric'>
+                        <strong>{totalRuns.toLocaleString()}</strong>
+                        <span>Runs</span>
+                    </div>
+                    <div className='bb-card__metric'>
+                        <strong>{winRate}%</strong>
+                        <span>Win rate</span>
+                    </div>
+                    <div className='bb-card__metric'>
+                        <strong>{profits}</strong>
+                        <span>Wins</span>
+                    </div>
+                    <div className='bb-card__metric'>
+                        <strong>{losses}</strong>
+                        <span>Losses</span>
+                    </div>
+                </div>
+
+                <div className='bb-card__profit-line'>
+                    <span className='bb-card__profit-label'>Estimated profit</span>
+                    <span className='bb-card__profit-value'>{formatMoney(netAmount)}</span>
+                </div>
+
+                <div className='bb-card__actions'>
+                    {guideUrl ? (
+                        <button
+                            className='bb-card__guide'
+                            type='button'
+                            aria-label={`${bot.name} guide`}
+                            onClick={toggleGuideModal}
+                        >
+                            <span className='bb-card__guide-icon' />
+                            Guide
+                        </button>
+                    ) : (
+                        <div className='bb-card__guide'>
+                            <span className='bb-card__guide-icon' />
+                            Guide
+                        </div>
+                    )}
+                    <button
+                        className={`bb-card__btn${loaded ? ' bb-card__btn--loaded' : ''}${
+                            error ? ' bb-card__btn--error' : ''
+                        }`}
+                        onClick={handleLoad}
+                        disabled={loading}
+                    >
+                        <span>{loading ? 'Loading...' : loaded ? 'Loaded' : error ? 'Retry' : 'Load Bot'}</span>
+                        <span className='bb-card__btn-icon'>↓</span>
+                    </button>
+                </div>
             </div>
             {guideUrl && (
                 <Modal

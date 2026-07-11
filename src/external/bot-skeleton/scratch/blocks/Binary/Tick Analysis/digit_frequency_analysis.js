@@ -54,7 +54,8 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.digit_frequency_analysis 
             window.Blockly.JavaScript.javascriptGenerator.ORDER_NONE
         ) || 1000;
     const rank = block.getFieldValue('RANK');
-    const order = rank === 'least' ? 'a.count - b.count || a.digit - b.digit' : 'b.count - a.count || a.digit - b.digit';
+    const order =
+        rank === 'least' ? 'a.count - b.count || a.digit - b.digit' : 'b.count - a.count || a.digit - b.digit';
 
     return [
         `(function () {

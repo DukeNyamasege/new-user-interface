@@ -26,6 +26,7 @@ import '../components/bot-notification/bot-notification.scss';
 
 const AppContent = observer(() => {
     const [is_api_initialized, setIsApiInitialized] = React.useState(false);
+    const initialization_fallback_timer = React.useRef(null);
 
     const store = useStore();
     const { app, transactions, common, client } = store;
@@ -57,16 +58,39 @@ const AppContent = observer(() => {
         if (connectionStatus === CONNECTION_STATUS.OPENED) {
             setIsApiInitialized(true);
             common.setSocketOpened(true);
+            if (initialization_fallback_timer.current) {
+                clearTimeout(initialization_fallback_timer.current);
+                initialization_fallback_timer.current = null;
+            }
         } else if (connectionStatus !== CONNECTION_STATUS.OPENED) {
             common.setSocketOpened(false);
         }
     }, [common, connectionStatus]);
 
     useEffect(() => {
-        if (!connectionStatus) {
+        if (!connectionStatus || connectionStatus === CONNECTION_STATUS.UNKNOWN) {
             setIsApiInitialized(true);
         }
     }, [connectionStatus]);
+
+    useEffect(() => {
+        if (is_api_initialized || connectionStatus === CONNECTION_STATUS.OPENED) {
+            return undefined;
+        }
+
+        // Avoid trapping the entire app behind the auth loader when the WebSocket
+        // stays in "unknown" or transitions to "closed" during local development.
+        initialization_fallback_timer.current = setTimeout(() => {
+            setIsApiInitialized(true);
+        }, 3000);
+
+        return () => {
+            if (initialization_fallback_timer.current) {
+                clearTimeout(initialization_fallback_timer.current);
+                initialization_fallback_timer.current = null;
+            }
+        };
+    }, [connectionStatus, is_api_initialized]);
 
     const { current_language } = common;
     const html = document.documentElement;

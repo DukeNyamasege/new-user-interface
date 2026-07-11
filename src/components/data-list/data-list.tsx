@@ -112,7 +112,7 @@ const DataList = React.memo(
             }
             const action = getRowAction && getRowAction(row);
             const destination_link = typeof action === 'string' ? action : undefined;
-            const action_desc = typeof action === 'object' ? action : undefined;
+            const action_desc = typeof action === 'object' && action?.component ? action : undefined;
             const row_key = keyMapper?.(row) || key;
 
             const getContent = ({ measure }: GetContentType = {}) => (

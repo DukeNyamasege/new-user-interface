@@ -57,7 +57,9 @@ class LeaderboardRowBoundary extends Component<LeaderboardRowBoundaryProps, Lead
     render() {
         if (this.state.hasError) {
             return (
-                <tr className={`competition-leaderboard__row--empty${this.props.isAwardZone ? ' competition-leaderboard__row--award' : ''}`}>
+                <tr
+                    className={`competition-leaderboard__row--empty${this.props.isAwardZone ? ' competition-leaderboard__row--award' : ''}`}
+                >
                     <td>
                         <div className='competition-rank'>
                             <strong>{this.props.fallbackRank}</strong>
@@ -73,7 +75,11 @@ class LeaderboardRowBoundary extends Component<LeaderboardRowBoundaryProps, Lead
     }
 }
 
-const LeaderboardTable = ({ entries, competitionIsLive, emptyMessage = 'No competition entries yet.' }: LeaderboardTableProps) => {
+const LeaderboardTable = ({
+    entries,
+    competitionIsLive,
+    emptyMessage = 'No competition entries yet.',
+}: LeaderboardTableProps) => {
     const visibleEntries = entries.slice(0, MAX_VISIBLE_ROWS);
     const fillerCount = Math.max(MAX_VISIBLE_ROWS - visibleEntries.length, 0);
     const hasEntries = visibleEntries.length > 0;
@@ -105,10 +111,7 @@ const LeaderboardTable = ({ entries, competitionIsLive, emptyMessage = 'No compe
                     <tbody>
                         {!hasEntries ? (
                             <tr className='competition-leaderboard__row--empty'>
-                                <td
-                                    className='competition-leaderboard__empty-cell'
-                                    colSpan={competitionIsLive ? 7 : 5}
-                                >
+                                <td className='competition-leaderboard__empty-cell' colSpan={competitionIsLive ? 7 : 5}>
                                     <div className='competition-leaderboard__empty-state'>{emptyMessage}</div>
                                 </td>
                             </tr>
@@ -139,13 +142,29 @@ const LeaderboardTable = ({ entries, competitionIsLive, emptyMessage = 'No compe
                                             </div>
                                         </td>
                                         <td>{entry.username}</td>
-                                        <td>{getDisplayMaskedLoginId(entry.masked_account_id || '') || 'Pending verification'}</td>
+                                        <td>
+                                            {getDisplayMaskedLoginId(entry.masked_account_id || '') ||
+                                                'Pending verification'}
+                                        </td>
                                         {competitionIsLive ? (
                                             <>
-                                                <td>{formatCompetitionMoney(entry.starting_balance, entry.account_currency || 'USD')}</td>
-                                                <td>{formatCompetitionMoney(entry.current_balance, entry.account_currency || 'USD')}</td>
+                                                <td>
+                                                    {formatCompetitionMoney(
+                                                        entry.starting_balance,
+                                                        entry.account_currency || 'USD'
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    {formatCompetitionMoney(
+                                                        entry.current_balance,
+                                                        entry.account_currency || 'USD'
+                                                    )}
+                                                </td>
                                                 <td className={`competition-metric competition-metric--${tone}`}>
-                                                    {formatCompetitionMoney(entry.adjusted_profit, entry.account_currency || 'USD')}
+                                                    {formatCompetitionMoney(
+                                                        entry.adjusted_profit,
+                                                        entry.account_currency || 'USD'
+                                                    )}
                                                 </td>
                                                 <td className={`competition-metric competition-metric--${tone}`}>
                                                     {formatGrowth(entry.growth_percentage)}
@@ -153,7 +172,12 @@ const LeaderboardTable = ({ entries, competitionIsLive, emptyMessage = 'No compe
                                             </>
                                         ) : (
                                             <>
-                                                <td>{formatCompetitionMoney(entry.current_balance, entry.account_currency || 'USD')}</td>
+                                                <td>
+                                                    {formatCompetitionMoney(
+                                                        entry.current_balance,
+                                                        entry.account_currency || 'USD'
+                                                    )}
+                                                </td>
                                                 <td className={`competition-metric competition-metric--${tone}`}>
                                                     {formatGrowth(entry.growth_percentage)}
                                                 </td>
@@ -165,43 +189,42 @@ const LeaderboardTable = ({ entries, competitionIsLive, emptyMessage = 'No compe
                         })}
                         {hasEntries
                             ? Array.from({ length: fillerCount }, (_, index) => {
-                            const rank = visibleEntries.length + index + 1;
-                            const isAwardZone = rank <= AWARD_CUTOFF;
+                                  const rank = visibleEntries.length + index + 1;
+                                  const isAwardZone = rank <= AWARD_CUTOFF;
 
-                            return (
-                                <tr
-                                    key={`empty-row-${rank}`}
-                                    className={`competition-leaderboard__row--empty${isAwardZone ? ' competition-leaderboard__row--award' : ''}`}
-                                >
-                                    <td>
-                                        <div className='competition-rank'>
-                                            <strong>{rank}</strong>
-                                            <span>{'\u2022'}</span>
-                                        </div>
-                                    </td>
-                                    <td>--</td>
-                                    <td>--</td>
-                                    {competitionIsLive ? (
-                                        <>
-                                            <td>--</td>
-                                            <td>--</td>
-                                            <td>--</td>
-                                            <td>--</td>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <td>--</td>
-                                            <td>--</td>
-                                        </>
-                                    )}
-                                </tr>
-                            );
-                        })
+                                  return (
+                                      <tr
+                                          key={`empty-row-${rank}`}
+                                          className={`competition-leaderboard__row--empty${isAwardZone ? ' competition-leaderboard__row--award' : ''}`}
+                                      >
+                                          <td>
+                                              <div className='competition-rank'>
+                                                  <strong>{rank}</strong>
+                                                  <span>{'\u2022'}</span>
+                                              </div>
+                                          </td>
+                                          <td>--</td>
+                                          <td>--</td>
+                                          {competitionIsLive ? (
+                                              <>
+                                                  <td>--</td>
+                                                  <td>--</td>
+                                                  <td>--</td>
+                                                  <td>--</td>
+                                              </>
+                                          ) : (
+                                              <>
+                                                  <td>--</td>
+                                                  <td>--</td>
+                                              </>
+                                          )}
+                                      </tr>
+                                  );
+                              })
                             : null}
                     </tbody>
                 </table>
             </div>
-
         </div>
     );
 };

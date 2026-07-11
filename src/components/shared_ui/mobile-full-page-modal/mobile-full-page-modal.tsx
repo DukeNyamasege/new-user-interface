@@ -28,6 +28,7 @@ type TMobileFullPageModal = {
     page_footer_parent?: React.ReactNode;
     renderPageHeader?: () => React.ReactNode;
     page_footer_parent_className?: string;
+    page_overlay?: boolean;
 };
 
 const MobileFullPageModal = ({

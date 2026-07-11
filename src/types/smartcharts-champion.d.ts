@@ -219,4 +219,6 @@ declare module '@deriv-com/smartcharts-champion' {
     export const Share: ComponentType<any>;
     export const ToolbarWidget: ComponentType<{ children?: React.ReactNode }>;
     export const ChartSetting: ComponentType<any>;
+    export const FastMarker: ComponentType<any>;
+    export const Marker: ComponentType<any>;
 }

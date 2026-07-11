@@ -12,8 +12,8 @@ const FilterDialog = ({
     toggleFilterDialog,
 }: TFilterDialogProps) => {
     const wrapper_ref = React.useRef<HTMLDivElement>(null);
-    const validateClickOutside = (event: React.ChangeEvent<HTMLInputElement>) =>
-        is_filter_dialog_visible && !toggle_ref.current?.contains(event.target);
+    const validateClickOutside = (event: MouseEvent) =>
+        is_filter_dialog_visible && !toggle_ref.current?.contains(event.target as Node);
 
     useOnClickOutside(wrapper_ref, toggleFilterDialog, validateClickOutside);
 

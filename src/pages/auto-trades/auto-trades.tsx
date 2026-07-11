@@ -1150,7 +1150,6 @@ const AutoTrades = observer(() => {
     const consecutiveLossCountRef = useRef(consecutiveLossCount);
     const modeTransitionLockRef = useRef(false);
     const isRecoveringDataRef = useRef(false);
-    const [showDisclaimer, setShowDisclaimer] = useState(false);
     const [showAiStrategy, setShowAiStrategy] = useState(false);
     const [aiStrategyText, setAiStrategyText] = useState('');
     const [aiStrategyResult, setAiStrategyResult] = useState<AiAutoTradeParseResult | null>(null);

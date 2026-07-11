@@ -8,17 +8,19 @@ description: How to switch from static to autoscale deployment, serve frontend f
 ## Deployment: static → autoscale
 
 Use `deployConfig()` (from deployment skill) — cannot edit `.replit` directly:
+
 ```js
 await deployConfig({
-    deploymentTarget: "autoscale",
-    build: ["sh", "-c", "npm run build && cd backend && npm install --production"],
-    run: ["sh", "-c", "NODE_ENV=production node backend/server/index.js"]
+    deploymentTarget: 'autoscale',
+    build: ['sh', '-c', 'npm run build && cd backend && npm install --production'],
+    run: ['sh', '-c', 'NODE_ENV=production node backend/server/index.js'],
 });
 ```
 
 ## Express: serve frontend static files in production
 
 In `backend/server/index.js`, after all API routes:
+
 ```js
 const distPath = path.join(__dirname, '../../dist');
 if (process.env.NODE_ENV === 'production' && fs.existsSync(distPath)) {
@@ -26,6 +28,7 @@ if (process.env.NODE_ENV === 'production' && fs.existsSync(distPath)) {
     app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
 }
 ```
+
 Also disable helmet's CSP in production (`contentSecurityPolicy: false`) to allow SPA assets.
 
 **Why:** On Replit autoscale, only one process runs. Express must serve the built `dist/` alongside `/api/*` routes so both frontend and backend are on the same origin — no CORS or proxy needed.
@@ -46,6 +49,7 @@ This works without touching `.git/config`. Commits are created automatically by 
 ## Netlify proxy fallback (if site stays on Netlify)
 
 In `netlify.toml`, add before the SPA catch-all:
+
 ```toml
 [[redirects]]
   from = "/api/*"
@@ -53,4 +57,5 @@ In `netlify.toml`, add before the SPA catch-all:
   status = 200
   force = true
 ```
+
 Set `REPLIT_BACKEND_URL` in Netlify's environment variables to the deployed Replit URL.

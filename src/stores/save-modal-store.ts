@@ -14,6 +14,8 @@ import { localize } from '@deriv-com/translations';
 import { TStrategy } from 'Types';
 import RootStore from './root-store';
 
+const sanitizeXmlString = (xml_string: unknown) => String(xml_string || '').replace(/^\uFEFF/, '');
+
 type IOnConfirmProps = {
     is_local: boolean;
     save_as_collection: boolean;
@@ -160,7 +162,7 @@ export default class SaveModalStore implements ISaveModalStore {
                 }
                 main_strategy.name = bot_name;
                 main_strategy.save_type = is_local ? save_types.LOCAL : save_types.GOOGLE_DRIVE;
-                xml = window.Blockly.utils.xml.textToDom(main_strategy.xml);
+                xml = window.Blockly.utils.xml.textToDom(sanitizeXmlString(main_strategy.xml));
             }
             xml.setAttribute('is_dbot', 'true');
             xml.setAttribute('collection', save_as_collection ? 'true' : 'false');

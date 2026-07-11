@@ -1,5 +1,11 @@
 import { tradingTimesService } from '@/components/shared/services/trading-times-service';
 
+type TTradingTimeSymbol = {
+    display_name?: string;
+    symbol?: string;
+    underlying_symbol?: string;
+};
+
 /**
  * Get display name for a symbol from underlying_symbol
  * @param underlying_symbol - The underlying symbol code (e.g., "1HZ100V", "frxEURUSD")
@@ -16,7 +22,7 @@ export const getSymbolDisplayName = async (underlying_symbol: string): Promise<s
         // Search through all markets and submarkets to find the symbol
         for (const market of trading_times.markets || []) {
             for (const submarket of market.submarkets || []) {
-                for (const symbol of submarket.symbols || []) {
+                for (const symbol of (submarket.symbols || []) as TTradingTimeSymbol[]) {
                     if (symbol.underlying_symbol === underlying_symbol || symbol.symbol === underlying_symbol) {
                         return symbol.display_name || underlying_symbol;
                     }

@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode } from 'react';
 import './error-boundary.scss';
 
 interface Props {
@@ -37,10 +37,10 @@ class ErrorBoundary extends Component<Props, State> {
             return (
                 <div className='error-boundary'>
                     <div className='error-boundary__panel'>
-                        <div className='error-boundary__icon'>⚠</div>
+                        <div className='error-boundary__icon'>Warning</div>
                         <h1 className='error-boundary__title'>Something went wrong</h1>
                         <p className='error-boundary__message'>
-                            An unexpected error occurred. Your account and settings are safe — reload to recover.
+                            An unexpected error occurred. Your account and settings are safe - reload to recover.
                         </p>
                         {this.state.error && (
                             <details className='error-boundary__details'>
@@ -49,12 +49,13 @@ class ErrorBoundary extends Component<Props, State> {
                             </details>
                         )}
                         <button className='error-boundary__btn' onClick={this.handleReset}>
-                            ↺&nbsp;Reload &amp; Recover
+                            Reload &amp; Recover
                         </button>
                     </div>
                 </div>
             );
         }
+
         return this.props.children;
     }
 }

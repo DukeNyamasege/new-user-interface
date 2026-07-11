@@ -497,10 +497,7 @@ export const streamContractUntilSettled = ({
                 data: contractId,
             });
             startSettlementPolling(
-                Math.max(
-                    settlementCheckMs,
-                    api_base.execution_config?.settlementRecoveryCheckMs ?? settlementCheckMs
-                )
+                Math.max(settlementCheckMs, api_base.execution_config?.settlementRecoveryCheckMs ?? settlementCheckMs)
             );
             void requestSettlementSnapshot('timeout-recovery');
         }, timeoutMs);

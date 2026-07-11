@@ -47,11 +47,7 @@ const parseLeaderboardJson = async <T>(response: Response, fallbackMessage: stri
         const text = await response.text().catch(() => '');
         const htmlLike = text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html');
 
-        throw new Error(
-            htmlLike
-                ? getHtmlCompetitionErrorMessage(response)
-                : fallbackMessage
-        );
+        throw new Error(htmlLike ? getHtmlCompetitionErrorMessage(response) : fallbackMessage);
     }
 
     try {
@@ -92,7 +88,9 @@ export const useLeaderboard = (slug = DEFAULT_COMPETITION_SLUG) => {
                 const response = await fetch(buildCompetitionUrl(`/competitions/${slug}/leaderboard`));
 
                 if (!response.ok) {
-                    throw new Error(await parseLeaderboardError(response, 'Unable to load the competition leaderboard.'));
+                    throw new Error(
+                        await parseLeaderboardError(response, 'Unable to load the competition leaderboard.')
+                    );
                 }
 
                 const payload = await parseLeaderboardJson<{ entries?: LeaderboardEntry[] }>(

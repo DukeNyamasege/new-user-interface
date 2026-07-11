@@ -44,7 +44,9 @@ window.Blockly.Blocks.match_differ_percentage = {
     meta() {
         return {
             display_name: localize('Match/Differ Analysis'),
-            description: localize('Returns the percentage of digits matching or differing from the specified value in the last N ticks.'),
+            description: localize(
+                'Returns the percentage of digits matching or differing from the specified value in the last N ticks.'
+            ),
         };
     },
     customContextMenu(menu) {

@@ -32,7 +32,7 @@ const CustomNotifications = () => {
     const notifications = useMemo(
         () =>
             BOT_ANNOUNCEMENTS_LIST.map(item => ({
-                key: item.id,
+                id: item.id,
                 icon: <item.icon announce={readNotifications[item.id] ?? true} />,
                 title: item.title,
                 message: item.message,

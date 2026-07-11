@@ -45,8 +45,7 @@
     overflow: hidden;
     background:
         radial-gradient(circle at top right, rgb(0 211 149 / 10%), transparent 24%),
-        radial-gradient(circle at bottom left, rgb(14 165 233 / 10%), transparent 22%),
-        var(--competition-bg-dark);
+        radial-gradient(circle at bottom left, rgb(14 165 233 / 10%), transparent 22%), var(--competition-bg-dark);
 
     .theme--light & {
         background:

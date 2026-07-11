@@ -86,7 +86,7 @@ const JournalItem = ({ row, measure }: TJournalItemProps) => {
                             message_type,
                             className,
                             extra as TJournalItemExtra,
-                            measure,
+                            measure || (() => undefined),
                             ui.is_dark_mode_on,
                             isModalOpen,
                             toggleModal

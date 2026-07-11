@@ -8,11 +8,7 @@ import type { DerivCompetitionAccount } from '@/features/competition/types/compe
 import { formatCompetitionMoney } from '@/features/competition/utils/formatCompetitionMoney';
 import { sanitizeDerivCompetitionAccount } from '@/features/competition/utils/competitionSafety';
 import { useStore } from '@/hooks/useStore';
-import {
-    getDisplayLoginId,
-    getDisplayMaskedLoginId,
-    getMaskedLoginId,
-} from '@/utils/account-helpers';
+import { getDisplayLoginId, getDisplayMaskedLoginId, getMaskedLoginId } from '@/utils/account-helpers';
 import '../styles/competition.scss';
 
 const COMPETITION_API_UNAVAILABLE = 'Competition API route was not found.';
@@ -60,7 +56,9 @@ const CompetitionPage = observer(() => {
         const loadEligibleAccount = async () => {
             try {
                 const accounts = await derivAuth.getAccounts();
-                const realAccounts = accounts.map(sanitizeDerivCompetitionAccount).filter(account => derivAuth.isRealAccount(account));
+                const realAccounts = accounts
+                    .map(sanitizeDerivCompetitionAccount)
+                    .filter(account => derivAuth.isRealAccount(account));
                 const accountsWithBalances = await Promise.all(
                     realAccounts.map(async account => ({
                         ...account,
@@ -290,7 +288,10 @@ const CompetitionPage = observer(() => {
 
             {isJoinModalOpen ? (
                 <div className='competition-modal'>
-                    <div className='competition-modal__backdrop' onClick={() => !isJoining && setIsJoinModalOpen(false)} />
+                    <div
+                        className='competition-modal__backdrop'
+                        onClick={() => !isJoining && setIsJoinModalOpen(false)}
+                    />
                     <div className='competition-modal__panel'>
                         <div className='competition-modal__header'>
                             <h3>{participantSnapshot ? 'Competition entry' : 'Create Entry'}</h3>

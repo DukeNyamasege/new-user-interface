@@ -66,7 +66,12 @@ exports.handler = async event => {
             return json(200, await getParticipantSnapshot(segments[2]));
         }
 
-        if (segments.length === 4 && segments[1] === 'participants' && segments[3] === 'connect-account' && method === 'POST') {
+        if (
+            segments.length === 4 &&
+            segments[1] === 'participants' &&
+            segments[3] === 'connect-account' &&
+            method === 'POST'
+        ) {
             return json(
                 200,
                 await connectCompetitionAccount({

@@ -7,6 +7,7 @@ type TExtraFilterMessage = {
 type TExtraJournal = {
     longcode: string;
     transaction_id: number;
+    contract_type?: string;
 };
 
 export type TDateItemProps = Record<'date' | 'time', string>;
@@ -21,19 +22,19 @@ export type TFilterMessageValues = {
     unique_id: string;
 };
 
-type TFilterMessageProps = Array<TFilterMessageValues> | TFilterMessageValues;
+type TFilterMessageProps = TFilterMessageValues[] | TFilterMessageValues;
 
-type TKeyFilters = 'error' & 'notify' & 'success';
-type TValuesFilters = 'Errors' & 'Notifications' & 'System';
+type TKeyFilters = 'error' | 'notify' | 'success';
+type TValuesFilters = 'Errors' | 'Notifications' | 'System';
 
-type TFilters = Array<{ id: TKeyFilters; label: TValuesFilters }>;
-export type TCheckedFilters = Record<'error' | 'notify' | 'success', string[]>;
+export type TFilters = Array<{ id: TKeyFilters; label: TValuesFilters }>;
+export type TCheckedFilters = string[];
 
 export type TFilterDialogProps = {
     toggle_ref: React.RefObject<HTMLDivElement>;
     checked_filters: TCheckedFilters;
     filters: TFilters;
-    filterMessage: () => TFilterMessageProps;
+    filterMessage: (checked: boolean, item_id: TKeyFilters) => void;
     is_filter_dialog_visible: boolean;
     toggleFilterDialog: () => void;
 };
@@ -41,7 +42,7 @@ export type TFilterDialogProps = {
 export type TJournalToolsProps = {
     checked_filters: TCheckedFilters;
     filters: TFilters;
-    filterMessage: () => TFilterMessageProps;
+    filterMessage: (checked: boolean, item_id: TKeyFilters) => void;
     is_filter_dialog_visible: boolean;
     toggleFilterDialog: () => void;
 };
@@ -50,7 +51,7 @@ export type TFiltersProps = {
     wrapper_ref: React.RefObject<HTMLDivElement>;
     checked_filters: TCheckedFilters;
     filters: TFilters;
-    filterMessage: (checked: boolean, item_id: number) => TFilterMessageProps;
+    filterMessage: (checked: boolean, item_id: TKeyFilters) => void;
     className: string;
     classNameLabel?: string;
 };
@@ -62,7 +63,7 @@ export type TJournalProps = {
     is_stop_button_visible: boolean;
     unfiltered_messages: TFilterMessageProps;
     checked_filters: TCheckedFilters;
-    filterMessage: () => TFilterMessageProps;
+    filterMessage: (checked: boolean, item_id: TKeyFilters) => void;
     filters: TFilters;
     is_filter_dialog_visible: boolean;
     toggleFilterDialog: () => void;
@@ -71,7 +72,7 @@ export type TJournalProps = {
 export type TJournalItemProps = {
     row: TFilterMessageValues;
     is_new_row: boolean;
-    measure: () => void;
+    measure?: () => void;
 };
 
 export type TJournalItemExtra = TExtraFilterMessage & TExtraJournal & { sold_for: string; current_currency?: string };
@@ -85,7 +86,7 @@ export type TFormatMessageProps = {
 export type TJournalDataListArgs = {
     is_new_row: boolean;
     is_scrolling: boolean;
-    measure: () => void;
+    measure?: () => void;
     passthrough?: any;
     row: TFilterMessageValues;
 };

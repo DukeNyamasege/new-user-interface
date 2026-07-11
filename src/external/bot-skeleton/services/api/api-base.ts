@@ -480,7 +480,10 @@ class APIBase {
                     deriv_accounts: DerivWSAccountsService.getStoredAccounts()?.length ? 'Present' : 'MISSING',
                 };
                 if (hasPkceAuth) {
-                    console.info('[authorizeAndSubscribe] Using authenticated WebSocket session without legacy token', logPayload);
+                    console.info(
+                        '[authorizeAndSubscribe] Using authenticated WebSocket session without legacy token',
+                        logPayload
+                    );
                 } else {
                     console.warn('⚠️ [authorizeAndSubscribe] No token available for authorization', logPayload);
                 }

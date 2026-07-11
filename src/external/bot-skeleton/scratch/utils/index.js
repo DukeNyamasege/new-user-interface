@@ -36,6 +36,8 @@ export const inject_workspace_options = {
     renderer: 'zelos',
 };
 
+const sanitizeXmlString = xml_string => String(xml_string || '').replace(/^\uFEFF/, '');
+
 export const updateXmlValues = blockly_options => {
     if (!window.Blockly) return;
     const { strategy_id, convertedDom, file_name, from } = blockly_options;
@@ -293,7 +295,8 @@ const getTradeOptionsTemplateInputs = xml => {
     const trade_options_block = xml.querySelector('block[type="trade_definition_tradeoptions"]');
     const duration_value = getDirectChild(trade_options_block, 'value', 'name', 'DURATION');
     const amount_value = getDirectChild(trade_options_block, 'value', 'name', 'AMOUNT');
-    const duration_type = trade_options_block?.querySelector('field[name="DURATIONTYPE_LIST"]')?.textContent?.trim() || 't';
+    const duration_type =
+        trade_options_block?.querySelector('field[name="DURATIONTYPE_LIST"]')?.textContent?.trim() || 't';
 
     return {
         duration_type,
@@ -304,7 +307,10 @@ const getTradeOptionsTemplateInputs = xml => {
 
 const createOptionMutation = xml => {
     const mutation = createXmlElement(xml, 'mutation');
-    mutation.setAttribute('options', '%5B%5B%22Even%20Odd%22%2C%22Even%20Odd%22%5D%2C%5B%22Over4%2FUnder5%22%2C%22Over4%2FUnder5%22%5D%2C%5B%22Rise%2FFall%22%2C%22Rise%2FFall%22%5D%5D');
+    mutation.setAttribute(
+        'options',
+        '%5B%5B%22Even%20Odd%22%2C%22Even%20Odd%22%5D%2C%5B%22Over4%2FUnder5%22%2C%22Over4%2FUnder5%22%5D%2C%5B%22Rise%2FFall%22%2C%22Rise%2FFall%22%5D%5D'
+    );
     return mutation;
 };
 
@@ -353,7 +359,11 @@ const injectLegacyTradeTypeCycle = xml => {
     cycle_block.appendChild(mutation);
 
     cycle_block.appendChild(
-        createValueElement(xml, 'IF0', createOptionCheckBlock(xml, 'is_even_odd_trade_type', trade_type_var_id, 'Even Odd'))
+        createValueElement(
+            xml,
+            'IF0',
+            createOptionCheckBlock(xml, 'is_even_odd_trade_type', trade_type_var_id, 'Even Odd')
+        )
     );
 
     const do0 = createXmlElement(xml, 'statement');
@@ -376,7 +386,9 @@ const injectLegacyTradeTypeCycle = xml => {
 
     const else_statement = createXmlElement(xml, 'statement');
     else_statement.setAttribute('name', 'ELSE');
-    else_statement.appendChild(createOptionSetBlock(xml, 'reset_trade_type_to_even_odd', trade_type_var_id, 'Even Odd'));
+    else_statement.appendChild(
+        createOptionSetBlock(xml, 'reset_trade_type_to_even_odd', trade_type_var_id, 'Even Odd')
+    );
     cycle_block.appendChild(else_statement);
 
     const next = createXmlElement(xml, 'next');
@@ -454,9 +466,7 @@ const normalizeApolloPurchaseBlocks = xml => {
                 cloneValueBlock(prediction_value) || createMathNumberBlock(xml, 0, 'math_number_positive')
             )
         );
-        smart_purchase_block.appendChild(
-            createValueElement(xml, 'RECOVERY_AFTER', createMathNumberBlock(xml, 999999))
-        );
+        smart_purchase_block.appendChild(createValueElement(xml, 'RECOVERY_AFTER', createMathNumberBlock(xml, 999999)));
 
         if (next_node) {
             smart_purchase_block.appendChild(next_node.cloneNode(true));
@@ -624,7 +634,9 @@ export const load = async ({
         };
     };
 
-    if (typeof block_string !== 'string' || !block_string.trim()) {
+    const sanitized_block_string = sanitizeXmlString(block_string);
+
+    if (typeof sanitized_block_string !== 'string' || !sanitized_block_string.trim()) {
         return showInvalidStrategyError({
             load_error_message: 'The XML file is empty or its text content could not be read.',
         });
@@ -632,7 +644,7 @@ export const load = async ({
 
     // Check if XML can be parsed correctly.
     try {
-        const xmlDoc = new DOMParser().parseFromString(block_string, 'application/xml');
+        const xmlDoc = new DOMParser().parseFromString(sanitized_block_string, 'application/xml');
         if (xmlDoc.getElementsByTagName('parsererror').length) {
             return showInvalidStrategyError({
                 parser_error_text: getParserErrorText(xmlDoc),
@@ -648,7 +660,7 @@ export const load = async ({
     let xml;
     // Check if XML can be parsed into a strategy.
     try {
-        xml = window.Blockly.utils.xml.textToDom(block_string);
+        xml = window.Blockly.utils.xml.textToDom(sanitized_block_string);
         xml = normalizeBotXml(xml);
     } catch (e) {
         return showInvalidStrategyError({ load_error_message: e?.message });
@@ -760,7 +772,7 @@ const loadBlocksFromHeader = (xml_string, block) => {
         let xml;
 
         try {
-            xml = window.Blockly.utils.xml.textToDom(xml_string);
+            xml = window.Blockly.utils.xml.textToDom(sanitizeXmlString(xml_string));
         } catch (error) {
             return reject(localize('Unrecognized file format'));
         }

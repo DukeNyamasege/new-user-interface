@@ -7,6 +7,7 @@ export * from './Legacy';
 export * from './Logo';
 export * from './Markets';
 export * from './TradeTypes';
+export * from './Settings';
 
 export {
     LabelPairedCheckCaptionFillIcon,

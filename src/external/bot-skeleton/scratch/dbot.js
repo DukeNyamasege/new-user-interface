@@ -13,6 +13,8 @@ import { loadBlockly } from './blockly';
 import DBotStore from './dbot-store';
 import { isAllRequiredBlocksEnabled, updateDisabledBlocks, validateErrorOnBlockDelete } from './utils';
 
+const sanitizeXmlString = xml_string => String(xml_string || '').replace(/^\uFEFF/, '');
+
 class DBot {
     constructor() {
         this.interpreter = null;
@@ -210,7 +212,9 @@ class DBot {
                 const event_group = `dbot-load${Date.now()}`;
                 window.Blockly.Events.setGroup(event_group);
                 window.Blockly.Xml.domToWorkspace(
-                    window.Blockly.utils.xml.textToDom(window.Blockly.derivWorkspace.strategy_to_load),
+                    window.Blockly.utils.xml.textToDom(
+                        sanitizeXmlString(window.Blockly.derivWorkspace.strategy_to_load)
+                    ),
                     this.workspace
                 );
                 const { save_modal } = DBotStore.instance;

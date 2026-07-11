@@ -374,46 +374,46 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                             </button>
                             {expandedGroups.real &&
                                 realAccounts.map(account => (
-                                <div
-                                    key={account.loginid}
-                                    role='option'
-                                    aria-selected={account.isActive}
-                                    tabIndex={0}
-                                    className={classNames('acc-dropdown__account', {
-                                        'acc-dropdown__account--selected': account.isActive,
-                                    })}
-                                    onClick={() => handleAccountSelect(account.loginid)}
-                                    onKeyDown={e => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            e.preventDefault();
-                                            handleAccountSelect(account.loginid);
-                                        }
-                                    }}
-                                >
-                                    <span className='acc-dropdown__account-icon'>
-                                        <CurrencyIcon currency='usd' />
-                                    </span>
-                                    <span className='acc-dropdown__account-info'>
-                                        <Text as='span' size='xs' weight='bold' className='acc-dropdown__currency'>
-                                            {getCurrencyName(account.currency)}
+                                    <div
+                                        key={account.loginid}
+                                        role='option'
+                                        aria-selected={account.isActive}
+                                        tabIndex={0}
+                                        className={classNames('acc-dropdown__account', {
+                                            'acc-dropdown__account--selected': account.isActive,
+                                        })}
+                                        onClick={() => handleAccountSelect(account.loginid)}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                handleAccountSelect(account.loginid);
+                                            }
+                                        }}
+                                    >
+                                        <span className='acc-dropdown__account-icon'>
+                                            <CurrencyIcon currency='usd' />
+                                        </span>
+                                        <span className='acc-dropdown__account-info'>
+                                            <Text as='span' size='xs' weight='bold' className='acc-dropdown__currency'>
+                                                {getCurrencyName(account.currency)}
+                                            </Text>
+                                            <Text as='span' size='xxxs' className='acc-dropdown__loginid'>
+                                                {account.loginid}
+                                            </Text>
+                                        </span>
+                                        <Text as='span' size='xs' weight='bold' className='acc-dropdown__balance'>
+                                            {account.currency ? (
+                                                formatDisplayBalanceValue(
+                                                    account.balance,
+                                                    account.currency,
+                                                    selectedDisplayCurrency,
+                                                    client?.usd_kes_rate
+                                                )
+                                            ) : (
+                                                <Localize i18n_default_text='No currency assigned' />
+                                            )}
                                         </Text>
-                                        <Text as='span' size='xxxs' className='acc-dropdown__loginid'>
-                                            {account.loginid}
-                                        </Text>
-                                    </span>
-                                    <Text as='span' size='xs' weight='bold' className='acc-dropdown__balance'>
-                                        {account.currency ? (
-                                            formatDisplayBalanceValue(
-                                                account.balance,
-                                                account.currency,
-                                                selectedDisplayCurrency,
-                                                client?.usd_kes_rate
-                                            )
-                                        ) : (
-                                            <Localize i18n_default_text='No currency assigned' />
-                                        )}
-                                    </Text>
-                                </div>
+                                    </div>
                                 ))}
                         </div>
                     )}
@@ -437,45 +437,45 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                             </button>
                             {expandedGroups.demo &&
                                 demoAccounts.map(account => (
-                                <div
-                                    key={account.loginid}
-                                    role='option'
-                                    aria-selected={account.isActive}
-                                    tabIndex={0}
-                                    className={classNames('acc-dropdown__account', {
-                                        'acc-dropdown__account--selected': account.isActive,
-                                    })}
-                                    onClick={() => handleAccountSelect(account.loginid)}
-                                    onKeyDown={e => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            e.preventDefault();
-                                            handleAccountSelect(account.loginid);
-                                        }
-                                    }}
-                                >
-                                    <span className='acc-dropdown__account-icon'>
-                                        <CurrencyIcon
-                                            currency={shouldShowUsdAccountIcon(account.loginid) ? 'usd' : undefined}
-                                            isVirtual={!shouldShowUsdAccountIcon(account.loginid)}
-                                        />
-                                    </span>
-                                    <span className='acc-dropdown__account-info'>
-                                        <Text as='span' size='xs' weight='bold' className='acc-dropdown__currency'>
-                                            Demo
+                                    <div
+                                        key={account.loginid}
+                                        role='option'
+                                        aria-selected={account.isActive}
+                                        tabIndex={0}
+                                        className={classNames('acc-dropdown__account', {
+                                            'acc-dropdown__account--selected': account.isActive,
+                                        })}
+                                        onClick={() => handleAccountSelect(account.loginid)}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                handleAccountSelect(account.loginid);
+                                            }
+                                        }}
+                                    >
+                                        <span className='acc-dropdown__account-icon'>
+                                            <CurrencyIcon
+                                                currency={shouldShowUsdAccountIcon(account.loginid) ? 'usd' : undefined}
+                                                isVirtual={!shouldShowUsdAccountIcon(account.loginid)}
+                                            />
+                                        </span>
+                                        <span className='acc-dropdown__account-info'>
+                                            <Text as='span' size='xs' weight='bold' className='acc-dropdown__currency'>
+                                                Demo
+                                            </Text>
+                                            <Text as='span' size='xxxs' className='acc-dropdown__loginid'>
+                                                {account.loginid}
+                                            </Text>
+                                        </span>
+                                        <Text as='span' size='xs' weight='bold' className='acc-dropdown__balance'>
+                                            {formatDisplayBalanceValue(
+                                                account.balance,
+                                                account.currency,
+                                                selectedDisplayCurrency,
+                                                client?.usd_kes_rate
+                                            )}
                                         </Text>
-                                        <Text as='span' size='xxxs' className='acc-dropdown__loginid'>
-                                            {account.loginid}
-                                        </Text>
-                                    </span>
-                                    <Text as='span' size='xs' weight='bold' className='acc-dropdown__balance'>
-                                        {formatDisplayBalanceValue(
-                                            account.balance,
-                                            account.currency,
-                                            selectedDisplayCurrency,
-                                            client?.usd_kes_rate
-                                        )}
-                                    </Text>
-                                </div>
+                                    </div>
                                 ))}
                         </div>
                     )}

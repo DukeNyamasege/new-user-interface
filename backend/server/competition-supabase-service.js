@@ -125,7 +125,10 @@ const invokeRpc = async (name, args = {}) => {
     }
 };
 
-const normalizeUsername = username => String(username || '').trim().toLowerCase();
+const normalizeUsername = username =>
+    String(username || '')
+        .trim()
+        .toLowerCase();
 
 const maskAccountId = accountId => {
     const value = String(accountId || '');

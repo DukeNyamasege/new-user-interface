@@ -18,8 +18,14 @@ import { TStrategy } from 'Types';
 /* [/AI] */
 import { tabs_title } from '../constants/load-modal';
 import { waitForDomElement } from '../utils/dom-observer';
-import { buildXmlImportDiagnosticsMessage, getParserErrorText, getUnsupportedXmlTags } from '../utils/xml-import-diagnostics';
+import {
+    buildXmlImportDiagnosticsMessage,
+    getParserErrorText,
+    getUnsupportedXmlTags,
+} from '../utils/xml-import-diagnostics';
 import RootStore from './root-store';
+
+const sanitizeXmlString = (xml_string: unknown) => String(xml_string || '').replace(/^\uFEFF/, '');
 
 export default class LoadModalStore {
     root_store: RootStore;
@@ -290,8 +296,9 @@ export default class LoadModalStore {
         const workspace = window.Blockly.derivWorkspace;
         if (workspace) {
             window.Blockly.derivWorkspace.asyncClear();
-            window.Blockly.Xml.domToWorkspace(window.Blockly.utils.xml.textToDom(workspace.cached_xml.main), workspace);
-            window.Blockly.derivWorkspace.strategy_to_load = workspace.cached_xml.main;
+            const sanitized_xml = sanitizeXmlString(workspace.cached_xml.main);
+            window.Blockly.Xml.domToWorkspace(window.Blockly.utils.xml.textToDom(sanitized_xml), workspace);
+            window.Blockly.derivWorkspace.strategy_to_load = sanitized_xml;
         }
     };
 
@@ -334,7 +341,7 @@ export default class LoadModalStore {
         if (!this.selected_strategy) {
             window.Blockly.derivWorkspace.asyncClear();
             window.Blockly.Xml.domToWorkspace(
-                window.Blockly.utils.xml.textToDom(window.Blockly.derivWorkspace.strategy_to_load),
+                window.Blockly.utils.xml.textToDom(sanitizeXmlString(window.Blockly.derivWorkspace.strategy_to_load)),
                 window.Blockly.derivWorkspace
             );
             this.is_open_button_loading = false;
@@ -463,7 +470,8 @@ export default class LoadModalStore {
                     return;
                 }
 
-                const parsed_xml = parser.parseFromString(content, 'text/xml');
+                const sanitized_content = sanitizeXmlString(content);
+                const parsed_xml = parser.parseFromString(sanitized_content, 'text/xml');
                 if (parsed_xml.querySelector('parsererror') || parsed_xml.documentElement?.nodeName !== 'xml') {
                     this.showErrorMessage(
                         buildXmlImportDiagnosticsMessage({
@@ -485,7 +493,7 @@ export default class LoadModalStore {
                 }
 
                 const load_options = {
-                    block_string: content,
+                    block_string: sanitized_content,
                     drop_event,
                     from: save_types.LOCAL,
                     workspace: null as window.Blockly.WorkspaceSvg | null,
@@ -541,7 +549,7 @@ export default class LoadModalStore {
         if (this.recent_strategies.length === 0) return;
         updateXmlValues({
             strategy_id: this.selected_strategy_id,
-            convertedDom: window?.Blockly?.utils?.xml?.textToDom(this.selected_strategy?.xml),
+            convertedDom: window?.Blockly?.utils?.xml?.textToDom(sanitizeXmlString(this.selected_strategy?.xml)),
             file_name: this.selected_strategy?.name,
             from: this.selected_strategy?.save_type || save_types.UNSAVED,
         });
@@ -566,7 +574,7 @@ export default class LoadModalStore {
             if (!this.recent_workspace) this.recent_workspace = window.Blockly.inject(ref_preview, inject_options);
             (this.recent_workspace as any).RTL = isDbotRTL();
 
-            const convertedDom = window.Blockly?.utils?.xml?.textToDom(this.selected_strategy?.xml);
+            const convertedDom = window.Blockly?.utils?.xml?.textToDom(sanitizeXmlString(this.selected_strategy?.xml));
             const mainWorkspace = window.Blockly?.getMainWorkspace();
 
             window.Blockly?.Xml?.clearWorkspaceAndLoadFromXml(convertedDom, mainWorkspace);

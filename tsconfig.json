@@ -17,12 +17,13 @@
         "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true,
         "allowJs": true,
-        "baseUrl": "./src",
         "paths": {
-            "@/*": ["./*"]
+            "@/*": ["./src/*"],
+            "@deriv-com/translations": ["../node_modules/@deriv-com/translations/dist/src/index.d.ts"]
         },
         "esModuleInterop": true,
-        "types": ["jest"]
+        "types": ["jest", "@testing-library/jest-dom"]
     },
-    "include": ["src"]
+    "include": ["src", "jest.setup.ts"],
+    "exclude": ["src/Stores"]
 }
