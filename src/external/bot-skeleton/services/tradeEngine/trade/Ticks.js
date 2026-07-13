@@ -75,6 +75,10 @@ export default Engine =>
                     .then(ticks => {
                         try {
                             const last_tick_data = getLast(ticks);
+                            if (!last_tick_data) {
+                                resolve(toString ? '' : undefined);
+                                return;
+                            }
                             let last_tick = raw ? last_tick_data : last_tick_data.quote;
                             if (!raw && toString) {
                                 last_tick = this.formatTickQuote(last_tick_data);
@@ -188,7 +192,7 @@ export default Engine =>
                 growth_rate: this?.tradeOptions?.growth_rate,
                 proposal: 1,
                 subscribe: 1,
-                underlying_symbol: this?.tradeOptions?.symbol,
+                symbol: this?.tradeOptions?.symbol,
             };
             if (!subscription_id && !is_proposal_requested) {
                 this.is_proposal_requested_for_accumulators = true;

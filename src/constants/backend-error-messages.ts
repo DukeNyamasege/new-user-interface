@@ -406,6 +406,10 @@ export const getLocalizedErrorMessage = (errorCode: string, errorResponse?: Reco
                 details: validation_details,
             });
         }
+
+        if (errorResponse?.message && errorResponse.message !== message) {
+            return sanitizeParameterValue(errorResponse.message);
+        }
     }
 
     // Handle direct replacement of [_1], [_2], [_3] format with code_args values

@@ -1,3 +1,4 @@
+import { getLocalizedErrorMessage } from '@/constants/backend-error-messages';
 import { api_base, observer as globalObserver } from '@/external/bot-skeleton';
 import { assertApiTokenScope } from '@/utils/api-token-permissions';
 import { safeSubscribe } from '@/utils/websocket-handler';
@@ -20,7 +21,16 @@ class InsufficientDemoBalanceError extends Error {
 
 const throwApiError = (response: any, source: string) => {
     if (response?.error) {
-        throw new Error(response.error.message || `${source} contract purchase failed.`);
+        const api_error = response.error;
+        const message = api_error.code
+            ? getLocalizedErrorMessage(api_error.code, api_error)
+            : api_error.message || `${source} contract purchase failed.`;
+        const error = new Error(message);
+
+        (error as Error & { code?: string; details?: Record<string, any> }).code = api_error.code;
+        (error as Error & { code?: string; details?: Record<string, any> }).details = api_error.details;
+
+        throw error;
     }
 };
 

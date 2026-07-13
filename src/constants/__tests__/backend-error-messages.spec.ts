@@ -91,5 +91,14 @@ describe('Backend Error Messages', () => {
 
             expect(message).toBe('Invalid input provided: limit_order/take_profit: Expected number - got string.');
         });
+
+        it('should preserve Deriv input validation messages when details are empty', () => {
+            const message = getLocalizedErrorMessage('InputValidationFailed', {
+                message: 'Input validation failed: Properties not allowed: underlying_symbol.',
+                details: {},
+            });
+
+            expect(message).toBe('Input validation failed: Properties not allowed: underlying_symbol.');
+        });
     });
 });

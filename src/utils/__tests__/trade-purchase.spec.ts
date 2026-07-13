@@ -124,6 +124,34 @@ describe('buyContractForUi', () => {
         expect(mockSend).toHaveBeenLastCalledWith({ buy: 'proposal-2', price: 15 });
     });
 
+    it('preserves Deriv input validation messages when a UI purchase fails', async () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const invalidInputResponse = {
+            error: {
+                code: 'InputValidationFailed',
+                details: {},
+                message: 'Input validation failed: Properties not allowed: underlying_symbol.',
+            },
+        };
+
+        mockSend.mockResolvedValue(invalidInputResponse);
+
+        await expect(
+            buyContractForUi({
+                parameters: {
+                    contract_type: 'CALL',
+                    duration: 1,
+                    duration_unit: 't',
+                    symbol: 'R_10',
+                },
+                price: 1,
+                source: 'Auto Trades',
+            })
+        ).rejects.toThrow('Input validation failed: Properties not allowed: underlying_symbol.');
+
+        warnSpy.mockRestore();
+    });
+
     it('prefers exact display tick values for one-tick entry and exit spots', () => {
         expect(
             getContractSnapshot(
