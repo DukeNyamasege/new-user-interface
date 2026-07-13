@@ -4,7 +4,7 @@ jest.mock('@deriv-com/translations', () => ({
     localize: jest.fn((text: string) => text),
 }));
 
-import { createDetails } from '../helpers';
+import { createDetails, tradeOptionToBuy, tradeOptionToProposal } from '../helpers';
 
 describe('createDetails', () => {
     it('returns safe empty details before a complete contract exists', () => {
@@ -25,5 +25,68 @@ describe('createDetails', () => {
 
     it('does not report an unfinished contract as a win', () => {
         expect(createDetails({ buy_price: 1, contract_id: 42, sell_price: '' })[10]).toBe('');
+    });
+});
+
+describe('trade option request builders', () => {
+    it('keeps multiplier limit order values numeric', () => {
+        const request = tradeOptionToBuy('MULTUP', {
+            amount: 1,
+            basis: 'stake',
+            currency: 'USD',
+            duration: 5,
+            duration_unit: 't',
+            limit_order: {
+                take_profit: 2.5,
+            },
+            multiplier: 100,
+            symbol: 'R_100',
+        });
+
+        expect(request).toEqual({
+            buy: '1',
+            parameters: {
+                amount: 1,
+                basis: 'stake',
+                contract_type: 'MULTUP',
+                currency: 'USD',
+                limit_order: {
+                    take_profit: 2.5,
+                },
+                multiplier: 100,
+                symbol: 'R_100',
+            },
+            price: 1,
+        });
+    });
+
+    it('builds accumulator proposals with growth rate and without duration', () => {
+        const [proposal] = tradeOptionToProposal(
+            {
+                amount: 1,
+                basis: 'stake',
+                contractTypes: ['ACCU'],
+                currency: 'USD',
+                duration: 5,
+                duration_unit: 't',
+                growth_rate: 0.01,
+                symbol: 'R_100',
+            },
+            'purchase-reference'
+        );
+
+        expect(proposal).toEqual({
+            amount: 1,
+            basis: 'stake',
+            contract_type: 'ACCU',
+            currency: 'USD',
+            growth_rate: 0.01,
+            passthrough: {
+                contract_type: 'ACCU',
+                purchase_reference: 'purchase-reference',
+            },
+            proposal: 1,
+            symbol: 'R_100',
+        });
     });
 });

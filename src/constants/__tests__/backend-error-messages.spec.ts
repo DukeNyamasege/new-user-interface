@@ -81,5 +81,15 @@ describe('Backend Error Messages', () => {
             expect(message).toContain('5');
             expect(message).toContain('12345');
         });
+
+        it('should include Deriv input validation details when available', () => {
+            const message = getLocalizedErrorMessage('InputValidationFailed', {
+                details: {
+                    'limit_order/take_profit': 'Expected number - got string.',
+                },
+            });
+
+            expect(message).toBe('Invalid input provided: limit_order/take_profit: Expected number - got string.');
+        });
     });
 });

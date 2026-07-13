@@ -288,9 +288,8 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.trade_definition_accumula
         !block.getChildByType('accumulator_take_profit')?.disabled &&
         block.childValueToCode('accumulator_take_profit', 'AMOUNT');
 
-    const limit_order = {
-        take_profit: take_profit ? `+(Number(${take_profit}).toFixed(2))` : undefined,
-    };
+    const take_profit_value = take_profit ? `+(Number(${take_profit}).toFixed(2))` : 'undefined';
+    const limit_order = take_profit ? `{ take_profit: ${take_profit_value} }` : '{}';
 
     setContractUpdateConfig(undefined, take_profit);
     // Determine decimal places for rounding the stake, this is done so Martingale accumulators
@@ -304,9 +303,9 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.trade_definition_accumula
             growth_rate        : ${growth_rate},
             currency           : '${currency}',
             amount             : ${stake_amount},
-            limit_order        : ${JSON.stringify(limit_order)},
+            limit_order        : ${limit_order},
             basis              : 'stake',
-            take_profit          : ${limit_order.take_profit},
+            take_profit        : ${take_profit_value},
         });
         BinaryBotPrivateHasCalledTradeOptions = true;
     `;

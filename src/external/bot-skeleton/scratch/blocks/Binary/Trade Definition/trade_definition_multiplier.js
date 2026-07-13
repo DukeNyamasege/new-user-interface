@@ -329,10 +329,18 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.trade_definition_multipli
     const take_profit =
         !block.getChildByType('multiplier_take_profit')?.disabled &&
         block.childValueToCode('multiplier_take_profit', 'AMOUNT');
-    const limit_order = {
-        stop_loss: stop_loss ? `+(Number(${stop_loss}).toFixed(2))` : undefined,
-        take_profit: take_profit ? `+(Number(${take_profit}).toFixed(2))` : undefined,
-    };
+    const stop_loss_value = stop_loss ? `+(Number(${stop_loss}).toFixed(2))` : 'undefined';
+    const take_profit_value = take_profit ? `+(Number(${take_profit}).toFixed(2))` : 'undefined';
+    const limit_order_entries = [];
+
+    if (stop_loss) {
+        limit_order_entries.push(`stop_loss: ${stop_loss_value}`);
+    }
+    if (take_profit) {
+        limit_order_entries.push(`take_profit: ${take_profit_value}`);
+    }
+
+    const limit_order = `{ ${limit_order_entries.join(', ')} }`;
 
     setContractUpdateConfig(take_profit, stop_loss);
     // Determine decimal places for rounding the stake, this is done so Martingale multipliers
@@ -346,10 +354,10 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.trade_definition_multipli
             multiplier         : ${multiplier_value},
             currency           : '${currency}',
             amount             : ${stake_amount},
-            limit_order        : ${JSON.stringify(limit_order)},
+            limit_order        : ${limit_order},
             basis              : 'stake',
-            stop_loss          : ${limit_order.stop_loss},
-            take_profit        : ${limit_order.take_profit},
+            stop_loss          : ${stop_loss_value},
+            take_profit        : ${take_profit_value},
         });
         BinaryBotPrivateHasCalledTradeOptions = true;
     `;

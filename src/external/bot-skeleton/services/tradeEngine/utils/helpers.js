@@ -38,6 +38,11 @@ export const tradeOptionToProposal = (trade_option, purchase_reference) =>
             proposal.duration = undefined;
             proposal.duration_unit = undefined;
         }
+        if (['ACCU'].includes(type)) {
+            proposal.duration = undefined;
+            proposal.duration_unit = undefined;
+            proposal.growth_rate = trade_option.growth_rate;
+        }
         if (!isEmptyObject(trade_option.limit_order)) {
             proposal.limit_order = trade_option.limit_order;
         }

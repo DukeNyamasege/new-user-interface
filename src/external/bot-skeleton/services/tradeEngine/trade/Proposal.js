@@ -177,13 +177,18 @@ export default Engine =>
                 'barrierOffset',
                 'basis',
                 'contractTypes',
+                'currency',
                 'duration',
                 'duration_unit',
+                'growth_rate',
+                'limit_order',
+                'multiplier',
                 'prediction',
                 'secondBarrierOffset',
+                'symbol',
                 'underlying_symbol',
             ].some(value => {
-                if (value === 'contractTypes') {
+                if (value === 'contractTypes' || value === 'limit_order') {
                     return JSON.stringify(this.trade_option[value] || []) !== JSON.stringify(trade_option[value] || []);
                 }
                 return this.trade_option[value] !== trade_option[value];

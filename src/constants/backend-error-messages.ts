@@ -83,6 +83,25 @@ const processBackendParameters = (message: string, errorResponse?: Record<string
     return params;
 };
 
+const getInputValidationDetails = (errorResponse?: Record<string, any>) => {
+    const details = errorResponse?.details;
+
+    if (!details || typeof details !== 'object') return '';
+
+    const field = details.field || details.path;
+    const field_message = details.message || details.reason;
+
+    if (field && field_message) {
+        return `${sanitizeParameterValue(String(field))}: ${sanitizeParameterValue(String(field_message))}`;
+    }
+
+    const validation_entries = Object.entries(details)
+        .filter(([, value]) => value !== undefined && value !== null && value !== '')
+        .map(([key, value]) => `${sanitizeParameterValue(key)}: ${sanitizeParameterValue(String(value))}`);
+
+    return validation_entries.join(', ');
+};
+
 // Backend error code mappings for localization
 export const getBackendErrorMessages = () => ({
     // Bot-skeleton specific errors
@@ -377,6 +396,16 @@ export const getLocalizedErrorMessage = (errorCode: string, errorResponse?: Reco
 
         // If no predefined message, use the backend message if available
         message = errorResponse?.message || localize('An error occurred. Please try again.');
+    }
+
+    if (errorCode === 'InputValidationFailed') {
+        const validation_details = getInputValidationDetails(errorResponse);
+
+        if (validation_details) {
+            return localize('Invalid input provided: {{details}}', {
+                details: validation_details,
+            });
+        }
     }
 
     // Handle direct replacement of [_1], [_2], [_3] format with code_args values
