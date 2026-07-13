@@ -2,6 +2,7 @@ import { getSocketURL } from '@/components/shared';
 import { assertApiTokenScope, getPendingApiToken, isApiTokenSession } from '@/utils/api-token-permissions';
 import DerivAPIBasic from '@deriv/deriv-api/dist/DerivAPIBasic';
 import APIMiddleware from './api-middleware';
+import { setRequestWebSocketURL } from './legacy-request';
 
 /**
  * Singleton instance management for DerivAPI
@@ -24,6 +25,7 @@ export const clearDerivApiInstance = () => {
     derivApiInstance = null;
     derivApiPromise = null;
     currentWebSocketURL = null;
+    setRequestWebSocketURL(null);
 };
 
 /**
@@ -73,6 +75,7 @@ export const generateDerivApiInstance = async (forceNew = false) => {
             }
 
             currentWebSocketURL = wsURL;
+            setRequestWebSocketURL(wsURL);
 
             console.log('[DerivAPI] Creating new WebSocket connection to:', wsURL);
             const deriv_socket = new WebSocket(wsURL);
@@ -105,6 +108,7 @@ export const generateDerivApiInstance = async (forceNew = false) => {
                 if (derivApiInstance === deriv_api) {
                     derivApiInstance = null;
                     currentWebSocketURL = null;
+                    setRequestWebSocketURL(null);
                 }
             });
 

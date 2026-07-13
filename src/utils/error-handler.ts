@@ -5,8 +5,10 @@ import { getLocalizedErrorMessage } from '@/constants/backend-error-messages';
  */
 export interface BackendError {
     code: string;
+    code_args?: any[];
     message?: string;
     details?: Record<string, any>;
+    subcode?: string;
 }
 
 /**
@@ -43,7 +45,10 @@ export const handleBackendError = (error: BackendError): string => {
     }
 
     // Get localized message for the specific error code with details
-    return getLocalizedErrorMessage(error.code, details);
+    return getLocalizedErrorMessage(error.code, {
+        ...error,
+        details,
+    });
 };
 
 /**

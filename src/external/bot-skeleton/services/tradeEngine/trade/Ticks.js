@@ -5,6 +5,7 @@ import { localize } from '@deriv-com/translations';
 import { getLast } from '../../../utils/binary-utils';
 import { observer as globalObserver } from '../../../utils/observer';
 import { api_base } from '../../api/api-base';
+import { getSymbolRequestField } from '../../api/legacy-request';
 import { getDirection, getLastDigit } from '../utils/helpers';
 import { expectPositiveInteger } from '../utils/sanitize';
 import * as constants from './state/constants';
@@ -92,7 +93,7 @@ export default Engine =>
                         if (e.code === 'MarketIsClosed') {
                             const localizedError = {
                                 ...e,
-                                message: getLocalizedErrorMessage(e.code, e.details),
+                                message: getLocalizedErrorMessage(e.code, e),
                             };
                             globalObserver.emit('Error', localizedError);
                             resolve(e.code);
@@ -183,8 +184,13 @@ export default Engine =>
         async requestAccumulatorStats() {
             const subscription_id = this.subscription_id_for_accumulators;
             const is_proposal_requested = this.is_proposal_requested_for_accumulators;
+            const {
+                symbol: legacy_symbol,
+                underlying_symbol,
+                ...accumulator_request
+            } = window.Blockly.accumulators_request || {};
             const proposal_request = {
-                ...window.Blockly.accumulators_request,
+                ...accumulator_request,
                 amount: this?.tradeOptions?.amount,
                 basis: this?.tradeOptions?.basis,
                 contract_type: 'ACCU',
@@ -192,7 +198,7 @@ export default Engine =>
                 growth_rate: this?.tradeOptions?.growth_rate,
                 proposal: 1,
                 subscribe: 1,
-                symbol: this?.tradeOptions?.symbol,
+                ...getSymbolRequestField(this?.tradeOptions?.symbol || legacy_symbol || underlying_symbol),
             };
             if (!subscription_id && !is_proposal_requested) {
                 this.is_proposal_requested_for_accumulators = true;

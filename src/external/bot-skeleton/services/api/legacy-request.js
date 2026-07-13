@@ -13,7 +13,16 @@ export const isLegacyOAuthSession = () => {
     }
 };
 
-export const getSymbolRequestField = symbol => ({ symbol });
+let currentWebSocketURL = '';
+
+export const isLegacyWebSocketURL = url => /\/websockets\/v3(?:[/?]|$)/i.test(String(url || ''));
+
+export const setRequestWebSocketURL = url => {
+    currentWebSocketURL = String(url || '');
+};
+
+export const getSymbolRequestField = (symbol, webSocketURL = currentWebSocketURL) =>
+    isLegacyWebSocketURL(webSocketURL) || !webSocketURL ? { symbol } : { underlying_symbol: symbol };
 
 export const removeUndefinedFields = value => {
     if (!value || typeof value !== 'object') return value;

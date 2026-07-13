@@ -819,13 +819,7 @@ export default class RunPanelStore {
         if (error.subcode && error.code_args) {
             const { getLocalizedErrorMessage } = require('@/constants/backend-error-messages');
 
-            const details = {
-                param1: error.code_args[0],
-                param2: error.code_args[1],
-                param3: error.code_args[2],
-            };
-
-            const localizedMessage = getLocalizedErrorMessage(error.subcode, details);
+            const localizedMessage = getLocalizedErrorMessage(error.subcode, error);
             this.showErrorMessage(localizedMessage, error);
             return;
         }

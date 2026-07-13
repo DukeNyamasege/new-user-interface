@@ -1,5 +1,6 @@
 import { getLocalizedErrorMessage } from '@/constants/backend-error-messages';
 import { api_base, observer as globalObserver } from '@/external/bot-skeleton';
+import { getSymbolRequestField } from '@/external/bot-skeleton/services/api/legacy-request';
 import { assertApiTokenScope } from '@/utils/api-token-permissions';
 import { safeSubscribe } from '@/utils/websocket-handler';
 import type { Buy } from '@deriv/api-types';
@@ -40,13 +41,15 @@ const removeUndefinedFields = <T extends Record<string, any>>(fields: T): T =>
         return cleaned;
     }, {} as T);
 
-export const normalizeTradeParameters = (parameters: TTradeParameters) => {
+export const normalizeTradeParameters = (parameters: TTradeParameters, webSocketURL?: string) => {
     const { symbol, underlying_symbol, ...rest } = parameters;
     const normalized_symbol = symbol || underlying_symbol;
-    const symbol_field = normalized_symbol ? { symbol: normalized_symbol } : {};
+    const symbol_field = normalized_symbol ? getSymbolRequestField(normalized_symbol, webSocketURL) : {};
 
     return removeUndefinedFields({ ...rest, ...symbol_field });
 };
+
+const getApiError = (error: any) => error?.error ?? (error?.code ? error : undefined);
 
 const ensureAuthorizedForTrading = async () => {
     if (api_base.is_authorized) return;
@@ -134,6 +137,18 @@ export const buyContractForUi = async ({ parameters, price, source }: TBuyContra
         if (proposal_error instanceof InsufficientDemoBalanceError) {
             throw proposal_error;
         }
+
+        const api_error = getApiError(proposal_error);
+        if (api_error) {
+            console.error(`[${source}] Proposal rejected by Deriv.`, {
+                code: api_error.code,
+                details: api_error.details,
+                message: api_error.message,
+                parameters: normalized_parameters,
+            });
+            throwApiError({ error: api_error }, source);
+        }
+
         console.warn(`[${source}] Proposal buy failed, retrying with direct buy.`, proposal_error);
     }
 

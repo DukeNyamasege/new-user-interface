@@ -22,6 +22,7 @@ jest.mock('@/utils/api-token-permissions', () => ({
     assertApiTokenScope: jest.fn(),
 }));
 
+import { setRequestWebSocketURL } from '@/external/bot-skeleton/services/api/legacy-request';
 import { buyContractForUi, getContractSnapshot } from '../trade-purchase';
 import { streamContractUntilSettled } from '../trade-purchase';
 
@@ -36,6 +37,7 @@ describe('buyContractForUi', () => {
         jest.useRealTimers();
         mockSubscribe.mockReset();
         mockUnsubscribe.mockReset();
+        setRequestWebSocketURL('wss://ws.derivws.com/websockets/v3?app_id=1089');
         mockGetState.mockImplementation(key => {
             if (key !== 'client.store') return undefined;
 
@@ -51,6 +53,7 @@ describe('buyContractForUi', () => {
 
     afterEach(() => {
         jest.useRealTimers();
+        setRequestWebSocketURL(null);
     });
 
     it('blocks demo purchases that exceed the available displayed balance', async () => {
@@ -125,7 +128,7 @@ describe('buyContractForUi', () => {
     });
 
     it('preserves Deriv input validation messages when a UI purchase fails', async () => {
-        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
         const invalidInputResponse = {
             error: {
                 code: 'InputValidationFailed',
@@ -149,7 +152,49 @@ describe('buyContractForUi', () => {
             })
         ).rejects.toThrow('Input validation failed: Properties not allowed: underlying_symbol.');
 
-        warnSpy.mockRestore();
+        expect(mockSend).toHaveBeenCalledTimes(1);
+        errorSpy.mockRestore();
+    });
+
+    it('uses underlying_symbol when purchasing through a new Options API session', async () => {
+        setRequestWebSocketURL('wss://api.derivws.com/trading/v1/options/ws/demo?otp=example');
+        mockSend
+            .mockResolvedValueOnce({
+                proposal: {
+                    id: 'proposal-new-api',
+                    ask_price: 1,
+                },
+            })
+            .mockResolvedValueOnce({
+                buy: {
+                    contract_id: 43,
+                    transaction_id: 100,
+                    buy_price: 1,
+                },
+            });
+
+        await buyContractForUi({
+            parameters: {
+                amount: 1,
+                basis: 'stake',
+                contract_type: 'CALL',
+                currency: 'USD',
+                duration: 1,
+                duration_unit: 't',
+                symbol: 'R_100',
+            },
+            price: 1,
+            source: 'Auto Trades',
+        });
+
+        expect(mockSend).toHaveBeenNthCalledWith(
+            1,
+            expect.objectContaining({
+                proposal: 1,
+                underlying_symbol: 'R_100',
+            })
+        );
+        expect(mockSend.mock.calls[0][0]).not.toHaveProperty('symbol');
     });
 
     it('prefers exact display tick values for one-tick entry and exit spots', () => {

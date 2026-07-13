@@ -4,7 +4,16 @@ jest.mock('@deriv-com/translations', () => ({
     localize: jest.fn((text: string) => text),
 }));
 
+import { setRequestWebSocketURL } from '../../../api/legacy-request';
 import { createDetails, tradeOptionToBuy, tradeOptionToProposal } from '../helpers';
+
+beforeEach(() => {
+    setRequestWebSocketURL('wss://ws.derivws.com/websockets/v3?app_id=1089');
+});
+
+afterEach(() => {
+    setRequestWebSocketURL(null);
+});
 
 describe('createDetails', () => {
     it('returns safe empty details before a complete contract exists', () => {
@@ -88,5 +97,29 @@ describe('trade option request builders', () => {
             proposal: 1,
             symbol: 'R_100',
         });
+    });
+
+    it('builds proposals with underlying_symbol on the new Options API', () => {
+        setRequestWebSocketURL('wss://api.derivws.com/trading/v1/options/ws/demo?otp=example');
+
+        const [proposal] = tradeOptionToProposal(
+            {
+                amount: 1,
+                basis: 'stake',
+                contractTypes: ['CALL'],
+                currency: 'USD',
+                duration: 5,
+                duration_unit: 't',
+                symbol: 'R_100',
+            },
+            'purchase-reference'
+        );
+
+        expect(proposal).toEqual(
+            expect.objectContaining({
+                underlying_symbol: 'R_100',
+            })
+        );
+        expect(proposal).not.toHaveProperty('symbol');
     });
 });

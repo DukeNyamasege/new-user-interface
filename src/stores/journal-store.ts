@@ -176,23 +176,11 @@ export default class JournalStore {
             if (error.subcode && error.code_args) {
                 const { getLocalizedErrorMessage } = require('@/constants/backend-error-messages');
 
-                const details = {
-                    param1: error.code_args[0],
-                    param2: error.code_args[1],
-                    param3: error.code_args[2],
-                };
-
-                processedMessage = getLocalizedErrorMessage(error.subcode, details);
+                processedMessage = getLocalizedErrorMessage(error.subcode, error);
             } else if (error.code && error.code_args) {
                 const { getLocalizedErrorMessage } = require('@/constants/backend-error-messages');
 
-                const details = {
-                    param1: error.code_args[0],
-                    param2: error.code_args[1],
-                    param3: error.code_args[2],
-                };
-
-                processedMessage = getLocalizedErrorMessage(error.code, details);
+                processedMessage = getLocalizedErrorMessage(error.code, error);
             } else {
                 processedMessage = error.message || message;
             }

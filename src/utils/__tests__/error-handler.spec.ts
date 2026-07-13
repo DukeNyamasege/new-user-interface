@@ -2,12 +2,16 @@ import { handleBackendError, isBackendError } from '../error-handler';
 
 // Mock the backend error messages
 jest.mock('../../constants/backend-error-messages', () => ({
-    getLocalizedErrorMessage: jest.fn((errorCode, details) => {
+    getLocalizedErrorMessage: jest.fn((errorCode, errorResponse) => {
         if (errorCode === 'InsufficientBalance') {
             return 'Your account balance is insufficient to buy this contract.';
         }
+        const details = errorResponse?.details;
         if (errorCode === 'RateLimit' && details) {
             return `You are rate limited for: ${details.message_type}, retrying in ${details.delay}s`;
+        }
+        if (errorCode === 'InputValidationFailed') {
+            return errorResponse?.message || 'Invalid input provided';
         }
         return 'An error occurred. Please try again.';
     }),
@@ -67,6 +71,16 @@ describe('Error Handler', () => {
             };
             const result = handleBackendError(unknownError);
             expect(result).toBe('An error occurred. Please try again.');
+        });
+
+        it('preserves the backend message for input validation failures without details', () => {
+            const result = handleBackendError({
+                code: 'InputValidationFailed',
+                details: {},
+                message: 'Input validation failed: Properties not allowed: symbol.',
+            });
+
+            expect(result).toBe('Input validation failed: Properties not allowed: symbol.');
         });
 
         it('should handle errors without code property', () => {

@@ -67,7 +67,7 @@ export default Engine =>
 
                             const sell_error = {
                                 name: error.code,
-                                message: getLocalizedErrorMessage(error.code, error.details),
+                                message: getLocalizedErrorMessage(error.code, error),
                                 msg_type: e.msg_type,
                                 error: { ...error.error },
                             };

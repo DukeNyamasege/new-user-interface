@@ -85,6 +85,7 @@ const processBackendParameters = (message: string, errorResponse?: Record<string
 
 const getInputValidationDetails = (errorResponse?: Record<string, any>) => {
     const details = errorResponse?.details;
+    const sanitize_validation_text = (value: unknown) => sanitizeParameterValue(String(value)).replace(/&#x2F;/gi, '/');
 
     if (!details || typeof details !== 'object') return '';
 
@@ -92,12 +93,12 @@ const getInputValidationDetails = (errorResponse?: Record<string, any>) => {
     const field_message = details.message || details.reason;
 
     if (field && field_message) {
-        return `${sanitizeParameterValue(String(field))}: ${sanitizeParameterValue(String(field_message))}`;
+        return `${sanitize_validation_text(field)}: ${sanitize_validation_text(field_message)}`;
     }
 
     const validation_entries = Object.entries(details)
         .filter(([, value]) => value !== undefined && value !== null && value !== '')
-        .map(([key, value]) => `${sanitizeParameterValue(key)}: ${sanitizeParameterValue(String(value))}`);
+        .map(([key, value]) => `${sanitize_validation_text(key)}: ${sanitize_validation_text(value)}`);
 
     return validation_entries.join(', ');
 };

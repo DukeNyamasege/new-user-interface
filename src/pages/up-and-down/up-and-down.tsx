@@ -149,7 +149,9 @@ const sendPublicDerivRequest = (payload: Record<string, unknown>) =>
             return;
         }
 
-        const socket = new WebSocket(getDerivWebSocketUrl());
+        const web_socket_url = getDerivWebSocketUrl();
+        const normalized_payload = normalizeTradeParameters(payload, web_socket_url);
+        const socket = new WebSocket(web_socket_url);
         let is_settled = false;
         const timeout_id = window.setTimeout(() => {
             if (is_settled) return;
@@ -167,7 +169,7 @@ const sendPublicDerivRequest = (payload: Record<string, unknown>) =>
         };
 
         socket.onopen = () => {
-            socket.send(JSON.stringify(payload));
+            socket.send(JSON.stringify(normalized_payload));
         };
         socket.onmessage = event => {
             settle(() => {

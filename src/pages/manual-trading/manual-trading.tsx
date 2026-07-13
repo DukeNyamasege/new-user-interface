@@ -14,7 +14,7 @@ import {
     type DigitStrategyId,
 } from '@/utils/digit-strategy';
 import { getLastDigitFromQuote, isExpectedStreamInterruption } from '@/utils/market-data';
-import { buyContractForUi, streamContractUntilSettled } from '@/utils/trade-purchase';
+import { buyContractForUi, normalizeTradeParameters, streamContractUntilSettled } from '@/utils/trade-purchase';
 import { safeSubscribe } from '@/utils/websocket-handler';
 import { getMartingaleStakeForRun, type ManualMartingaleMode } from './martingale-utils';
 
@@ -826,7 +826,7 @@ const ManualTrading = observer(() => {
                     try {
                         const proposalResponse = await (api_base.api as any).send({
                             proposal: 1,
-                            ...buildTradeParameters(action.contractType),
+                            ...normalizeTradeParameters(buildTradeParameters(action.contractType)),
                         });
                         const preview = getProposalPreview(proposalResponse?.proposal, stake, currency);
                         nextPreviews[action.contractType] = preview || localProposalPreviews[action.contractType];
