@@ -25,7 +25,7 @@
         "id": "double-under-bot",
         "name": "Double Under bot",
         "file": "Double Under bot.xml",
-        "description": "Risk Managers digit bot that trades Under 8 in normal mode, switches to Under 7 after a loss, and waits for two-tick direction confirmation before entries.",
+        "description": "Risk Managers digit bot with editable Over/Under direction and win/loss prediction digits, plus two-tick direction confirmation before entries.",
         "emoji": "VIP",
         "is_premium": true,
         "priority": 1

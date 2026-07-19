@@ -97,7 +97,7 @@ const RISK_MANAGERS_BOTS: TBot[] = [
         file: 'Double Under bot.xml',
         guide_file: 'Mighty_Double_Under_Bot_Quick_Guide.pdf',
         description:
-            'Risk Managers digit bot that trades Under 8 in normal mode, switches to Under 7 after a loss, and waits for two-tick direction confirmation before entries.',
+            'Risk Managers digit bot with editable Over/Under direction and win/loss prediction digits, plus two-tick direction confirmation before entries.',
         emoji: 'VIP',
         is_premium: true,
         priority: 1,
