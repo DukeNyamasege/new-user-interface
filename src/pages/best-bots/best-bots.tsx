@@ -82,6 +82,16 @@ const createManifestBot = (entry: TBotManifestEntry): TBot => {
 
 const RISK_MANAGERS_BOTS: TBot[] = [
     {
+        id: 'new-under-8-special-bot-2026',
+        name: 'New Under 8 Special Bot 2026',
+        file: 'New under 8 special bot 2026.xml',
+        description:
+            'Premium Risk Managers Under 8 strategy with adaptive prediction and protected profit and loss controls.',
+        emoji: 'GOLD',
+        is_premium: true,
+        priority: 0,
+    },
+    {
         id: 'double-under-bot',
         name: 'Double Under bot',
         file: 'Double Under bot.xml',

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { CSSProperties, useMemo, useRef, useState } from 'react';
 import { calculateDigitAnalytics } from './digit-analytics';
 import { useDerivDigitStream } from './use-deriv-digit-stream';
 import './live-analysis.scss';
@@ -17,6 +17,7 @@ const MARKETS = [
 ] as const;
 const SUPPORTED_MARKETS = new Set(MARKETS.map(([value]) => value));
 const pct = (value: number) => `${value.toFixed(1)}%`;
+const RING_COLORS = { highest: '#0ba95b', secondHighest: '#1127ff', least: '#ff1717', secondLeast: '#ffe733' };
 
 const LiveAnalysis = () => {
     const [visible, setVisible] = useState(false);
@@ -27,6 +28,18 @@ const LiveAnalysis = () => {
     const { ticks, status } = useDerivDigitStream(symbol, tickCount);
     const data = useMemo(() => calculateDigitAnalytics(ticks), [ticks]);
     const current = ticks.at(-1);
+    const ringColors = useMemo(() => {
+        if (!ticks.length) return {} as Record<number, string>;
+        const ranked = data.percentages.map((percentage, digit) => ({ digit, percentage }));
+        const descending = [...ranked].sort((a, b) => b.percentage - a.percentage || b.digit - a.digit);
+        const ascending = [...ranked].sort((a, b) => a.percentage - b.percentage || a.digit - b.digit);
+        return {
+            [descending[0].digit]: RING_COLORS.highest,
+            [descending[1].digit]: RING_COLORS.secondHighest,
+            [ascending[0].digit]: RING_COLORS.least,
+            [ascending[1].digit]: RING_COLORS.secondLeast,
+        };
+    }, [data.percentages, ticks.length]);
 
     React.useEffect(() => {
         const toggle = () => setVisible(value => !value);
@@ -132,8 +145,16 @@ const LiveAnalysis = () => {
                 <div className='live-analysis__digits'>
                     {data.percentages.map((value, digit) => (
                         <div key={digit} className={digit === current?.digit ? 'is-current' : ''}>
-                            <strong>{digit}</strong>
-                            <span>{pct(value)}</span>
+                            <div
+                                className={ringColors[digit] ? 'has-special-ring' : ''}
+                                style={{ '--analysis-ring-color': ringColors[digit] ?? '#666' } as CSSProperties}
+                            >
+                                <div>
+                                    <strong>{digit}</strong>
+                                    <span>{value.toFixed(2)}%</span>
+                                </div>
+                            </div>
+                            {digit === current?.digit && <i aria-hidden='true' />}
                         </div>
                     ))}
                 </div>

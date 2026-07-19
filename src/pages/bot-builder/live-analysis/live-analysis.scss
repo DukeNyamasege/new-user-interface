@@ -134,32 +134,61 @@
         padding: 1rem 1.5rem;
     }
     &__digits div {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 0;
+    }
+
+    &__digits > div > div {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        border: 1px solid #d6e0ec;
+        border-radius: 50%;
+        background: #666;
+        box-shadow: 0 0.3rem 0.8rem rgb(42 62 91 / 14%);
+    }
+
+    &__digits > div > .has-special-ring {
+        background: conic-gradient(#666 0deg 90deg, var(--analysis-ring-color) 90deg 270deg, #666 270deg 360deg);
+    }
+
+    &__digits > div > div > div {
+        width: calc(100% - 1.2rem);
         aspect-ratio: 1;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        border: 1px solid #d6e0ec;
         border-radius: 50%;
-        background: #f8fafc;
-        box-shadow: 0 0.3rem 0.8rem rgb(42 62 91 / 14%);
+        color: #fff;
+        background: #292929;
+        box-shadow: inset 0 0.2rem 0.3rem rgb(255 255 255 / 8%);
     }
+
     &__digits strong {
+        margin-bottom: 0.45rem;
         font-size: 1.5rem;
+        font-weight: 900;
     }
     &__digits span {
-        color: #65748d;
-        font-size: 0.72rem;
-        font-weight: 700;
-    }
-    &__digits .is-current {
         color: #fff;
-        border-color: #675ee0;
-        background: radial-gradient(circle at 35% 25%, #7775ed, #261a72);
-        box-shadow: 0 0 0 0.2rem rgb(99 88 214 / 35%);
+        font-size: 1.1rem;
+        font-weight: 900;
     }
-    &__digits .is-current span {
-        color: #fff;
+
+    &__digits > div > i {
+        position: absolute;
+        bottom: -0.8rem;
+        width: 0;
+        height: 0;
+        border-right: 0.65rem solid transparent;
+        border-bottom: 0.9rem solid #ff1717;
+        border-left: 0.65rem solid transparent;
     }
     &__recent {
         display: grid;
