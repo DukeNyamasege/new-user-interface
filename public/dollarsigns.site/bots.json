@@ -1,5 +1,9 @@
 [
     {
+        "name": "Wealth Generator",
+        "file": "Wealth Generator.xml"
+    },
+    {
         "name": "Mwenda Pole By The Risk Manager (1)",
         "file": "Mwenda Pole By The Risk Manager (1).xml"
     },
@@ -18,9 +22,5 @@
     {
         "name": "under 7,8,9= g2 bot 1==",
         "file": "under 7,8,9= g2 bot 1==.xml"
-    },
-    {
-        "name": "Wealth Generator",
-        "file": "Wealth Generator.xml"
     }
 ]

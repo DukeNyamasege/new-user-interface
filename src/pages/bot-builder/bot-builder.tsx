@@ -11,6 +11,7 @@ import { TBlocklyEvents } from 'Types';
 import LoadModal from '../../components/load-modal';
 import SaveModal from '../dashboard/bot-list/save-modal';
 import BotBuilderTourHandler from '../tutorials/dbot-tours/bot-builder-tour';
+import LiveAnalysis from './live-analysis';
 import QuickStrategy1 from './quick-strategy';
 import WorkspaceWrapper from './workspace-wrapper';
 
@@ -128,6 +129,7 @@ const BotBuilder = observer(() => {
             <LoadModal />
             <SaveModal />
             {is_open && <QuickStrategy1 />}
+            {active_tab === DBOT_TABS.BOT_BUILDER && <LiveAnalysis />}
         </>
     );
 });

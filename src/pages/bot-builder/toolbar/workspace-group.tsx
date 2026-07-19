@@ -1,7 +1,6 @@
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import { isDomainFeatureEnabled } from '@/components/shared';
-import { useStore } from '@/hooks/useStore';
 import {
     LabelPairedArrowRotateLeftMdRegularIcon,
     LabelPairedArrowRotateRightMdRegularIcon,
@@ -13,6 +12,7 @@ import {
     LabelPairedMagnifyingGlassPlusMdRegularIcon,
     LabelPairedObjectsAlignLeftMdRegularIcon,
 } from '@/components/shared_ui/figma-icons/LabelPaired';
+import { useStore } from '@/hooks/useStore';
 import { localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
@@ -114,6 +114,23 @@ const WorkspaceGroup = observer(() => {
                         />
                     </>
                 )}
+                <ToolbarIcon
+                    popover_message={localize('Live analysis')}
+                    icon={
+                        <button
+                            type='button'
+                            className='toolbar__icon toolbar__icon--analysis'
+                            id='db-toolbar__analysis-button'
+                            aria-label={localize('Open live analysis')}
+                            onClick={() => window.dispatchEvent(new Event('dbot:toggle-analysis'))}
+                        >
+                            <svg viewBox='0 0 24 24' aria-hidden='true'>
+                                <path d='M4 18V9m5 9V5m5 13v-7m5 7V3' />
+                                <path className='toolbar__analysis-spark' d='m3 6 4-3 4 3 5-4 5 3' />
+                            </svg>
+                        </button>
+                    }
+                />
                 <div className='vertical-divider' />
                 <ToolbarIcon
                     popover_message={localize('Undo')}

@@ -453,6 +453,7 @@ const DOLLARSIGNS_BOTS: TBot[] = [
         id: 'wealth-generator',
         name: 'Wealth Generator',
         file: 'Wealth Generator.xml',
+        priority: 0,
         description: 'Compound growth strategy built for long-term account building.',
         emoji: '💰',
     },
