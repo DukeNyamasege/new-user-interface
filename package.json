@@ -21,7 +21,6 @@
         "build:analyze": "BUNDLE_ANALYZE=true rsbuild build",
         "generate:brand-css": "node scripts/generate-brand-css.js",
         "dev:commit-push": "powershell -ExecutionPolicy Bypass -File scripts/dev-commit-push.ps1",
-        "migrate:competition": "node scripts/run-competition-migrations.js",
         "type-check": "tsc --noEmit"
     },
     "dependencies": {
@@ -56,7 +55,6 @@
         "mobx-react-lite": "^4.1.1",
         "moment": "^2.30.1",
         "pako": "^2.1.0",
-        "pg": "^8.11.3",
         "prop-types": "^15.8.1",
         "react": "^18.3.1",
         "react-content-loader": "^7.1.2",

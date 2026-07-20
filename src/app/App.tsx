@@ -2,7 +2,6 @@ import { lazy, Suspense } from 'react';
 import React from 'react';
 import { createBrowserRouter, createRoutesFromElements, Navigate, Route, RouterProvider } from 'react-router-dom';
 import ChunkLoader from '@/components/loader/chunk-loader';
-import { isDomainFeatureEnabled } from '@/components/shared';
 import LocalStorageSyncWrapper from '@/components/localStorage-sync-wrapper';
 import RoutePromptDialog from '@/components/route-prompt-dialog';
 import { useAccountSwitching } from '@/hooks/useAccountSwitching';
@@ -18,13 +17,6 @@ import './app-root.scss';
 
 const Layout = lazy(() => import('../components/layout'));
 const AppRoot = lazy(() => import('./app-root'));
-const CompetitionPage = lazy(() => import('@/features/competition/pages/CompetitionPage'));
-const CompetitionAdminPage = lazy(() => import('@/features/competition/pages/CompetitionAdminPage'));
-
-const CompetitionRoute = () =>
-    isDomainFeatureEnabled('competition') ? <CompetitionPage /> : <Navigate to='/' replace />;
-const CompetitionAdminRoute = () =>
-    isDomainFeatureEnabled('competition') ? <CompetitionAdminPage /> : <Navigate to='/' replace />;
 
 // Translations CDN is optional — requires TRANSLATIONS_CDN_URL, R2_PROJECT_NAME, and CROWDIN_BRANCH_NAME env vars.
 // Without these, the app defaults to English. See user-guide/03-white-labeling.md#translations for setup instructions.
@@ -64,8 +56,6 @@ const router = createBrowserRouter(
         >
             {/* All child routes will be passed as children to Layout */}
             <Route index element={<AppRoot />} />
-            <Route path='competition' element={<CompetitionRoute />} />
-            <Route path='admin/competitions' element={<CompetitionAdminRoute />} />
             {/* Catch-all: redirect any unknown path back to root (hash-based tab navigation handles the rest) */}
             <Route path='*' element={<Navigate to='/' replace />} />
         </Route>

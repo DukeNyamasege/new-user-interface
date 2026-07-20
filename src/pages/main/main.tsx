@@ -2,11 +2,22 @@ import React, { useEffect, useState } from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import { useLocation, useNavigate } from 'react-router-dom';
+import RiskDisclaimerFloating from '@/components/risk-disclaimer-floating';
 import { generateOAuthURL, getDomainRedirectUrl, isDomainFeatureEnabled } from '@/components/shared';
 import DesktopWrapper from '@/components/shared_ui/desktop-wrapper';
 import Dialog from '@/components/shared_ui/dialog';
+import {
+    LabelPairedChartLineCaptionRegularIcon,
+    LabelPairedChartMixedCaptionRegularIcon,
+    LabelPairedChartTrendUpCaptionRegularIcon,
+    LabelPairedCircleStarCaptionRegularIcon,
+    LabelPairedLightbulbCaptionRegularIcon,
+    LabelPairedObjectsColumnCaptionRegularIcon,
+    LabelPairedPlaceholderCaptionRegularIcon,
+    LabelPairedPuzzlePieceTwoCaptionBoldIcon,
+    LabelPairedSearchCaptionRegularIcon,
+} from '@/components/shared_ui/figma-icons/LabelPaired';
 import MobileWrapper from '@/components/shared_ui/mobile-wrapper';
-import RiskDisclaimerFloating from '@/components/risk-disclaimer-floating';
 import Tabs from '@/components/shared_ui/tabs/tabs';
 import TradeTypeConfirmationModal from '@/components/trade-type-confirmation-modal';
 import { DBOT_TABS, TAB_IDS } from '@/constants/bot-contents';
@@ -29,34 +40,22 @@ import {
     resetUrlParamProcessing,
     setModalStateChangeCallback,
 } from '@/utils/trade-type-modal-handler';
-import {
-    LabelPairedChartLineCaptionRegularIcon,
-    LabelPairedChartMixedCaptionRegularIcon,
-    LabelPairedChartTrendUpCaptionRegularIcon,
-    LabelPairedCircleStarCaptionRegularIcon,
-    LabelPairedLightbulbCaptionRegularIcon,
-    LabelPairedObjectsColumnCaptionRegularIcon,
-    LabelPairedPlaceholderCaptionRegularIcon,
-    LabelPairedPuzzlePieceTwoCaptionBoldIcon,
-    LabelPairedSearchCaptionRegularIcon,
-} from '@/components/shared_ui/figma-icons/LabelPaired';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 import RunPanel from '../../components/run-panel';
+import Accumilatoirs from '../accumilatoirs';
+import Analysistool from '../analysistool';
 import AutoTrades from '../auto-trades/auto-trades';
 import BestBots from '../best-bots';
 import BotIdeas from '../bot-ideas';
 import ChartModal from '../chart/chart-modal';
 import ChartWrapper from '../chart/chart-wrapper';
 import Dashboard from '../dashboard';
-import ManualTrading from '../manual-trading';
 import RunStrategy from '../dashboard/run-strategy';
-import Analysistool from '../analysistool';
-import Accumilatoirs from '../accumilatoirs';
+import ManualTrading from '../manual-trading';
 import Scanner from '../scanner';
 import TradingView from '../tradingview';
 import UpAndDown from '../up-and-down';
-import CompetitionPage from '@/features/competition/pages/CompetitionPage';
 import './main.scss';
 
 const AppWrapper = observer(() => {
@@ -93,8 +92,17 @@ const AppWrapper = observer(() => {
         [key: string]: string;
     };
     const { clear } = summary_card;
-    const { BOT_BUILDER, BOT_IDEAS, DASHBOARD, AUTO_TRADES, MANUAL_TRADING, SCANNER, CHART, TRADING_VIEW, UP_AND_DOWN } =
-        DBOT_TABS;
+    const {
+        BOT_BUILDER,
+        BOT_IDEAS,
+        DASHBOARD,
+        AUTO_TRADES,
+        MANUAL_TRADING,
+        SCANNER,
+        CHART,
+        TRADING_VIEW,
+        UP_AND_DOWN,
+    } = DBOT_TABS;
     const init_render = React.useRef(true);
     const hash = [
         'bot_ideas',
@@ -109,7 +117,6 @@ const AppWrapper = observer(() => {
         'analysistool',
         'chart',
         'tradingview',
-        'competition',
     ];
     const show_bot_ideas = isDomainFeatureEnabled('botIdeas');
     const show_auto_trades = isDomainFeatureEnabled('autoTrades');
@@ -118,7 +125,6 @@ const AppWrapper = observer(() => {
     const show_accumilatoirs = isDomainFeatureEnabled('accumilatoirs');
     const show_chart = isDomainFeatureEnabled('chart');
     const show_trading_view = isDomainFeatureEnabled('tradingView');
-    const show_competition = isDomainFeatureEnabled('competition');
     const isMainTabVisible = (tab_index: number) => {
         if (tab_index === BOT_IDEAS) return show_bot_ideas;
         if (tab_index === AUTO_TRADES) return show_auto_trades;
@@ -127,7 +133,6 @@ const AppWrapper = observer(() => {
         if (tab_index === DBOT_TABS.ACCUMILATOIRS) return show_accumilatoirs;
         if (tab_index === CHART) return show_chart;
         if (tab_index === TRADING_VIEW) return show_trading_view;
-        if (tab_index === DBOT_TABS.COMPETITION) return show_competition;
         return true;
     };
     const { isDesktop } = useDevice();
@@ -203,18 +208,9 @@ const AppWrapper = observer(() => {
     }, [location.search]);
 
     React.useEffect(() => {
-        const first_visible_tab_id =
-            isRiskManagersDomain && show_competition
-                ? 'id-competition'
-                : show_bot_ideas
-                  ? 'id-bot-ideas'
-                  : 'id-best-bots';
+        const first_visible_tab_id = show_bot_ideas ? 'id-bot-ideas' : 'id-best-bots';
         const el_dashboard = document.getElementById(first_visible_tab_id);
-        const last_visible_tab_id = show_competition
-            ? 'id-competition'
-            : show_trading_view
-              ? 'id-tradingview'
-              : 'id-analysistool';
+        const last_visible_tab_id = show_trading_view ? 'id-tradingview' : 'id-analysistool';
         const el_last_tab = document.getElementById(last_visible_tab_id);
 
         const observer_dashboard = new window.IntersectionObserver(
@@ -251,7 +247,7 @@ const AppWrapper = observer(() => {
             observer_dashboard.disconnect();
             observer_last_tab.disconnect();
         };
-    }, [isRiskManagersDomain, show_bot_ideas, show_competition, show_trading_view]);
+    }, [show_bot_ideas, show_trading_view]);
 
     React.useEffect(() => {
         const is_recoverable_trading_module = active_trading_module === 'auto_trades';
@@ -487,8 +483,7 @@ const AppWrapper = observer(() => {
                 <div
                     className={classNames('main__container', {
                         'main__container--active': active_tour && active_tab === DASHBOARD && !isDesktop,
-                        'main__container--with-open-run-panel':
-                            should_show_run_panel && isDesktop && is_drawer_open,
+                        'main__container--with-open-run-panel': should_show_run_panel && isDesktop && is_drawer_open,
                         'main__container--with-open-mobile-run-panel':
                             should_show_run_panel && !isDesktop && is_drawer_open,
                     })}
@@ -688,23 +683,6 @@ const AppWrapper = observer(() => {
                                     id='id-tradingview'
                                 >
                                     <TradingView />
-                                </div>
-                            )}
-                            {show_competition && (
-                                <div
-                                    label={
-                                        <>
-                                            <LabelPairedCircleStarCaptionRegularIcon
-                                                height='24px'
-                                                width='24px'
-                                                fill='#c8a45d'
-                                            />
-                                            <Localize i18n_default_text='Copy Trading' />
-                                        </>
-                                    }
-                                    id='id-competition'
-                                >
-                                    <CompetitionPage />
                                 </div>
                             )}
                         </Tabs>

@@ -32,7 +32,6 @@ type DomainFeatureFlags = {
     accumilatoirs: boolean;
     chart: boolean;
     tradingView: boolean;
-    competition: boolean;
 };
 
 type MartingaleConfig = {
@@ -135,7 +134,6 @@ const DEFAULT_DOMAIN_FEATURES: DomainFeatureFlags = {
     accumilatoirs: false,
     chart: true,
     tradingView: true,
-    competition: false,
 };
 
 const DEFAULT_MARTINGALE_CONFIG: MartingaleConfig = {
@@ -315,7 +313,6 @@ export const DOMAIN_CONFIG: Record<string, DomainConfig> = {
             chart: false,
             manualTrading: true,
             tradingView: false,
-            competition: true,
         },
         ui: {
             ...LOCALHOST_DOMAIN_UI,

@@ -359,10 +359,6 @@
 
 .main--risk-managers {
     .dc-tabs__list {
-        #id-competition {
-            order: -1;
-        }
-
         @include mobile-or-tablet-screen {
             gap: 0;
             padding-inline: 0.4rem;
