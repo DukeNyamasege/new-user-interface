@@ -115,9 +115,6 @@ For local development:
 ```sh
 # Start the development server
 npm start
-
-# Alternative: Start with webpack (if needed)
-npm run start:webpack
 ```
 
 The development server includes:
